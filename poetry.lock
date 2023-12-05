@@ -961,7 +961,7 @@ virtualenv = ">=20.10.0"
 name = "protobuf"
 version = "4.25.1"
 description = ""
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.8"
 files = [
@@ -1583,4 +1583,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8,<4.0"
-content-hash = "3dcec7c053f32889a2ca55a80643d75c3846b7f472f7ab19ccfcb63946d8055f"
+content-hash = "848a01c857d35498598d50e258a8c8a223eb6b766f5b1343afb974dec09d49d4"
