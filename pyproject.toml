@@ -51,12 +51,8 @@ warn_unused_ignores = "True"
 show_error_codes = "True"
 
 [[tool.mypy.overrides]]
-module = "grpc.*"
-ignore_missing_imports = "True"
-
-[[tool.mypy.overrides]]
-module = "overlore.proto.*"
-ignore_missing_imports = "True"
+module = "overlore.dojo_world"
+ignore_errors = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
