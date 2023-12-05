@@ -362,7 +362,7 @@ colorama = ">=0.4"
 name = "grpcio"
 version = "1.59.3"
 description = "HTTP/2-based RPC framework"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
@@ -1583,4 +1583,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8,<4.0"
-content-hash = "05692f67a28a6a9554857f0bc6d48016339d1e2afa44dcd67995a0390e309a56"
+content-hash = "3dcec7c053f32889a2ca55a80643d75c3846b7f472f7ab19ccfcb63946d8055f"
