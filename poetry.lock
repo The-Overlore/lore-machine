@@ -362,7 +362,7 @@ colorama = ">=0.4"
 name = "grpcio"
 version = "1.59.3"
 description = "HTTP/2-based RPC framework"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.7"
 files = [
@@ -429,7 +429,7 @@ protobuf = ["grpcio-tools (>=1.59.3)"]
 name = "grpcio-tools"
 version = "1.59.3"
 description = "Protobuf code generator for gRPC"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.7"
 files = [
@@ -961,7 +961,7 @@ virtualenv = ">=20.10.0"
 name = "protobuf"
 version = "4.25.1"
 description = ""
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.8"
 files = [
@@ -1310,7 +1310,7 @@ use-chardet-on-py3 = ["chardet (>=3.0.2,<6)"]
 name = "setuptools"
 version = "69.0.2"
 description = "Easily download, build, install, upgrade, and uninstall Python packages"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.8"
 files = [
@@ -1583,4 +1583,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8,<4.0"
-content-hash = "2b694625bac302a12a8c93f6977e11d0449c01af56be8738d57562d0471e9c8c"
+content-hash = "05692f67a28a6a9554857f0bc6d48016339d1e2afa44dcd67995a0390e309a56"
