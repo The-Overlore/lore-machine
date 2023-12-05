@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "lore_but_over"
+name = "overlore"
 version = "0.0.1"
 description = "power to the autonomous, generative agency peoples"
 authors = ["human spirit <fhuman@spirit.life>"]
@@ -7,11 +7,14 @@ repository = "https://github.com/elonmusk/overlore"
 documentation = "https://elonmusk.github.io/overlore/"
 readme = "README.md"
 packages = [
-  {include = "lore_but_over"}
+  {include = "overlore"}
 ]
 
 [tool.poetry.dependencies]
 python = ">=3.8,<4.0"
+grpcio = "^1.59.3"
+grpcio-tools = "^1.59.3"
+websockets = "^12.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.2.0"
@@ -20,6 +23,8 @@ deptry = "^0.12.0"
 mypy = "^1.5.1"
 pre-commit = "^3.4.0"
 tox = "^4.11.1"
+websocket-client = "^1.7.0"
+pytest-asyncio = "^0.23.2"
 
 [tool.poetry.group.docs.dependencies]
 mkdocs = "^1.4.2"

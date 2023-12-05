@@ -1,4 +1,4 @@
-from lore_but_over.foo import foo
+from overlore.foo import foo
 
 
 def test_foo():
