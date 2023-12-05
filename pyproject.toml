@@ -101,6 +101,9 @@ ignore = [
     "E731",
 ]
 
+[tool.deptry.per_rule_ignores]
+DEP001 = ["overlore.proto.world_pb2_grpc"]
+
 [tool.coverage.report]
 skip_empty = true
 
