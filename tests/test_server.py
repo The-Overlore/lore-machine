@@ -1,8 +1,11 @@
-import pytest
 import asyncio
-import websockets
 from threading import Thread
-from overlore.server import echo 
+
+import pytest
+import websockets
+
+from overlore.server import echo
+
 
 # Function to run the server in a separate thread
 def run_server():
@@ -12,6 +15,7 @@ def run_server():
     loop.run_until_complete(start_server)
     loop.run_forever()
 
+
 @pytest.fixture(scope="module")
 def server():
     # Start the server in a separate thread
@@ -19,6 +23,7 @@ def server():
     server_thread.start()
     yield
     # Cleanup code here if needed
+
 
 @pytest.mark.asyncio
 async def test_echo(server):
