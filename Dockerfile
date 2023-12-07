@@ -16,6 +16,6 @@ COPY poetry.lock pyproject.toml /code/
 RUN poetry install --no-interaction --no-ansi --no-root --no-dev
 
 # Copy Python code to the Docker image
-COPY lore_but_over /code/lore_but_over/
+COPY overlore /code/overlore/
 
-CMD [ "python", "lore_but_over/foo.py"]
+CMD [ "python", "overlore/foo.py"]
