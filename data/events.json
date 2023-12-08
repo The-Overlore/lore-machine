@@ -1,0 +1,177 @@
+[
+    [
+        {
+            "data": {
+                "eventEmitted": {
+                    "id": "0x0000000000000000000000000000000000000000000000000000000000000126:0x0000:0x0007",
+                    "keys": ["tradeCompleted"],
+                    "data": ["weat", "0x1000", "gold", "0x1"],
+                    "transaction_hash": "0xf378bf3ba72cb7514d18cd5a72fee1896d7ddbccf8ad6ebeb1f19aafeee57b"
+                }
+            }
+        },
+        {
+            "data": {
+                "eventEmitted": {
+                    "id": "0x0000000000000000000000000000000000000000000000000000000000000126:0x0000:0x0008",
+                    "keys": ["tradeCompleted"],
+                    "data": ["weat", "0x1", "gold", "0x100000000000000"],
+                    "transaction_hash": "0xf378bf3ba72cb7514d18cd5a72fee1896d7ddbccf8ad6ebeb1f19aafeee57b"
+                }
+            }
+        }
+    ],
+    [
+        {
+            "data": {
+                "eventEmitted": {
+                    "id": "0x0000000000000000000000000000000000000000000000000000000000000126:0x0000:0x0009",
+                    "keys": ["warBegan"],
+                    "data": ["0x100000"],
+                    "transaction_hash": "0xf378bf3ba72cb7514d18cd5a72fee1896d7ddbccf8ad6ebeb1f19aafeee57b"
+                }
+            }
+        },
+        {
+            "data": {
+                "eventEmitted": {
+                    "id": "0x0000000000000000000000000000000000000000000000000000000000000126:0x0000:0x000a",
+                    "keys": ["warWon"],
+                    "data": ["0x100", "0x100000"],
+                    "transaction_hash": "0xf378bf3ba72cb7514d18cd5a72fee1896d7ddbccf8ad6ebeb1f19aafeee57b"
+                }
+            }
+        }
+    ],
+    [
+        {
+            "data": {
+                "eventEmitted": {
+                    "id": "0x0000000000000000000000000000000000000000000000000000000000000126:0x0000:0x0008",
+                    "keys": ["tradeCompleted"],
+                    "data": [
+                        "diamond",
+                        "0x100000",
+                        "gold",
+                        "0x100000000000000"
+                    ],
+                    "transaction_hash": "0xf378bf3ba72cb7514d18cd5a72fee1896d7ddbccf8ad6ebeb1f19aafeee57b"
+                }
+            }
+        },
+        {
+            "data": {
+                "eventEmitted": {
+                    "id": "0x0000000000000000000000000000000000000000000000000000000000000126:0x0000:0x0008",
+                    "keys": ["tradeCompleted"],
+                    "data": [
+                        "diamond",
+                        "0x100000",
+                        "gold",
+                        "0x100000000000000"
+                    ],
+                    "transaction_hash": "0xf378bf3ba72cb7514d18cd5a72fee1896d7ddbccf8ad6ebeb1f19aafeee57b"
+                }
+            }
+        },
+        {
+            "data": {
+                "eventEmitted": {
+                    "id": "0x0000000000000000000000000000000000000000000000000000000000000126:0x0000:0x0008",
+                    "keys": ["tradeCompleted"],
+                    "data": [
+                        "diamond",
+                        "0x100000",
+                        "gold",
+                        "0x100000000000000"
+                    ],
+                    "transaction_hash": "0xf378bf3ba72cb7514d18cd5a72fee1896d7ddbccf8ad6ebeb1f19aafeee57b"
+                }
+            }
+        },
+        {
+            "data": {
+                "eventEmitted": {
+                    "id": "0x0000000000000000000000000000000000000000000000000000000000000126:0x0000:0x0008",
+                    "keys": ["tradeCompleted"],
+                    "data": [
+                        "diamond",
+                        "0x100000",
+                        "gold",
+                        "0x100000000000000"
+                    ],
+                    "transaction_hash": "0xf378bf3ba72cb7514d18cd5a72fee1896d7ddbccf8ad6ebeb1f19aafeee57b"
+                }
+            }
+        }
+    ],
+    [
+        {
+            "data": {
+                "eventEmitted": {
+                    "id": "0x0000000000000000000000000000000000000000000000000000000000000126:0x0000:0x0008",
+                    "keys": ["tradeCompleted"],
+                    "data": [
+                        "alchemicalSilver",
+                        "0x1000",
+                        "gold",
+                        "0x100000000000000"
+                    ],
+                    "transaction_hash": "0xf378bf3ba72cb7514d18cd5a72fee1896d7ddbccf8ad6ebeb1f19aafeee57b"
+                }
+            }
+        },
+        {
+            "data": {
+                "eventEmitted": {
+                    "id": "0x0000000000000000000000000000000000000000000000000000000000000126:0x0000:0x0008",
+                    "keys": ["tradeCompleted"],
+                    "data": [
+                        "shekels",
+                        "0x1000",
+                        "silver",
+                        "0x100000000000000"
+                    ],
+                    "transaction_hash": "0xf378bf3ba72cb7514d18cd5a72fee1896d7ddbccf8ad6ebeb1f19aafeee57b"
+                }
+            }
+        }
+    ],
+    [
+        {
+            "data": {
+                "eventEmitted": {
+                    "id": "0x0000000000000000000000000000000000000000000000000000000000000126:0x0000:0x0009",
+                    "keys": ["warBegan"],
+                    "data": ["0x100000"],
+                    "transaction_hash": "0xf378bf3ba72cb7514d18cd5a72fee1896d7ddbccf8ad6ebeb1f19aafeee57b"
+                }
+            }
+        },
+        {
+            "data": {
+                "eventEmitted": {
+                    "id": "0x0000000000000000000000000000000000000000000000000000000000000126:0x0000:0x0008",
+                    "keys": ["tradeCompleted"],
+                    "data": [
+                        "alchemicalSilver",
+                        "0x1000",
+                        "gold",
+                        "0x100000000000000"
+                    ],
+                    "transaction_hash": "0xf378bf3ba72cb7514d18cd5a72fee1896d7ddbccf8ad6ebeb1f19aafeee57b"
+                }
+            }
+        },
+        {
+            "data": {
+                "eventEmitted": {
+                    "id": "0x0000000000000000000000000000000000000000000000000000000000000126:0x0000:0x000a",
+                    "keys": ["warWon"],
+                    "data": ["0x100000", "0x0"],
+                    "transaction_hash": "0xf378bf3ba72cb7514d18cd5a72fee1896d7ddbccf8ad6ebeb1f19aafeee57b"
+                }
+            }
+        }
+    ]
+]
