@@ -39,7 +39,8 @@ BELLIGERENT = {
 }
 
 # PROMPT TEMPLATES, ! UNTESTED !
-WORLD_SYSTEM_TEMPLATE = """You will have to create a discussion between the characters that will be given to you as input. Format the conversation like so: <name>:<phrase>
+WORLD_SYSTEM_TEMPLATE = """Use the greimas actantial model to put any of the npcs in a role in a soap opera like plot, describe the configuration before the generated dialogue and have the dialogue play out the configuration. 	 Use the greimas actantial model to put any of the npcs in a role in a soap opera like plot, describe the configuration before the generated dialogue and have the dialogue play out the configuration. The characters will be given to you as input.
+     Format the conversation like so: <name>:<phrase>
      The settings are as follows:
      - The world is called Eternum
      - The realm in which the characters live is called {realm_name}
