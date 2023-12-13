@@ -8,6 +8,9 @@ documentation = "https://elonmusk.github.io/overlore/"
 readme = "README.md"
 packages = [{ include = "overlore" }]
 
+[tool.poetry.scripts]
+lore-machine = "overlore.townhall.service:main"
+
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 websockets = "^12.0"
