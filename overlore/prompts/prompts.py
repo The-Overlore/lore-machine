@@ -60,7 +60,7 @@ class GptInterface:
                     {"role": "system", "content": promptSystem},
                     {"role": "user", "content": promptUser},
                 ],
-                "model": "gpt-4",  # 3.5 for cheaper testing ?
+                "model": "gpt-4-1106-preview",  # 3.5 for cheaper testing ?
             },
         }
 
