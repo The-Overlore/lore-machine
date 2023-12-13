@@ -43,7 +43,7 @@ AGENT_TEMPLATE = """{name}, a {sex} {role}. He/she is {happiness}, {hunger} and 
 # PROMPT TEMPLATES
 WORLD_SYSTEM_TEMPLATE = """
      Use the greimas actantial model to put any of the characters in a role in a soap opera like plot. 
-     Describe the configuration before the generated dialogue and have the dialogue play out the configuration.
+     Only return the generated dialogue and have the dialogue play out the configuration.
      The characters will be given to you as input.
      You cannot create new characters on your own.
      Format the conversation like so: <name>:<phrase> and end it with the following phrase: "The town meeting is now over"

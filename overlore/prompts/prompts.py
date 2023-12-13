@@ -100,8 +100,10 @@ class GptInterface:
         systemPrompt = WORLD_SYSTEM_TEMPLATE.format(
             # Use getters for this
             realm_name="Straejelas",
-            realmState_happiness="Happy",
-            realmState_defense="Vulnerable",
+            realm_state_happiness="Happy",
+            realm_state_defense="Vulnerable",
+            realm_state_food_availability="Scarce",
+            realm_state_relic_presence="1 relic",
             events=event_string,
         )
 
