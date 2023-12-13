@@ -55,6 +55,7 @@ class GptInterface:
                 "Authorization": f"Bearer {self.OPENAI_API_KEY}",
             },
             "body": {
+                # frequency_penalty seems interesting. Tried 0.6 and got pretty original dialogue
                 "messages": [
                     {"role": "system", "content": promptSystem},
                     {"role": "user", "content": promptUser},
