@@ -118,6 +118,4 @@ class GptInterface:
                 belligerent=BELLIGERENT[mood.get("belligerent")],
             )
             userPrompt += "\n"
-        print(systemPrompt)
-        print(userPrompt)
         return self.generatePrompt(systemPrompt, userPrompt)

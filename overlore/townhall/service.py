@@ -25,7 +25,6 @@ args = parser.parse_args()
 
 
 def handle_sigint(a, b):
-    print("Keyboard interrupt")
     exit(0)
 
 
@@ -38,7 +37,6 @@ async def service(websocket: WebSocketServerProtocol, path: str):
 async def start():
     signal.signal(signalnum=signal.SIGINT, handler=handle_sigint)
     gpt_interface = GptInterface.instance()
-    print(OPENAI_API_KEY)
     gpt_interface.init(OPENAI_API_KEY, OPENAI_EMBEDDINGS_API_KEY)
     print(f"great job, starting this service on port {WS_PORT}. everything is perfect from now on.")
     async with serve(service, "localhost", WS_PORT):
