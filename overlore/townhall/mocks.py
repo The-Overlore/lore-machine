@@ -2,6 +2,25 @@ import json
 import os
 
 
+async def load_mock_gpt_response(mock_index: int):
+    # Get the current file's directory
+    current_dir = os.path.dirname(__file__)
+
+    # Build the path to the events.json file
+    gpt_response_path = os.path.join(current_dir, "../../data/mock_gpt_response.json")
+
+    # Read the JSON data from the file
+    with open(gpt_response_path) as file:
+        gpt_response = json.load(file)
+
+    try:
+        gpt_response = gpt_response[mock_index].get("message")
+    except Exception as error:
+        print(error)
+    else:
+        return gpt_response
+
+
 def load_mock_villagers():
     # Get the current file's directory
     current_dir = os.path.dirname(__file__)

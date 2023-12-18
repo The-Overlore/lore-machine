@@ -36,6 +36,12 @@ To finalize the set-up for publishing to PyPi or Artifactory, see [here](https:/
 For activating the automatic documentation with MkDocs, see [here](https://fpgmaas.github.io/cookiecutter-poetry/features/mkdocs/#enabling-the-documentation-on-github).
 To enable the code coverage reports, see [here](https://fpgmaas.github.io/cookiecutter-poetry/features/codecov/).
 
+## Running your project
+
+From the root of the project, simply run `poetry run lore-machine`
+
+Add the `--mock` flag to use mock GTP responses
+
 ## Releasing a new version
 
 ---
