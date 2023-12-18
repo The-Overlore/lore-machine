@@ -167,8 +167,8 @@
             "data": {
                 "eventEmitted": {
                     "id": "0x0000000000000000000000000000000000000000000000000000000000000126:0x0000:0x000a",
-                    "keys": ["warWon"],
-                    "data": ["0x100000", "0x0"],
+                    "keys": ["warLost"],
+                    "data": ["0x100000"],
                     "transaction_hash": "0xf378bf3ba72cb7514d18cd5a72fee1896d7ddbccf8ad6ebeb1f19aafeee57b"
                 }
             }
