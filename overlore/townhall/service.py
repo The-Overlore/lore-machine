@@ -7,15 +7,23 @@ import signal
 from dotenv import load_dotenv
 from websockets import WebSocketServerProtocol, serve
 
+from overlore.graphql.event_sub import torii_event_sub
 from overlore.prompts.prompts import GptInterface
 from overlore.townhall.logic import gen_townhall
 
-WS_PORT = 8765
 load_dotenv()
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 OPENAI_EMBEDDINGS_API_KEY = ""
 
-parser = argparse.ArgumentParser(description="Optional app description")
+SERVICE_WS_PORT = 8765
+TORII_WS = os.environ.get("TORII_ENDPOINT")
+
+
+def simple_callback(argument):
+    print(argument)
+
+
+parser = argparse.ArgumentParser(description="The weaving loomer of all possible actual experiential occasions.")
 parser.add_argument(
     "--mock",
     action="store_true",
@@ -40,9 +48,11 @@ async def start():
     signal.signal(signalnum=signal.SIGINT, handler=handle_sigint)
     gpt_interface = GptInterface.instance()
     gpt_interface.init(OPENAI_API_KEY, OPENAI_EMBEDDINGS_API_KEY)
-    print(f"great job, starting this service on port {WS_PORT}. everything is perfect from now on.")
-    async with serve(service, args.address, WS_PORT):
-        await asyncio.Future()  # Run forever
+    overlore_pulse = serve(service, "localhost", SERVICE_WS_PORT)
+
+    print(f"great job, starting this service on port {SERVICE_WS_PORT}. everything is perfect from now on.")
+    async with overlore_pulse:
+        await asyncio.gather(overlore_pulse, torii_event_sub(TORII_WS, simple_callback))
 
 
 # hardcode for now, when more mature we need some plumbing to read this off a config
