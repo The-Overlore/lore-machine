@@ -18,17 +18,20 @@ async def torii_event_sub(torii_service_endpoint: str, realm_entity_id: str, on_
     )
 
     client = Client(transport=transport)
+    # first star is for event kind,
+    # second star is for realm entity id
+    # not sure what the third star is
     async with client as session:
         subscription = gql(
-            f"""
-          subscription {{
-          eventEmitted(keys: ["{COMBAT_EVENT}", "{realm_entity_id}", "*"]) {{
+            """
+          subscription {
+          eventEmitted(keys: ["*", "*", "*"]) {
             id
             keys
             data
             createdAt
-          }}
-        }}
+          }
+        }
             """
         )
 
