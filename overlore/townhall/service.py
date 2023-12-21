@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 from websockets import WebSocketServerProtocol, serve
 
 from overlore.graphql.event_sub import torii_event_sub
+from overlore.graphql.realms import fetch_realms
 from overlore.prompts.prompts import GptInterface
 from overlore.townhall.logic import gen_townhall
 
@@ -15,8 +16,9 @@ load_dotenv()
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 OPENAI_EMBEDDINGS_API_KEY = ""
 
-SERVICE_WS_PORT = 8765
-TORII_WS = os.environ.get("TORII_ENDPOINT")
+SERVICE_WS_PORT = 8766
+TORII_WS = os.environ.get("TORII_WS")
+TORII_GRAPHQL = os.environ.get("TORII_GRAPHQL")
 
 
 def simple_callback(argument):
@@ -49,10 +51,11 @@ async def start():
     gpt_interface = GptInterface.instance()
     gpt_interface.init(OPENAI_API_KEY, OPENAI_EMBEDDINGS_API_KEY)
     overlore_pulse = serve(service, "localhost", SERVICE_WS_PORT)
-
+    # simple fetching of all realms
+    realms = fetch_realms(TORII_GRAPHQL)
     print(f"great job, starting this service on port {SERVICE_WS_PORT}. everything is perfect from now on.")
-    async with overlore_pulse:
-        await asyncio.gather(overlore_pulse, torii_event_sub(TORII_WS, simple_callback))
+    # arbitrarily choose just the first realm to sub to events on
+    await asyncio.gather(overlore_pulse, torii_event_sub(TORII_WS, realms[0]["entity_id"], simple_callback))
 
 
 # hardcode for now, when more mature we need some plumbing to read this off a config

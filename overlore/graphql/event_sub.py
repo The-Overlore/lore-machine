@@ -9,7 +9,7 @@ COMBAT_EVENT = "0x30f73782da72e6613eab4ee2cf2ebc3d75cb02d6dd8c537483bb2717a2afb5
 OnEventCallbackType = Callable[[dict], Awaitable[None]]
 
 
-async def torii_event_sub(torii_service_endpoint: str, on_event_callback: OnEventCallbackType):
+async def torii_event_sub(torii_service_endpoint: str, realm_entity_id: str, on_event_callback: OnEventCallbackType):
     transport = WebsocketsTransport(
         url=torii_service_endpoint,
         # Uncomment the following lines to activate client pings
@@ -17,18 +17,16 @@ async def torii_event_sub(torii_service_endpoint: str, on_event_callback: OnEven
         # pong_timeout=10,
     )
 
-    made_up_entity_id = 0
     client = Client(transport=transport)
-
     async with client as session:
         subscription = gql(
             f"""
           subscription {{
-          eventEmitted(keys: [{TRANSFER_EVENT}, {hex(made_up_entity_id)}, * ]) {{
+          eventEmitted(keys: ["{COMBAT_EVENT}", "{realm_entity_id}", "*"]) {{
             id
             keys
             data
-            created_at
+            createdAt
           }}
         }}
             """
@@ -36,6 +34,3 @@ async def torii_event_sub(torii_service_endpoint: str, on_event_callback: OnEven
 
         async for result in session.subscribe(subscription):
             on_event_callback(result)
-
-
-# asyncio.run(main())
