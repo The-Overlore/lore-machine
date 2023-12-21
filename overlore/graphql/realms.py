@@ -9,16 +9,16 @@ class RealmData(TypedDict):
 
 
 all_realms_query = """
-    query AllRealmsForYourMomma {{
-        realmModels {{
-          edges {{
-            node {{
-              realm_id
-              entity_id
-           }}
-         }}
-       }}
-     }}
+    query AllRealmsForYourMomma {
+        realmModels {
+          edges {
+            node {
+              realm_id,
+              entity_id,
+           }
+         }
+       }
+     }
 """
 
 # Main Synchronization Function
