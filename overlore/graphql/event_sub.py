@@ -9,7 +9,7 @@ COMBAT_EVENT = "0x30f73782da72e6613eab4ee2cf2ebc3d75cb02d6dd8c537483bb2717a2afb5
 OnEventCallbackType = Callable[[dict], Awaitable[None]]
 
 
-async def torii_event_sub(torii_service_endpoint: str, realm_entity_id: str, on_event_callback: OnEventCallbackType):
+async def torii_event_sub(torii_service_endpoint: str, on_event_callback: OnEventCallbackType):
     transport = WebsocketsTransport(
         url=torii_service_endpoint,
         # Uncomment the following lines to activate client pings
