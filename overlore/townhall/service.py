@@ -21,6 +21,8 @@ parser.add_argument(
     action="store_true",
     help="Use mock data for GPT response instead of querying the API. (saves API calls)",
 )
+parser.add_argument("-a", "--address", help="Host address for connection", type=str, default="localhost")
+
 args = parser.parse_args()
 
 
@@ -39,7 +41,7 @@ async def start():
     gpt_interface = GptInterface.instance()
     gpt_interface.init(OPENAI_API_KEY, OPENAI_EMBEDDINGS_API_KEY)
     print(f"great job, starting this service on port {WS_PORT}. everything is perfect from now on.")
-    async with serve(service, "localhost", WS_PORT):
+    async with serve(service, args.address, WS_PORT):
         await asyncio.Future()  # Run forever
 
 
