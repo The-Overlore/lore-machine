@@ -21,7 +21,7 @@ parser.add_argument(
     action="store_true",
     help="Use mock data for GPT response instead of querying the API. (saves API calls)",
 )
-parser.add_argument("-a", "--address", help="Host address for connection", type=str, required=True)
+parser.add_argument("-a", "--address", help="Host address for connection", type=str, default="localhost")
 
 args = parser.parse_args()
 
