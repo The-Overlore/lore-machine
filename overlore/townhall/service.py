@@ -50,7 +50,7 @@ async def start():
     signal.signal(signalnum=signal.SIGINT, handler=handle_sigint)
     gpt_interface = GptInterface.instance()
     gpt_interface.init(OPENAI_API_KEY, OPENAI_EMBEDDINGS_API_KEY)
-    overlore_pulse = serve(service, "localhost", SERVICE_WS_PORT)
+    overlore_pulse = serve(service, args.address, SERVICE_WS_PORT)
     print(f"great job, starting this service on port {SERVICE_WS_PORT}. everything is perfect from now on.")
     # arbitrarily choose just the first realm to sub to events on
     await asyncio.gather(overlore_pulse, torii_event_sub(TORII_WS, simple_callback))
