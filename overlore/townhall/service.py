@@ -50,7 +50,7 @@ async def start():
     await asyncio.gather(
         overlore_pulse,
         torii_event_sub(TORII_WS, db.process_event, Subscriptions.COMBAT_OUTCOME_EVENT_EMITTED),
-        torii_event_sub(TORII_WS, db.process_event, Subscriptions.COMPLETED_TRADE_EVENT_EMITTED),
+        torii_event_sub(TORII_WS, db.process_event, Subscriptions.ORDER_ACCEPTED_EVENT_EMITTED),
     )
 
 
