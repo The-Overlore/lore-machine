@@ -5,26 +5,17 @@ from gql.transport.websockets import WebsocketsTransport
 
 from overlore.graphql.constants import Subscriptions
 
-TRANSFER_EVENT = "0x99cd8bde557814842a3121e8ddfd433a539b8c9f14bf31ebf108d12e6196e9"
-COMBAT_EVENT = "0x30f73782da72e6613eab4ee2cf2ebc3d75cb02d6dd8c537483bb2717a2afb57"
-
 OnEventCallbackType = Callable[[dict], Awaitable[None]]
 
 
-async def torii_event_sub(torii_service_endpoint: str, on_event_callback: OnEventCallbackType):
-    transport = WebsocketsTransport(
-        url=torii_service_endpoint,
-        # Uncomment the following lines to activate client pings
-        # ping_interval=60,
-        # pong_timeout=10,
-    )
+async def torii_event_sub(
+    torii_service_endpoint: str, on_event_callback: OnEventCallbackType, subscription: Subscriptions
+):
+    transport = WebsocketsTransport(url=torii_service_endpoint)
 
     client = Client(transport=transport)
-    # first star is for event kind,
-    # second star is for realm entity id
-    # not sure what the third star is
     async with client as session:
-        subscription = gql(Subscriptions.ANY_EVENT_EMITTED.value)
+        gql_subscription = gql(subscription.value)
 
-        async for result in session.subscribe(subscription):
+        async for result in session.subscribe(gql_subscription):
             on_event_callback(result)

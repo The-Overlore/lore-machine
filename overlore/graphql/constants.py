@@ -1,7 +1,10 @@
 from enum import Enum
 
-COMPLETED_TRADE_EVENT = "0x27319ec70e0f69f3988d0a1a75dd2cc3715d4d7a60acec45b51fe577a5f2bf1"
-TRANSFER_EVENT = "0x99cd8bde557814842a3121e8ddfd433a539b8c9f14bf31ebf108d12e6196e9"
+
+class EventType(Enum):
+    COMPLETED_TRADE_EVENT = "0x27319ec70e0f69f3988d0a1a75dd2cc3715d4d7a60acec45b51fe577a5f2bf1"
+    TRANSFER_EVENT = "0x99cd8bde557814842a3121e8ddfd433a539b8c9f14bf31ebf108d12e6196e9"
+    COMBAT_OUTCOME = "0x1736c207163ad481e2a196c0fb6394f90c66c2e2b52e0c03d4a077ac6cea918"
 
 
 class Queries(Enum):
@@ -73,7 +76,7 @@ class Queries(Enum):
 class Subscriptions(Enum):
     EVENT_EMITTED = """
           subscription {{
-                eventEmitted(keys: ["{event_hash}", "*", "*", "*"]) {{
+                eventEmitted(keys: ["{event_hash}"]) {{
                     id
                     keys
                     data
@@ -91,4 +94,5 @@ class Subscriptions(Enum):
                 }
             }
         """
-    COMPLETED_TRADE_EVENT_EMITTED = EVENT_EMITTED.format(event_hash=COMPLETED_TRADE_EVENT)
+    COMPLETED_TRADE_EVENT_EMITTED = EVENT_EMITTED.format(event_hash=EventType.COMPLETED_TRADE_EVENT.value)
+    COMBAT_OUTCOME_EVENT_EMITTED = EVENT_EMITTED.format(event_hash=EventType.COMBAT_OUTCOME.value)

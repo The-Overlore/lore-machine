@@ -1,5 +1,5 @@
-import argparse
 import asyncio
+import functools
 import json
 import os
 import signal
@@ -7,9 +7,12 @@ import signal
 from dotenv import load_dotenv
 from websockets import WebSocketServerProtocol, serve
 
+from overlore.db.handler import DatabaseHandler
+from overlore.graphql.constants import Subscriptions
 from overlore.graphql.event_sub import torii_event_sub
 from overlore.prompts.prompts import GptInterface
 from overlore.townhall.logic import gen_townhall
+from overlore.utils import parse_cli_args
 
 load_dotenv()
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
@@ -20,40 +23,35 @@ SERVICE_WS_PORT = 8766
 TORII_WS = os.environ.get("DEV_TORII_WS")
 TORII_GRAPHQL = os.environ.get("DEV_TORII_GRAPHQL")
 
-
-def simple_callback(argument):
-    print(argument)
-
-
-parser = argparse.ArgumentParser(description="The weaving loomer of all possible actual experiential occasions.")
-parser.add_argument(
-    "--mock",
-    action="store_true",
-    help="Use mock data for GPT response instead of querying the API. (saves API calls)",
-)
-parser.add_argument("-a", "--address", help="Host address for connection", type=str, default="localhost")
-
-args = parser.parse_args()
+args = parse_cli_args()
 
 
 def handle_sigint(a, b):
     exit(0)
 
 
-async def service(websocket: WebSocketServerProtocol, path: str):
+async def service(websocket: WebSocketServerProtocol, extra_argument):
     async for message in websocket:
-        response = await gen_townhall(message, args.mock)
+        response = await gen_townhall(message, extra_argument.get("mock"))
         await websocket.send(json.dumps(response))
 
 
 async def start():
+    db = DatabaseHandler.instance().init()
     signal.signal(signalnum=signal.SIGINT, handler=handle_sigint)
     gpt_interface = GptInterface.instance()
     gpt_interface.init(OPENAI_API_KEY, OPENAI_EMBEDDINGS_API_KEY)
-    overlore_pulse = serve(service, args.address, SERVICE_WS_PORT)
+
+    bound_handler = functools.partial(service, extra_argument={"mock": args.mock})
+    overlore_pulse = serve(bound_handler, args.address, SERVICE_WS_PORT)
+
     print(f"great job, starting this service on port {SERVICE_WS_PORT}. everything is perfect from now on.")
     # arbitrarily choose just the first realm to sub to events on
-    await asyncio.gather(overlore_pulse, torii_event_sub(TORII_WS, simple_callback))
+    await asyncio.gather(
+        overlore_pulse,
+        torii_event_sub(TORII_WS, db.process_event, Subscriptions.COMBAT_OUTCOME_EVENT_EMITTED),
+        torii_event_sub(TORII_WS, db.process_event, Subscriptions.COMPLETED_TRADE_EVENT_EMITTED),
+    )
 
 
 # hardcode for now, when more mature we need some plumbing to read this off a config

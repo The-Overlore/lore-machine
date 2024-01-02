@@ -1,6 +1,6 @@
 from overlore.prompts.prompts import GptInterface
 from overlore.townhall.mocks import fetch_events, fetch_users, fetch_villagers, load_mock_gpt_response
-from overlore.townhall.utils import msg_to_json
+from overlore.utils import str_to_json
 
 
 async def gen_prompt(users, events, villagers):
@@ -13,7 +13,7 @@ async def gen_prompt(users, events, villagers):
 
 
 async def gen_townhall(message: str, mock: bool):
-    data = msg_to_json(message)
+    data = str_to_json(message)
     if data == {}:
         return "invalid msg"
     users = fetch_users(data.get("user"))
