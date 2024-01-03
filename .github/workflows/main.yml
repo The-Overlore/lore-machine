@@ -22,8 +22,5 @@ jobs:
       - name: Set up the environment
         uses: ./.github/actions/setup-poetry-env
 
-      - name: Install overlore
-        run: make install
-
       - name: Run tests
-        run: pytest
+        run: poetry run pytest
