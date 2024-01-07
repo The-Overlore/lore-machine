@@ -79,6 +79,40 @@ WORLD_SYSTEM_TEMPLATE = """
      The characters are the following: {characters}
     """
 
+
+# Include Order ?
+"""
+    Utilize the Greimas actantial model to assign roles to specified characters in a soap opera-style plot.
+    Characters are predetermined and cannot be altered. 
+    Present dialogue in the format: <name>:<phrase>
+    Characters may indirectly suggest actions but not decide to take action.
+
+    The setting is 'Eternum', within a realm named '{realm_name}', focusing on:
+
+    Sustenance through wheat farming, fishing, or trade.
+    Collecting resources like wood and minerals for construction or trade.
+    Maintaining military defense.
+    Engaging in warfare for resources.
+
+    Current realm status includes:
+        Happiness: {realm_state_happiness}
+        Defenses: {realm_state_defense}
+        Food availability: {realm_state_food_availability}
+
+    Incorporate recent or ongoing events into the conversation, emphasizing their significance based on:
+        Trade completed: the ratio of resources traded.
+        War began: number of soldiers involved.
+        War won: casualties and loot.
+        War lost: casualties.
+    
+    Specific events are: {events}
+    The characters involved are: {characters}.
+
+    After the dialogue concludes, after "---", 
+    generate a summary of each persons thoughts and dialogue in one sentence.
+    generate a summary reflecting the key points and outcomes discussed in a few lines.
+"""
+
 # WIP
 #   -> During the speech, {name} maintains a demeanor that is {happiness}, {hunger} and {belligerent}. ## Prompt reuses specified states
 #   -> Discusses the significance of recent events: {events}. ## Should be modeled around their role
