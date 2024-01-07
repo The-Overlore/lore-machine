@@ -19,11 +19,23 @@ jobs:
           path: ~/.cache/pre-commit
           key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
 
-      - name: Set up the environment
+      - name: Set up poetry environment
         uses: ./.github/actions/setup-poetry-env
 
+      - name: Load cached mod_libspatialite
+        id: cached-mod_libspatialite
+        uses: actions/cache@v3
+        with:
+          path: /usr/local/lib/mod_spatialite.so
+          key: venv-${{ runner.os }}-${{ hashFiles('/usr/local/lib/mod_spatialite.so') }}
+
+      - name: Install mod_libspatialite
+        if: steps.cached-mod_libspatialite.outputs.cache-hit != 'true'
+        run: apt-get update -y && apt-get install -y libsqlite3-mod-spatialite && cp /usr/lib/aarch64-linux-gnu/mod_spatialite.so /usr/local/lib/
+        shell: bash
+
       - name: Run tests
-        run: poetry run pytest
+        run: make test
 
   check:
     runs-on: ubuntu-latest
@@ -36,7 +48,7 @@ jobs:
           path: ~/.cache/pre-commit
           key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
 
-      - name: Set up the environment
+      - name: Set up poetry environment
         uses: ./.github/actions/setup-poetry-env
 
       - name: Run checks

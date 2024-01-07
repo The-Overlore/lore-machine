@@ -22,10 +22,10 @@ class DatabaseHandler:
     # create a lock
     lock = Lock()
 
-    def __lock(self):
+    def __lock(self) -> None:
         self.lock.acquire(blocking=True, timeout=1000)
 
-    def __release(self):
+    def __release(self) -> None:
         self.lock.release()
 
     @classmethod
@@ -42,7 +42,7 @@ class DatabaseHandler:
         self.db.execute("SELECT InitSpatialMetaData(1);")
 
     def __load_sqlean(self, path: str) -> Connection:
-        conn = sqlean.connect(path)
+        conn: Connection = sqlean.connect(path)
         # TODO Do we have to load the extension everytime we start up or only once when the db is first created?
         conn.enable_load_extension(True)
         conn.execute('SELECT load_extension("mod_spatialite")')
@@ -77,27 +77,36 @@ class DatabaseHandler:
         cursor = self.db.cursor()
         cursor.execute(query, values)
         self.db.commit()
-        added_id = cursor.lastrowid
+        added_id = cursor.lastrowid if cursor.lastrowid else 0
         self.__release()
         return added_id
 
     def __add(self, obj: dict[Any, Any]) -> int:
-        event_type = obj.get("type")
+        event_type = obj["type"]
         del obj["type"]
-        active_pos = obj.get("active_pos")
+        active_pos = obj["active_pos"]
         del obj["active_pos"]
-        passive_pos = obj.get("passive_pos")
+        passive_pos = obj["passive_pos"]
         del obj["passive_pos"]
-        ts = obj.get("ts")
+        ts = obj["ts"]
         del obj["ts"]
-        obj.get("importance")
+        obj["importance"]
         del obj["importance"]
         additional_data = json.dumps(obj)
         query = (
             "INSERT INTO events (type, importance, ts, metadata, active_pos, passive_pos) VALUES (?, ?,"
             " ?, ?, MakePoint(?,?),MakePoint(?, ?));"
         )
-        values = (event_type, 4, ts, additional_data, active_pos[0], active_pos[1], passive_pos[0], passive_pos[1])
+        values: tuple[Any, ...] = (
+            event_type,
+            4,
+            ts,
+            additional_data,
+            active_pos[0],
+            active_pos[1],
+            passive_pos[0],
+            passive_pos[1],
+        )
         added_id = self.__insert(query, values)
         return added_id
 
