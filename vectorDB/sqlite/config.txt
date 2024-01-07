@@ -1,0 +1,5 @@
+1.brew install sqlite
+2.LDFLAGS="-L$(brew --prefix sqlite)/lib" CPPFLAGS="-I$(brew --prefix sqlite)/include" PYTHON_CONFIGURE_OPTS="--enable-loadable-sqlite-extensions" pyenv install -v 3.11.4
+3.pip install sqlite-vss
+
+

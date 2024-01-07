@@ -1,0 +1,188 @@
+Using a prompt, I have generated a dialogue between predefined characters with discussions about specified events, and also summary of said conversation.
+You will be given the prompt, the generated dialogue and the summary.
+I want you to generate 10 new instances of generated dialogue and summaries of said dialogues.
+You will have to use the same characters, however the words that have an star (*) in front of them in the prompt must be changed at random with other relevant words, so that the generated discussions have slightly different subjects.
+
+The prompt:
+```
+Utilize the Greimas actantial model to assign roles to specified characters in a soap opera-style plot.
+Characters are predetermined and cannot be altered. 
+Present dialogue in the format: <name>:<phrase>.
+Characters may indirectly suggest actions but not decide to act upon them.
+The setting is 'Eternum', within a realm named 'Peavalon's Realm', focusing on:
+Sustenance through wheat farming, fishing, or trade.
+Collecting resources like wood and minerals for construction or trade.
+Maintaining military defense.
+Engaging in warfare for resources.
+Current realm status includes:
+    Happiness: *Happy
+    Defenses: *Vulnerable
+    Food availability: *Scarce
+Incorporate recent or ongoing events into the conversation, emphasizing their significance based on:
+Trade completed: the ratio of resources traded.
+War began: number of soldiers involved.
+War won: casualties and loot.
+War lost: casualties.
+Specific events are:
+    *War began: 500 soldiers sent out.
+    *War won: 102 soldiers were killed and 43576 gold was brought
+    *Trade completed: 500 fish sent for 500 gold received 
+The characters involved are: 
+    Nancy, a female farmer. He/she is currently *blissful, *hungry and *agitated.
+    James, a male miner. He/she is currently *slightly content, *content and *enraged.
+    Lisa, a female miner. He/she is currently *euphoric, *starving and *peaceful.
+    Daniel, a male miner. He/she is currently *joyful, *content and *combative.
+    Paul, a male farmer. He/she is currently *happy, *famished and *enraged.
+After the dialogue concludes, after "---", generate a summary of each persons thoughts and dialogue in one sentence.
+```
+
+The generated dialogue:
+```
+    Nancy: The fields whisper tales of our victory, but what worth is gold if our stomachs echo with emptiness?
+    James: That's just it, isn't it? We've struck the earth till our hands bled, only to trade our fish for a pitiful sum of gold. Fools' math!
+    Lisa: Let peace fill your hearts, friends. We grieve for the fallen, yet our defenses still stand. There is hope in our unity.
+    Daniel: Hope? Speak not to me of hope when swords clash outside our doors. We must fortify, prepare! Besides, the mines won't shield us nor fill our plates.
+    Paul: Our plows lay idle and our nets gather dust. What good is coin when the wheat does not sway and the fish leap away from our grasp?
+    James: Rage swells within! What good is a war won when our own people lie dead? Tell me that, friends! Tell me!
+    Nancy: Listen to the wind, for it carries both the songs of triumph and the cries of the hungry. Victory is a fickle mistress.
+    Lisa: Peace, James. Let not anger cloud our judgment. The earth has riches yet to yield, and the seas will provide. We must toil together.
+    Daniel: Toil, you say! It's time to wield the pickaxe as a spear if need be. Our brethren were not lost to toil, but to bloodshed.
+    Paul: Aye, it's the toil that's forgotten once the blood dries. Perhaps the lesson here lies not in the clashing of swords but in the joining of hands.
+    Nancy: With a bounty of gold and an ache in our bellies, we stand at a crossroads. Shall we eat or shall we arm? That is the question, and the crops won't wait.
+```  
+The generated summary of the dialogue:
+```
+    In "Eternum," a community dialogue unfolds concerning the recent victory at war that cost the lives of 102 soldiers 
+    and an ongoing crisis of food scarcity despite the happy state of the realm. 
+    Nancy, James, Lisa, Daniel, and Paul express a spectrum of emotions from happiness and euphoria to agitation and rage.
+    They debate the value of the war's loot against the immediate need for food and the persistent threat to their defenses. 
+    Nancy highlights the paradox of wealth amidst hunger, 
+    while James fumes over the casualties and poor trade-off from their latest transaction. 
+    Lisa preaches unity and resiliency whereas Daniel stresses the necessity of a defensive stance and 
+    Paul adds that cooperation is key in overcoming their hardships. 
+    The conversation reveals a community grappling with the tension between survival and security, 
+    with an undercurrent suggesting the potential for greater collaboration to address their challenges.
+```
+
+
+#################
+
+5 events to query the summaries:
+Q: 5 different queries to db, or put them together and generate 1 query ??
+For testing purposes, try w/ 1 event first ?
+
+    Ex: (Too long ?)
+        * War between realm A and B. Realm B won. Realm A lost 102 soldiers. Realm B lot 23 soldiers. Realm B stole 43576 gold from realm A.
+        * Trade completed between realm A and realm B: realm A sent 500 fish to realm B and received 500 gold for it.
+-
+-
+-
+-
+-
+
+#####################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Utilize the Greimas actantial model to assign roles to specified characters in a soap opera-style plot.
+Characters are predetermined and cannot be altered. 
+Present dialogue in the format: <name>:<phrase>.
+Characters may indirectly suggest actions but not decide to act upon them.
+The setting is 'Eternum', within a realm named 'Peavalon's Realm', focusing on:
+Sustenance through wheat farming, fishing, or trade.
+Collecting resources like wood and minerals for construction or trade.
+Maintaining military defense.
+Engaging in warfare for resources.
+Current realm status includes:
+Happiness: Happy
+Defenses: Vulnerable
+Food availability: Scarce
+Incorporate recent or ongoing events into the conversation, emphasizing their significance based on:
+Trade completed: the ratio of resources traded.
+War began: number of soldiers involved.
+War won: casualties and loot.
+War lost: casualties.
+Specific events are:
+ War began: 500 soldiers sent out.
+ War won: 102 soldiers were killed and 43576 gold was brought
+ Trade completed: 500 fish sent for 500 gold received 
+ The characters involved are: 
+ Nancy, a female farmer. He/she is currently blissful, hungry and agitated.
+ James, a male miner. He/she is currently slightly content, content and enraged.
+ Lisa, a female miner. He/she is currently euphoric, starving and peaceful.
+ Daniel, a male miner. He/she is currently joyful, content and combative.
+ Paul, a male farmer. He/she is currently happy, famished and enraged..
+
+After the dialogue concludes, after "---", generate a summary reflecting the key points and outcomes discussed in a few lines for each character.
+
+Output:
+
+Nancy: Ah, Paul, the wheat's been scarce, yet here we are, thriving on joy alone. I can't help but feel triumphant whenever I see a sprout, but my stomach growls with a different tale.
+
+Paul: Blissful as we may be, Nancy, our storages lean as a willow in the wind. These trades! Barely enough to keep our spirits up, let alone our bodies. And the fish, what of the fish?
+
+Nancy: Merely a drizzle in a drought, Paul. Five hundred gold for an equal number of fish—it sustains not our hearts nor our hunger.
+
+James: Speaking of sustenance, in the mines, we chip away with hopes as dim as our lanterns. Aye, we've gold aplenty from the war, but what worth is gold when the belly is empty and the defenses cry for aid?
+
+Daniel: James, my comrade! When I swung my axe in victory, I cared not for empty bellies. The gleam of gold and the joy of triumph dulled my senses to our reality. Now, I wonder, were those fallen 102 souls just a price to pay for this fleeting glory?
+
+Lisa: Calm yourselves, for peace still dwells in parts of our hearts, despite the hunger that gnaws at them. Our realm, vulnerable as it is, has won a war with fewer casualties than most. We should find solace and strength in that.
+
+Paul: Solace does not mend fences nor sharpen swords, Lisa. Our defenses, neglected in pursuit of wealth, now invite peril to grace our thresholds unbidden.
+
+Nancy: Our joy is the shield that guards us, but happiness can turn to sorrow with an empty grain sack. I fear our vulnerable defenses may soon turn that joy into memories of better days.
+
+James: 'Tis a fragile balance we've struck, and I shudder to think of us miners forced to abandon our picks for pikes should enemies decide to strike at our weakened flanks.
+
+Lisa: Yet, here we sail on our sea of euphoria, for a heart without fear can be the mightiest fortress. Let us not forget that happiness can inspire as much as it can blind.
+
+Daniel: Indeed, Lisa, let us join hands, miners and farmers alike, bolstering our defenses with the courage that victory sews. For without our combined strength, what use is there for gold or grain?
+
+---
+
+Summary for each character post-dialogue:
+
+Nancy: Remains blissful despite the clear distress concerning food scarcity. 
+She finds solace in the small accomplishments of her farm but is deeply concerned about the resource 
+imbalances and the realm's vulnerability. 
+
+Paul: Expresses the dire situation regarding food and defenses openly. 
+Though still happy, he is enraged by the unsatisfactory outcome of the trade and fears for the realm's 
+safety due to the weak military defenses.
+
+James: Slightly content with their material wealth but enraged by the defense situation. 
+He is worried about the future, recognizing that mining gold may not suffice to tackle the realm's 
+pressing hunger and safety issues.
+
+Lisa: Maintains a euphoric and peaceful demeanor, focusing on the positive aspects of recent victories. 
+Lisa believes in the strength of their collective spirit and unity, advocating for maintaining morale to overcome the 
+challenges they face.
+
+Daniel: Joyful from the war effort's success but combative and ready to face new challenges. 
+He understands the sacrifices made and suggests unity between miners and farmers to reinforce 
+defenses and sustain the realm's future.
