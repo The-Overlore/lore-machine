@@ -1,9 +1,11 @@
+from typing import Any
+
 from overlore.prompts.prompts import GptInterface
 from overlore.townhall.mocks import fetch_events, fetch_users, fetch_villagers, load_mock_gpt_response
 from overlore.utils import str_to_json
 
 
-async def gen_prompt(users, events, villagers):
+async def gen_prompt(users: list[Any], events: list[Any], villagers: list[Any]) -> str:
     gpt_interface = GptInterface.instance()
     gpt_response = await gpt_interface.generateTownHallDiscussion(villagers, events)
     print(f"Generated response: {gpt_response}")
@@ -12,7 +14,7 @@ async def gen_prompt(users, events, villagers):
     return prompt
 
 
-async def gen_townhall(message: str, mock: bool):
+async def gen_townhall(message: str, mock: bool) -> str:
     data = str_to_json(message)
     if data == {}:
         return "invalid msg"

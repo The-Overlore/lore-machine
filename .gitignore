@@ -1,5 +1,6 @@
 docs/source
-events_db.json
+events.db
+events.db-journal
 
 # From https://raw.githubusercontent.com/github/gitignore/main/Python.gitignore
 

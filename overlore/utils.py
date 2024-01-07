@@ -1,8 +1,10 @@
 import argparse
 import json
+from argparse import Namespace
+from typing import Any
 
 
-def str_to_json(message: str):
+def str_to_json(message: str) -> Any:
     try:
         return json.loads(message)
     except Exception as error:
@@ -10,7 +12,14 @@ def str_to_json(message: str):
         return {}
 
 
-def parse_cli_args():
+def open_json_file(path: str) -> Any:
+    # Read the JSON data from the file
+    with open(path) as file:
+        file_contents = json.load(file)
+        return file_contents
+
+
+def parse_cli_args() -> Namespace:
     parser = argparse.ArgumentParser(description="The weaving loomer of all possible actual experiential occasions.")
     parser.add_argument(
         "--mock",
@@ -21,7 +30,7 @@ def parse_cli_args():
     return parser.parse_args()
 
 
-def get_enum_name_by_value(enum, val):
+def get_enum_name_by_value(enum: Any, val: Any) -> Any:
     for enum_entry in enum:
         if enum_entry.value == val:
             return enum_entry.name

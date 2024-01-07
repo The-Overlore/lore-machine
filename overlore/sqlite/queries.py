@@ -1,0 +1,2 @@
+INSERT_QUERY = """"""
+MOST_RELEVANT_QUERY = """"""

@@ -1,51 +1,23 @@
-import json
-import os
+from typing import Any
+
+from overlore.utils import open_json_file
 
 
-async def load_mock_gpt_response(mock_index: int):
-    # Get the current file's directory
-    current_dir = os.path.dirname(__file__)
-
-    # Build the path to the events.json file
-    gpt_response_path = os.path.join(current_dir, "../../data/mock_gpt_response.json")
-
-    # Read the JSON data from the file
-    with open(gpt_response_path) as file:
-        gpt_response = json.load(file)
-
+async def load_mock_gpt_response(mock_index: int) -> str:
+    gpt_response_file = open_json_file("./data/mock_gpt_response.json")
     try:
-        gpt_response = gpt_response[mock_index].get("message")
+        return str(gpt_response_file[mock_index].get("message"))
     except Exception as error:
         print(error)
-    else:
-        return gpt_response
+        return ""
 
 
-def load_mock_villagers():
-    # Get the current file's directory
-    current_dir = os.path.dirname(__file__)
-
-    # Build the path to the events.json file
-    villagers_path = os.path.join(current_dir, "../../data/villagers.json")
-
-    # Read the JSON data from the file
-    with open(villagers_path) as file:
-        villagers = json.load(file)
-
-    return villagers
+def load_mock_villagers() -> Any:
+    return open_json_file("./data/villagers.json")
 
 
-def load_mock_events():
-    # Get the current file's directory
-    current_dir = os.path.dirname(__file__)
-
-    # Build the path to the events.json file
-    events_path = os.path.join(current_dir, "../../data/events.json")
-
-    # Read the JSON data from the file
-    with open(events_path) as file:
-        events = json.load(file)
-
+def load_mock_events() -> Any:
+    events = open_json_file("./data/events.json")
     # Use a list comprehension to extract eventEmitted details
     processed_events = [
         [event.get("data", {}).get("eventEmitted", {}) for event in event_group] for event_group in events
@@ -54,18 +26,18 @@ def load_mock_events():
     return processed_events
 
 
-def fetch_villagers():
+def fetch_villagers() -> Any:
     return load_mock_villagers()
 
 
 # as in FAKE
-def fetch_users(index: int):
+def fetch_users(index: int) -> Any:
     # Mock user data
     users = ["User1", "User2", "User3"]
     return users[index]
 
 
 # as in FAKE news
-def fetch_events(index: int):
+def fetch_events(index: int) -> Any:
     # Mock event data
     return load_mock_events()[index]

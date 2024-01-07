@@ -5,7 +5,7 @@ from overlore.db.handler import DatabaseHandler
 
 @pytest.mark.asyncio
 async def test_combat_outcome_event():
-    db = DatabaseHandler.instance().init()
+    db = DatabaseHandler.instance().init(":memory:")
     test_message = {
         "eventEmitted": {
             "id": "0x00000000000000000000000000000000000000000000000000000000000001c8:0x0000:0x0002",
@@ -21,21 +21,19 @@ async def test_combat_outcome_event():
     }
     db_id = db.process_event(test_message)
     actual = db.get_by_id(db_id)
-    expected = {
-        "attacker_realm_id": 75,
-        "target_realm_entity_id": 73,
-        "attacking_entity_ids": [],
-        "stolen_resources": [],
-        "winner": 0,
-        "damage": 0,
-        "ts": 1705098944,
-    }
+    print(actual)
+    expected = [
+        (1, 1, 4, 1705098944, '{"attacking_entity_ids": [], "stolen_resources": [], "winner": 0, "damage": 0}'),
+        (-53.6529, 47.48),
+        (114.8471, 43.38),
+    ]
     assert actual == expected
 
 
 @pytest.mark.asyncio
 async def test_trade_completed_event():
-    db = DatabaseHandler.instance().init()
+    db = DatabaseHandler.instance().init(":memory:")
+
     test_message = {
         "eventEmitted": {
             "id": "0x00000000000000000000000000000000000000000000000000000000000001cf:0x0000:0x0023",
@@ -49,13 +47,17 @@ async def test_trade_completed_event():
         }
     }
     db_id = db.process_event(test_message)
+
     actual = db.get_by_id(db_id)
-    expected = {
-        "trade_id": 125,
-        "maker_id": 75,
-        "taker_id": 73,
-        "resources_maker": [{"type": 8, "amount": 1}],
-        "resources_taker": [{"type": 1, "amount": 1}],
-        "ts": 1705106173,
-    }
+    expected = [
+        (
+            1,
+            0,
+            4,
+            1705106173,
+            '{"resources_maker": [{"type": 8, "amount": 1}], "resources_taker": [{"type": 1, "amount": 1}]}',
+        ),
+        (-53.6529, 47.48),
+        (114.8471, 43.38),
+    ]
     assert actual == expected
