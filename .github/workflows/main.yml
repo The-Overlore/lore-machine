@@ -31,7 +31,7 @@ jobs:
 
       - name: Install mod_libspatialite
         if: steps.cached-mod_libspatialite.outputs.cache-hit != 'true'
-        run: sudo apt-get update -y && sudo apt-get install -y libsqlite3-mod-spatialite && sudo cp /usr/lib/aarch64-linux-gnu/mod_spatialite.so /usr/local/lib/
+        run: sudo apt-get update -y && sudo apt-get install -y libsqlite3-mod-spatialite && echo "export LB_LIBRARY_PATH=$LD_LIBRARY_PATH:$(sudo find / -name mod_spatialite.so)" >> ~/.bashrc
         shell: bash
 
       - name: Run tests
