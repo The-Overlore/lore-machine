@@ -1,12 +1,17 @@
 import asyncio
+import functools
 import json
 import os
+import signal
 from typing import Any
 
 from dotenv import load_dotenv
-from websockets import WebSocketServerProtocol
+from websockets import WebSocketServerProtocol, serve
 
 from overlore.db.handler import DatabaseHandler
+from overlore.graphql.constants import Subscriptions
+from overlore.graphql.event_sub import torii_event_sub
+from overlore.prompts.prompts import GptInterface
 from overlore.townhall.logic import gen_townhall
 from overlore.utils import parse_cli_args
 
@@ -42,21 +47,23 @@ async def start() -> None:
         OPENAI_EMBEDDINGS_API_KEY = ""
     if TORII_WS is None:
         raise RuntimeError("Failure to provide WS url")
-    DatabaseHandler.instance().init()
-    # signal.signal(signal.SIGINT, handle_sigint)
-    # gpt_interface = GptInterface.instance()
-    # gpt_interface.init(OPENAI_API_KEY, OPENAI_EMBEDDINGS_API_KEY)
 
-    # bound_handler = functools.partial(service, extra_argument={"mock": args.mock})
-    # overlore_pulse = serve(bound_handler, args.address, SERVICE_WS_PORT)
+    db = DatabaseHandler.instance().init()
 
-    # print(f"great job, starting this service on port {SERVICE_WS_PORT}. everything is perfect from now on.")
-    # # arbitrarily choose just the first realm to sub to events on
-    # await asyncio.gather(
-    #     overlore_pulse,
-    #     torii_event_sub(TORII_WS, db.process_event, Subscriptions.COMBAT_OUTCOME_EVENT_EMITTED),
-    #     torii_event_sub(TORII_WS, db.process_event, Subscriptions.ORDER_ACCEPTED_EVENT_EMITTED),
-    # )
+    signal.signal(signal.SIGINT, handle_sigint)
+    gpt_interface = GptInterface.instance()
+    gpt_interface.init(OPENAI_API_KEY, OPENAI_EMBEDDINGS_API_KEY)
+
+    bound_handler = functools.partial(service, extra_argument={"mock": args.mock})
+    overlore_pulse = serve(bound_handler, args.address, SERVICE_WS_PORT)
+
+    print(f"great job, starting this service on port {SERVICE_WS_PORT}. everything is perfect from now on.")
+    # arbitrarily choose just the first realm to sub to events on
+    await asyncio.gather(
+        overlore_pulse,
+        torii_event_sub(TORII_WS, db.process_event, Subscriptions.COMBAT_OUTCOME_EVENT_EMITTED),
+        torii_event_sub(TORII_WS, db.process_event, Subscriptions.ORDER_ACCEPTED_EVENT_EMITTED),
+    )
 
 
 # hardcode for now, when more mature we need some plumbing to read this off a config
