@@ -1,4 +1,0 @@
-pip install python-dotenv
-pip install openai
-pip install psycopg2-binary
-pip install pgvector
