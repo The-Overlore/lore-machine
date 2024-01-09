@@ -8,19 +8,6 @@ class EventType(Enum):
 
 
 class Queries(Enum):
-    PENDINGTRADES = """
-    tradeModels(where: {taker_idEQ: "0"}) {
-        edges {
-        node {
-            entity {
-            id
-            keys
-            updatedAt
-            }
-        }
-        }
-    }"""
-
     PENDING_TRADES = """
     statusModels(where: {valueEQ: "0"}) {
             edges{
