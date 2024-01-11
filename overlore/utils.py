@@ -3,6 +3,8 @@ import json
 from argparse import Namespace
 from typing import Any
 
+import requests
+
 
 def str_to_json(message: str) -> Any:
     try:
@@ -35,3 +37,20 @@ def get_enum_name_by_value(enum: Any, val: Any) -> Any:
         if enum_entry.value == val:
             return enum_entry.name
     return None  # Return None or raise an error if the value is not found
+
+
+async def get_katana_timestamp() -> Any:
+    data = {"jsonrpc": "2.0", "method": "starknet_getBlockWithTxs", "params": {"block_id": "latest"}, "id": 1}
+    ret = await query_katana_node(data)
+    return ret.get("result").get("timestamp")
+
+
+async def query_katana_node(data: dict[str, Any]) -> Any:
+    # Define the URL and the header
+    url = "http://localhost:5050"
+    headers = {"Content-Type": "application/json"}
+
+    # Make the POST request
+    response = requests.post(url, headers=headers, data=json.dumps(data), timeout=1000)
+    json_response = str_to_json(response.text)
+    return json_response

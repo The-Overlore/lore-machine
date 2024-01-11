@@ -1,6 +1,7 @@
 import pytest
 
 from overlore.db.handler import DatabaseHandler
+from overlore.eternum.constants import Realms
 
 
 @pytest.mark.asyncio
@@ -267,3 +268,72 @@ async def test_get_all():
             (114.8471, 43.38),
         ],
     ]
+
+
+@pytest.mark.asyncio
+async def test_fetch_relevant_events_decay_time():
+    db = DatabaseHandler.instance().init(":memory:")
+
+    test_message = {
+        "eventEmitted": {
+            "id": "0x00000000000000000000000000000000000000000000000000000000000001ad:0x0000:0x0023",
+            "keys": [
+                "0x20e86edfa14c93309aa6559742e993d42d48507f3bf654a12d77a54f10f8945",
+                "0x88",
+                "0x63cbe849cf6325e727a8d6f82f25fad7dc7eb9433767f5c1b8c59189e36c9b6",
+            ],
+            "data": ["0x4b", "0x49", "0x1", "0xfd", "0xc350", "0x1", "0x3", "0xc350", "0x659daba0"],
+            "createdAt": "2024-01-08 16:38:25",
+        }
+    }
+    # store 7 events that are one day appart
+    for _i in range(0, 8):
+        db.process_event(test_message)
+        ts = int(test_message["eventEmitted"]["data"][8], base=16)
+        ts -= 86400
+        test_message["eventEmitted"]["data"][8] = hex(ts)
+
+    actual = db.fetch_most_relevant(realm_position=db.realms.position_by_id(75), current_time=1704831904)
+    print(actual)
+    expected = [
+        (10.0,),
+        (9.523809523809524,),
+        (9.047619047619047,),
+        (8.571428571428571,),
+        (8.095238095238095,),
+        (7.6190476190476195,),
+        (7.142857142857143,),
+        (6.666666666666667,),
+    ]
+    assert actual == expected
+
+
+@pytest.mark.asyncio
+async def test_fetch_relevant_events_decay_distance():
+    db = DatabaseHandler.instance().init(":memory:")
+
+    realms = Realms.instance()
+    realms.geodata = realms.load_geodata("./tests/data/test_geodata.json")
+
+    db.realms = realms
+    test_message = {
+        "eventEmitted": {
+            "id": "0x00000000000000000000000000000000000000000000000000000000000001ad:0x0000:0x0023",
+            "keys": [
+                "0x20e86edfa14c93309aa6559742e993d42d48507f3bf654a12d77a54f10f8945",
+                "0x88",
+                "0x63cbe849cf6325e727a8d6f82f25fad7dc7eb9433767f5c1b8c59189e36c9b6",
+            ],
+            "data": ["0x4b", "0x49", "0x1", "0xfd", "0xc350", "0x1", "0x3", "0xc350", "0x659daba0"],
+            "createdAt": "2024-01-08 16:38:25",
+        }
+    }
+    # store 7 events that are one day appart
+    for _i in range(0, 7):
+        db.process_event(test_message)
+        ts = int(test_message["eventEmitted"]["data"][8], base=16)
+        ts -= 86400
+        test_message["eventEmitted"]["data"][8] = hex(ts)
+
+    db.fetch_most_relevant(realm_position=db.realms.position_by_id(75), current_time=1704831904)
+    # assert actual == expected
