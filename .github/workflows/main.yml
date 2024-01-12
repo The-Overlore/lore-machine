@@ -37,6 +37,8 @@ jobs:
       - name: Add mod_libspatialite to libpath in bashrc
         run: echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:~/.cache/mod_spatialite.so" >> ~/.bashrc
 
+      - name: Echo path and cat bashrc
+        run: echo $LD_LIBRARY_PATH && cat ~/.bashrc
       - name: Run tests
         run: make test
 
