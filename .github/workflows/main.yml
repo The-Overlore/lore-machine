@@ -34,7 +34,7 @@ jobs:
         run: sudo apt-get update -y && sudo apt-get install -y libsqlite3-mod-spatialite && cp $(sudo find / -name mod_spatialite.so) ~/.cache/
         shell: bash
 
-      - name: Add mod_libspatialite.so to libpath
+      - name: Add mod_libspatialite to libpath in bashrc
         run: echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:~/.cache/mod_spatialite.so" >> ~/.bashrc
 
       - name: Run tests
