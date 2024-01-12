@@ -38,6 +38,9 @@ jobs:
         run: echo "export LB_LIBRARY_PATH=$LD_LIBRARY_PATH:$(sudo find / -name mod_spatialite.so)" >> ~/.bashrc
         shell: bash
 
+      - name: print out bashrc
+        run: cat ~/.bashrc
+
       - name: Run tests
         run: make test
 
