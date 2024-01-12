@@ -39,8 +39,11 @@ jobs:
 
       - name: Echo path and cat bashrc
         run: echo $LD_LIBRARY_PATH && cat ~/.bashrc
+        shell: bash
+
       - name: Run tests
         run: make test
+        shell: bash
 
   format-and-typing:
     runs-on: ubuntu-latest
