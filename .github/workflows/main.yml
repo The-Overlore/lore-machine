@@ -35,7 +35,7 @@ jobs:
         shell: bash
 
       - name: add mod_libspatialite.so to lib_path
-        run: echo "export LB_LIBRARY_PATH=$LD_LIBRARY_PATH:/mod_spatialite.so" >> ~/.bashrc
+        run: echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/mod_spatialite.so" >> ~/.bashrc
 
       - name: Run tests
         run: make test
