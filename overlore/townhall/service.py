@@ -47,15 +47,14 @@ async def start() -> None:
         raise RuntimeError("Failure to provide WS url")
 
     events_db = EventsDatabase.instance().init()
-
     signal.signal(signal.SIGINT, handle_sigint)
 
     bound_handler = functools.partial(service, extra_argument={"mock": args.mock})
-    overlore_pulse = serve(bound_handler, args.address, SERVICE_WS_PORT)
+    serve(bound_handler, args.address, SERVICE_WS_PORT)
 
     print(f"great job, starting this service on port {SERVICE_WS_PORT}. everything is perfect from now on.")
 
-    sqlean.connect(args.world_db)
+    conn = sqlean.connect(args.world_db)
 
     await asyncio.gather(
         overlore_pulse,
@@ -63,10 +62,10 @@ async def start() -> None:
         torii_event_sub(TORII_WS, process_event_bound_handler, Subscriptions.ORDER_ACCEPTED_EVENT_EMITTED),
     )
 
-
 # hardcode for now, when more mature we need some plumbing to read this off a config
 def main() -> None:
     asyncio.run(start())
+    print("wtf")
 
 
 if __name__ == "__main__":
