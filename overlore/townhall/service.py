@@ -8,7 +8,7 @@ from types import FrameType
 from dotenv import load_dotenv
 from websockets import WebSocketServerProtocol, serve
 
-from overlore.db.handler import DatabaseHandler
+from overlore.db.db_handler import DatabaseHandler
 from overlore.graphql.constants import Subscriptions
 from overlore.graphql.event_sub import torii_event_sub
 from overlore.prompts.prompts import GptInterface

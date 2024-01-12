@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from overlore.db.handlerVec import VectorDatabaseHandler
+from overlore.db.vector_db_handler import VectorDatabaseHandler
 
 
 @pytest.mark.asyncio

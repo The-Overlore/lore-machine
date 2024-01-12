@@ -1,6 +1,6 @@
 import pytest
 
-from overlore.db.handler import DatabaseHandler
+from overlore.db.db_handler import DatabaseHandler
 from overlore.eternum.constants import Realms
 
 

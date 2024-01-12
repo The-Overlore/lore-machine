@@ -4,47 +4,15 @@ import json
 import math
 import os
 import struct
-from sqlite3 import Connection
-from threading import Lock
 from typing import Any
 
-import sqlean
 from openai import OpenAI
 
+from overlore.db.base_db_handler import BaseDatabaseHandler
 
-class VectorDatabaseHandler:
-    path: str
-    db: Connection
-    _instance = None
 
-    # create a lock
-    lock = Lock()
-
-    def __lock(self):
-        self.lock.acquire(blocking=True, timeout=1000)
-
-    def __release(self):
-        self.lock.release()
-
-    @classmethod
-    def instance(cls) -> VectorDatabaseHandler:
-        if cls._instance is None:
-            print("Creating vector db interface")
-            cls._instance = cls.__new__(cls)
-        return cls._instance
-
-    def __init__(self) -> None:
-        raise RuntimeError("Call instance() instead")
-
-    def __load_sqlean(self, path: str) -> Connection:
-        conn = sqlean.connect(path)
-        # TODO Do we have to load the extension everytime we start up or only once when the db is first created?
-        conn.enable_load_extension(True)
-        conn.execute('SELECT load_extension("vector0")')
-        conn.execute('SELECT load_extension("vss0")')
-        return conn
-
-    def __use_initial_queries(self) -> None:
+class VectorDatabaseHandler(BaseDatabaseHandler):
+    def _use_initial_queries(self) -> None:
         self.db.execute(
             """
                 CREATE TABLE IF NOT EXISTS townhall (
@@ -60,21 +28,12 @@ class VectorDatabaseHandler:
             """
         )
 
-    def __insert(self, query: str, values: tuple) -> int:
-        self.__lock()
-        cursor = self.db.cursor()
-        cursor.execute(query, values)
-        self.db.commit()
-        added_id = cursor.lastrowid
-        self.__release()
-        return added_id
-
-    def __create_openai_embedding(self, text, model="text-embedding-ada-002"):
+    def _create_openai_embedding(self, text, model="text-embedding-ada-002"):
         client = OpenAI()
         text = text.replace("\n", " ")
         return client.embeddings.create(input=[text], model=model).data[0].embedding
 
-    def __calculate_cosine_similarity(self, v1, v2):
+    def _calculate_cosine_similarity(self, v1, v2):
         dot_prod = 0.0
         v1_sqr_sum = 0.0
         v2_sqr_sum = 0.0
@@ -86,7 +45,7 @@ class VectorDatabaseHandler:
 
         return dot_prod / (math.sqrt(v1_sqr_sum) * math.sqrt(v2_sqr_sum))
 
-    def __save_to_file(self, discussion, rowid, embedding):
+    def _save_to_file(self, discussion, rowid, embedding):
         # Writing the discussion, embedding, and rowid to a file
         with open("Output.json", "a") as file:  # 'a' mode appends to the file without overwriting existing data
             data_to_save = {"rowid": rowid, "discussion": discussion, "embedding": embedding}
@@ -95,9 +54,9 @@ class VectorDatabaseHandler:
 
     def init(self, path: str = "./vector.db") -> VectorDatabaseHandler:
         db_first_launch = not os.path.exists(path)
-        self.db = self.__load_sqlean(path)
+        self.db = self._load_sqlean(path, ["vector0", "vss0"])
         if db_first_launch:
-            self.__use_initial_queries()
+            self._use_initial_queries()
         return self
 
     def serialize(self, vector: list[float]) -> bytes:
@@ -106,16 +65,16 @@ class VectorDatabaseHandler:
 
     def insert(self, discussion):
         discussion = discussion.strip()
-        rowid = self.__insert("INSERT INTO townhall (discussion) VALUES (?);", (discussion,))
+        rowid = self._insert("INSERT INTO townhall (discussion) VALUES (?);", (discussion,))
         embedding = self.__create_openai_embedding(discussion)
-        self.__insert("INSERT INTO vss_townhall(rowid, embedding) VALUES (?, ?)", (rowid, json.dumps(embedding)))
+        self._insert("INSERT INTO vss_townhall(rowid, embedding) VALUES (?, ?)", (rowid, json.dumps(embedding)))
 
-        self.__save_to_file(discussion, rowid, embedding)
+        # self._save_to_file(discussion, rowid, embedding)
 
     def mock_insert(self, data):
-        rowid = self.__insert("INSERT INTO townhall (discussion) VALUES (?);", (data["discussion"],))
+        rowid = self._insert("INSERT INTO townhall (discussion) VALUES (?);", (data["discussion"],))
         embedding = data["embedding"]
-        self.__insert("INSERT INTO vss_townhall(rowid, embedding) VALUES (?, ?)", (rowid, json.dumps(embedding)))
+        self._insert("INSERT INTO vss_townhall(rowid, embedding) VALUES (?, ?)", (rowid, json.dumps(embedding)))
 
     def get_all(self, printEnabled=False) -> Any:
         query = "SELECT * from townhall"
@@ -180,7 +139,7 @@ class VectorDatabaseHandler:
         # print("Cosine similarity")
         res = []
         for row in results:
-            res.append({row[0]: self.__calculate_cosine_similarity(query_embedding, row[1])})
+            res.append({row[0]: self._calculate_cosine_similarity(query_embedding, row[1])})
             # print(f"{row[0]}: {res}")
 
         # print(res)

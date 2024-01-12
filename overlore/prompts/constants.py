@@ -41,6 +41,16 @@ BELLIGERENT = {
 AGENT_TEMPLATE = """{name}, a {sex} {role}. He/she is {happiness}, {hunger} and {belligerent}."""
 
 # PROMPT TEMPLATES
+
+# Feed it some plot Greimas model ()
+#
+#
+# INPUT:
+#   - PLOT --> stored in DB (Vectorized or not ?)
+#   - events
+#   - Realm state
+#   - NPCS
+
 WORLD_SYSTEM_TEMPLATE = """
      Use the greimas actantial model to put any of the characters in a role in a soap opera like plot.
      Describe the configuration before the generated dialogue and have the dialogue play out the configuration.
@@ -83,7 +93,7 @@ WORLD_SYSTEM_TEMPLATE = """
 # Include Order ?
 """
     Utilize the Greimas actantial model to assign roles to specified characters in a soap opera-style plot.
-    Characters are predetermined and cannot be altered. 
+    Characters are predetermined and cannot be altered.
     Present dialogue in the format: <name>:<phrase>
     Characters may indirectly suggest actions but not decide to take action.
 
@@ -104,11 +114,11 @@ WORLD_SYSTEM_TEMPLATE = """
         War began: number of soldiers involved.
         War won: casualties and loot.
         War lost: casualties.
-    
+
     Specific events are: {events}
     The characters involved are: {characters}.
 
-    After the dialogue concludes, after "---", 
+    After the dialogue concludes, after "---",
     generate a summary of each persons thoughts and dialogue in one sentence.
     generate a summary reflecting the key points and outcomes discussed in a few lines.
 """

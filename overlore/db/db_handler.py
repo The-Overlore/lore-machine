@@ -2,12 +2,9 @@ from __future__ import annotations
 
 import json
 import os
-from sqlite3 import Connection
-from threading import Lock
 from typing import Any, cast
 
-import sqlean
-
+from overlore.db.base_db_handler import BaseDatabaseHandler
 from overlore.eternum.constants import Realms
 from overlore.eternum.types import AttackingEntityIds, RealmPosition, ResourceAmounts
 from overlore.graphql.constants import EventType as EventKeyHash
@@ -42,42 +39,13 @@ def average(a: float, b: float, c: float) -> float:
     return (a + b + c) / 3
 
 
-class DatabaseHandler:
-    path: str
-    db: Connection
-    _instance = None
+class DatabaseHandler(BaseDatabaseHandler):
     realms: Realms
 
-    # create a lock
-    lock = Lock()
-
-    def __lock(self) -> None:
-        self.lock.acquire(blocking=True, timeout=1000)
-
-    def __release(self) -> None:
-        self.lock.release()
-
-    @classmethod
-    def instance(cls) -> DatabaseHandler:
-        if cls._instance is None:
-            print("Creating db interface")
-            cls._instance = cls.__new__(cls)
-        return cls._instance
-
-    def __init__(self) -> None:
-        raise RuntimeError("Call instance() instead")
-
-    def __init_db(self) -> None:
+    def _init_db(self) -> None:
         self.db.execute("SELECT InitSpatialMetaData(1);")
 
-    def __load_sqlean(self, path: str) -> Connection:
-        conn: Connection = sqlean.connect(path)
-        # TODO Do we have to load the extension everytime we start up or only once when the db is first created?
-        conn.enable_load_extension(True)
-        conn.execute('SELECT load_extension("mod_spatialite")')
-        return conn
-
-    def __use_initial_queries(self) -> None:
+    def _use_initial_queries(self) -> None:
         # Event db definition
         # -> Event type
         # -> pos_1 (maker/attacker)
@@ -138,7 +106,7 @@ class DatabaseHandler:
             passive_pos[0],
             passive_pos[1],
         )
-        added_id = self.__insert(query, values)
+        added_id = self._insert(query, values)
         return added_id
 
     def __get_event_type(self, keys: EventKeys) -> str:
@@ -162,8 +130,8 @@ class DatabaseHandler:
         attacker_realm_id = int(keys[1], base=16)
         target_realm_entity_id = int(keys[2], base=16)
 
-        (data, attacking_entity_ids) = self.__parse_attacking_entity_ids(data)
-        (data, stolen_resources) = self.__parse_resources(data)
+        (data, attacking_entity_ids) = self._parse_attacking_entity_ids(data)
+        (data, stolen_resources) = self._parse_resources(data)
 
         winner = int(data[0], base=16)
         damage = int(data[1], base=16)
@@ -191,8 +159,8 @@ class DatabaseHandler:
 
         data = data[2:]
 
-        (data, resources_maker) = self.__parse_resources(data)
-        (data, resources_taker) = self.__parse_resources(data)
+        (data, resources_maker) = self._parse_resources(data)
+        (data, resources_taker) = self._parse_resources(data)
         ts = int(data[0], base=16)
 
         importance = get_trade_importance(resources_maker + resources_taker)
@@ -213,10 +181,11 @@ class DatabaseHandler:
 
     def init(self, path: str = "./events.db") -> DatabaseHandler:
         db_first_launch = not os.path.exists(path)
-        self.db = self.__load_sqlean(path)
+        # self.db = self.__load_sqlean(path, ["mod_spatialite"])
+        self.db = self._load_sqlean(path, ["mod_spatialite"])
         if db_first_launch:
-            self.__init_db()
-            self.__use_initial_queries()
+            self._init_db()
+            self._use_initial_queries()
 
         self.db.create_function("decayFunction", 3, decayFunction)
         self.db.create_function("average", 3, average)

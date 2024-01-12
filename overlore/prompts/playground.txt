@@ -6,7 +6,7 @@ You will have to use the same characters, however the words that have an star (*
 The prompt:
 ```
 Utilize the Greimas actantial model to assign roles to specified characters in a soap opera-style plot.
-Characters are predetermined and cannot be altered. 
+Characters are predetermined and cannot be altered.
 Present dialogue in the format: <name>:<phrase>.
 Characters may indirectly suggest actions but not decide to act upon them.
 The setting is 'Eternum', within a realm named 'Peavalon's Realm', focusing on:
@@ -26,8 +26,8 @@ War lost: casualties.
 Specific events are:
     *War began: 500 soldiers sent out.
     *War won: 102 soldiers were killed and 43576 gold was brought
-    *Trade completed: 500 fish sent for 500 gold received 
-The characters involved are: 
+    *Trade completed: 500 fish sent for 500 gold received
+The characters involved are:
     Nancy, a female farmer. He/she is currently *blissful, *hungry and *agitated.
     James, a male miner. He/she is currently *slightly content, *content and *enraged.
     Lisa, a female miner. He/she is currently *euphoric, *starving and *peaceful.
@@ -49,18 +49,18 @@ The generated dialogue:
     Daniel: Toil, you say! It's time to wield the pickaxe as a spear if need be. Our brethren were not lost to toil, but to bloodshed.
     Paul: Aye, it's the toil that's forgotten once the blood dries. Perhaps the lesson here lies not in the clashing of swords but in the joining of hands.
     Nancy: With a bounty of gold and an ache in our bellies, we stand at a crossroads. Shall we eat or shall we arm? That is the question, and the crops won't wait.
-```  
+```
 The generated summary of the dialogue:
 ```
-    In "Eternum," a community dialogue unfolds concerning the recent victory at war that cost the lives of 102 soldiers 
-    and an ongoing crisis of food scarcity despite the happy state of the realm. 
+    In "Eternum," a community dialogue unfolds concerning the recent victory at war that cost the lives of 102 soldiers
+    and an ongoing crisis of food scarcity despite the happy state of the realm.
     Nancy, James, Lisa, Daniel, and Paul express a spectrum of emotions from happiness and euphoria to agitation and rage.
-    They debate the value of the war's loot against the immediate need for food and the persistent threat to their defenses. 
-    Nancy highlights the paradox of wealth amidst hunger, 
-    while James fumes over the casualties and poor trade-off from their latest transaction. 
-    Lisa preaches unity and resiliency whereas Daniel stresses the necessity of a defensive stance and 
-    Paul adds that cooperation is key in overcoming their hardships. 
-    The conversation reveals a community grappling with the tension between survival and security, 
+    They debate the value of the war's loot against the immediate need for food and the persistent threat to their defenses.
+    Nancy highlights the paradox of wealth amidst hunger,
+    while James fumes over the casualties and poor trade-off from their latest transaction.
+    Lisa preaches unity and resiliency whereas Daniel stresses the necessity of a defensive stance and
+    Paul adds that cooperation is key in overcoming their hardships.
+    The conversation reveals a community grappling with the tension between survival and security,
     with an undercurrent suggesting the potential for greater collaboration to address their challenges.
 ```
 
@@ -109,7 +109,7 @@ For testing purposes, try w/ 1 event first ?
 
 
 Utilize the Greimas actantial model to assign roles to specified characters in a soap opera-style plot.
-Characters are predetermined and cannot be altered. 
+Characters are predetermined and cannot be altered.
 Present dialogue in the format: <name>:<phrase>.
 Characters may indirectly suggest actions but not decide to act upon them.
 The setting is 'Eternum', within a realm named 'Peavalon's Realm', focusing on:
@@ -129,8 +129,8 @@ War lost: casualties.
 Specific events are:
  War began: 500 soldiers sent out.
  War won: 102 soldiers were killed and 43576 gold was brought
- Trade completed: 500 fish sent for 500 gold received 
- The characters involved are: 
+ Trade completed: 500 fish sent for 500 gold received
+ The characters involved are:
  Nancy, a female farmer. He/she is currently blissful, hungry and agitated.
  James, a male miner. He/she is currently slightly content, content and enraged.
  Lisa, a female miner. He/she is currently euphoric, starving and peaceful.
@@ -167,22 +167,22 @@ Daniel: Indeed, Lisa, let us join hands, miners and farmers alike, bolstering ou
 
 Summary for each character post-dialogue:
 
-Nancy: Remains blissful despite the clear distress concerning food scarcity. 
-She finds solace in the small accomplishments of her farm but is deeply concerned about the resource 
-imbalances and the realm's vulnerability. 
+Nancy: Remains blissful despite the clear distress concerning food scarcity.
+She finds solace in the small accomplishments of her farm but is deeply concerned about the resource
+imbalances and the realm's vulnerability.
 
-Paul: Expresses the dire situation regarding food and defenses openly. 
-Though still happy, he is enraged by the unsatisfactory outcome of the trade and fears for the realm's 
+Paul: Expresses the dire situation regarding food and defenses openly.
+Though still happy, he is enraged by the unsatisfactory outcome of the trade and fears for the realm's
 safety due to the weak military defenses.
 
-James: Slightly content with their material wealth but enraged by the defense situation. 
-He is worried about the future, recognizing that mining gold may not suffice to tackle the realm's 
+James: Slightly content with their material wealth but enraged by the defense situation.
+He is worried about the future, recognizing that mining gold may not suffice to tackle the realm's
 pressing hunger and safety issues.
 
-Lisa: Maintains a euphoric and peaceful demeanor, focusing on the positive aspects of recent victories. 
-Lisa believes in the strength of their collective spirit and unity, advocating for maintaining morale to overcome the 
+Lisa: Maintains a euphoric and peaceful demeanor, focusing on the positive aspects of recent victories.
+Lisa believes in the strength of their collective spirit and unity, advocating for maintaining morale to overcome the
 challenges they face.
 
-Daniel: Joyful from the war effort's success but combative and ready to face new challenges. 
-He understands the sacrifices made and suggests unity between miners and farmers to reinforce 
+Daniel: Joyful from the war effort's success but combative and ready to face new challenges.
+He understands the sacrifices made and suggests unity between miners and farmers to reinforce
 defenses and sustain the realm's future.
