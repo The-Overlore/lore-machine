@@ -27,7 +27,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: /usr/local/lib/mod_spatialite.so
-          key: venv-${{ runner.os }}-${{ hashFiles('/usr/local/lib/mod_spatialite.so') }}
+          key: venv-${{ runner.os }}-mod_spatialite
 
       - name: Install mod_libspatialite
         if: steps.cached-mod_libspatialite.outputs.cache-hit != 'true'
