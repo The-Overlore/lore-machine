@@ -5,6 +5,7 @@ import os
 import signal
 from types import FrameType
 
+import sqlean
 from dotenv import load_dotenv
 from websockets import WebSocketServerProtocol, serve
 
@@ -53,6 +54,9 @@ async def start() -> None:
     overlore_pulse = serve(bound_handler, args.address, SERVICE_WS_PORT)
 
     print(f"great job, starting this service on port {SERVICE_WS_PORT}. everything is perfect from now on.")
+
+    sqlean.connect(args.world_db)
+
     await asyncio.gather(
         overlore_pulse,
         torii_event_sub(TORII_WS, process_event_bound_handler, Subscriptions.COMBAT_OUTCOME_EVENT_EMITTED),
