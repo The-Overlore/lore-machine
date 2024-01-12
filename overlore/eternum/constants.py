@@ -3,6 +3,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Any
 
+from overlore.eternum.types import RealmPosition
 from overlore.utils import open_json_file
 
 
@@ -61,7 +62,7 @@ class Realms:
         self.geodata = self.load_geodata()
         return self
 
-    def position_by_id(self, i: int) -> list[int]:
+    def position_by_id(self, i: int) -> RealmPosition:
         if i <= 0 or i > 8000 or self.geodata[i - 1].get("xy") is None:
             raise RuntimeError("Error with input or geodata")
-        return list(self.geodata[i - 1]["xy"])
+        return tuple(self.geodata[i - 1]["xy"])
