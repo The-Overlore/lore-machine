@@ -36,7 +36,7 @@ jobs:
 
       - name: Copy to apt-get install folder
         if: steps.cached-mod_spatialite.outputs.cache-hit == 'true'
-        run: sudo cp -r ~/.cache/spatialite /usr/lib/x86_64-linux-gnu
+        run: sudo cp -r ~/.cache/spatialite /usr/lib/x86_64-linux-gnu && sudo cp -r ~/.cache/spatialite /opt/hostedtoolcache/Python/3.11.7/x64/lib/
 
       - name: Run tests
         run: make test
