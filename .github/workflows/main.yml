@@ -31,15 +31,11 @@ jobs:
 
       - name: Install mod_libspatialite
         if: steps.cached-mod_libspatialite.outputs.cache-hit != 'true'
-        run: sudo apt-get update -y && sudo apt-get install -y libsqlite3-mod-spatialite
+        run: sudo apt-get update -y && sudo apt-get install -y libsqlite3-mod-spatialite && cp $(sudo find / -name mod_spatialite.so) /usr/local/lib
         shell: bash
 
-      - name: Add libspatialite to lib_path
-        run: echo "export LB_LIBRARY_PATH=$LD_LIBRARY_PATH:$(sudo find / -name mod_spatialite.so)" >> ~/.bashrc
-        shell: bash
-
-      - name: print out bashrc
-        run: cat ~/.bashrc
+      - name: ls /usr/local/lib
+        run: ls /usr/local/lib
 
       - name: Run tests
         run: make test
