@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from sqlite3 import Connection
 from threading import Lock
-from typing import Any, Generic, TypeVar, cast
+from typing import Generic, TypeVar, cast
 
 import sqlean
 
@@ -34,7 +34,7 @@ class BaseDatabaseHandler(Generic[T]):
         return conn
 
     # TO FIX: Any
-    def _insert(self, query: str, values: tuple[Any]) -> int:
+    def _insert(self, query: str, values: tuple[int, str] | tuple[str]) -> int:
         self._lock()
         cursor = self.db.cursor()
         cursor.execute(query, values)
@@ -43,8 +43,10 @@ class BaseDatabaseHandler(Generic[T]):
         self._release()
         return added_id
 
-    def _use_initial_queries(self) -> None:
-        raise NotImplementedError("This method should be implemented by subclasses")
+    def _use_initial_queries(self, queries: list[str]) -> None:
+        for query in queries:
+            self.db.execute(query)
+        # raise NotImplementedError("This method should be implemented by subclasses")
 
     # def init(self, path: str) -> BaseDatabaseHandler:
     #     db_first_launch = not os.path.exists(path)

@@ -12,28 +12,41 @@ from overlore.db.base_db_handler import BaseDatabaseHandler
 
 
 class VectorDatabaseHandler(BaseDatabaseHandler):
-    def _use_initial_queries(self) -> None:
-        self.db.execute(
-            """
+    init_queries = [
+        """
                 CREATE TABLE IF NOT EXISTS townhall (
                     discussion text
                 );
-            """
-        )
-        self.db.execute(
-            """
-                CREATE VIRTUAL TABLE vss_townhall using vss0(
-                    embedding(1536)
-                );
-            """
-        )
+        """,
+        """
+            CREATE VIRTUAL TABLE vss_townhall using vss0(
+                embedding(1536)
+            );
+        """,
+    ]
 
-    def _create_openai_embedding(self, text, model="text-embedding-ada-002"):
+    # def _use_initial_queries(self) -> None:
+    #     self.db.execute(
+    #         """
+    #             CREATE TABLE IF NOT EXISTS townhall (
+    #                 discussion text
+    #             );
+    #         """
+    #     )
+    #     self.db.execute(
+    #         """
+    #             CREATE VIRTUAL TABLE vss_townhall using vss0(
+    #                 embedding(1536)
+    #             );
+    #         """
+    #     )
+
+    def _create_openai_embedding(self, text: str, model: str = "text-embedding-ada-002") -> list[float]:
         client = OpenAI()
         text = text.replace("\n", " ")
         return client.embeddings.create(input=[text], model=model).data[0].embedding
 
-    def _calculate_cosine_similarity(self, v1, v2):
+    def _calculate_cosine_similarity(self, v1: list[float], v2: list[float]) -> float:
         dot_prod = 0.0
         v1_sqr_sum = 0.0
         v2_sqr_sum = 0.0
@@ -45,7 +58,7 @@ class VectorDatabaseHandler(BaseDatabaseHandler):
 
         return dot_prod / (math.sqrt(v1_sqr_sum) * math.sqrt(v2_sqr_sum))
 
-    def _save_to_file(self, discussion, rowid, embedding):
+    def _save_to_file(self, discussion: str, rowid: str, embedding: str) -> None:
         # Writing the discussion, embedding, and rowid to a file
         with open("Output.json", "a") as file:  # 'a' mode appends to the file without overwriting existing data
             data_to_save = {"rowid": rowid, "discussion": discussion, "embedding": embedding}
@@ -56,27 +69,27 @@ class VectorDatabaseHandler(BaseDatabaseHandler):
         db_first_launch = not os.path.exists(path)
         self.db = self._load_sqlean(path, ["vector0", "vss0"])
         if db_first_launch:
-            self._use_initial_queries()
+            self._use_initial_queries(self.init_queries)
         return self
 
     def serialize(self, vector: list[float]) -> bytes:
         """serializes a list of floats into a compact "raw bytes" format"""
         return struct.pack("%sf" % len(vector), *vector)
 
-    def insert(self, discussion):
+    def insert(self, discussion: str) -> None:
         discussion = discussion.strip()
         rowid = self._insert("INSERT INTO townhall (discussion) VALUES (?);", (discussion,))
-        embedding = self.__create_openai_embedding(discussion)
+        embedding = self._create_openai_embedding(discussion)
         self._insert("INSERT INTO vss_townhall(rowid, embedding) VALUES (?, ?)", (rowid, json.dumps(embedding)))
 
         # self._save_to_file(discussion, rowid, embedding)
 
-    def mock_insert(self, data):
+    def mock_insert(self, data: Any) -> None:
         rowid = self._insert("INSERT INTO townhall (discussion) VALUES (?);", (data["discussion"],))
         embedding = data["embedding"]
         self._insert("INSERT INTO vss_townhall(rowid, embedding) VALUES (?, ?)", (rowid, json.dumps(embedding)))
 
-    def get_all(self, printEnabled=False) -> Any:
+    def get_all(self, printEnabled: bool = False) -> Any:
         query = "SELECT * from townhall"
         cursor = self.db.cursor()
         cursor.execute(query)
@@ -99,7 +112,7 @@ class VectorDatabaseHandler(BaseDatabaseHandler):
             return records, records_vss
         return len(records), len(records_vss)
 
-    def query_nn(self, query_embedding, limit=5):
+    def query_nn(self, query_embedding: str, limit: int = 5) -> list[str]:
         # SQLite version 3.41+
         # cur.execute("""
         #     select rowid, distance from vss_townhall
@@ -127,7 +140,7 @@ class VectorDatabaseHandler(BaseDatabaseHandler):
         results = cursor.fetchall()
         return results
 
-    def query_cosine_similarity(self, query_embedding):
+    def query_cosine_similarity(self, query_embedding: list[float]) -> list:
         cursor = self.db.cursor()
         cursor.execute(
             """
@@ -145,13 +158,13 @@ class VectorDatabaseHandler(BaseDatabaseHandler):
         # print(res)
         return res
 
-    def find_lowest_second_param(self, data):
+    def find_lowest_second_param(self, data: Any) -> Any:
         # Find the dictionary with the lowest value
         lowest_dict = min(data, key=lambda x: list(x.values())[0])
         # Return the key of this dictionary
         return list(lowest_dict.keys())[0]
 
-    def find_closest_to_one(self, data):
+    def find_closest_to_one(self, data: Any) -> Any:
         # Initialize a variable to store the closest value and its key
         closest_key = None
         closest_value = float("-inf")  # Start with the lowest possible value
@@ -167,7 +180,7 @@ class VectorDatabaseHandler(BaseDatabaseHandler):
 
         return closest_key
 
-    def vss_version(self):
+    def vss_version(self) -> Any:
         cursor = self.db.cursor()
         (version,) = cursor.execute("select vss_version()").fetchone()
         return version

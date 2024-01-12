@@ -42,10 +42,7 @@ def average(a: float, b: float, c: float) -> float:
 class DatabaseHandler(BaseDatabaseHandler):
     realms: Realms
 
-    def _init_db(self) -> None:
-        self.db.execute("SELECT InitSpatialMetaData(1);")
-
-    def _use_initial_queries(self) -> None:
+    init_queries = [
         # Event db definition
         # -> Event type
         # -> pos_1 (maker/attacker)
@@ -53,21 +50,47 @@ class DatabaseHandler(BaseDatabaseHandler):
         # -> timestamp
         # -> importance
         # -> metadata ()
-        self.db.execute(
-            """
-                CREATE TABLE IF NOT EXISTS events (
-                    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-                    type INTEGER NOT NULL,
-                    importance FLOAT NOT NULL,
-                    ts INTEGER NOT NULL,
-                    metadata TEXT
-                );
-            """
-        )
+        """
+            CREATE TABLE IF NOT EXISTS events (
+                id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                type INTEGER NOT NULL,
+                importance INTEGER NOT NULL,
+                ts INTEGER NOT NULL,
+                metadata TEXT
+            );
+        """,
         # maker/attacker
-        self.db.execute("""SELECT AddGeometryColumn('events', 'active_pos', 0, 'POINT', 'XY', 1);""")
+        """SELECT AddGeometryColumn('events', 'active_pos', 0, 'POINT', 'XY', 1);""",
         # taker/target
-        self.db.execute("""SELECT AddGeometryColumn('events', 'passive_pos', 0, 'POINT', 'XY', 1);""")
+        """SELECT AddGeometryColumn('events', 'passive_pos', 0, 'POINT', 'XY', 1);""",
+    ]
+
+    def _init_db(self) -> None:
+        self.db.execute("SELECT InitSpatialMetaData(1);")
+
+    # def _use_initial_queries(self) -> None:
+    #     # Event db definition
+    #     # -> Event type
+    #     # -> pos_1 (maker/attacker)
+    #     # -> pos_2 (taker/target)
+    #     # -> timestamp
+    #     # -> importance
+    #     # -> metadata ()
+    #     self.db.execute(
+    #         """
+    #             CREATE TABLE IF NOT EXISTS events (
+    #                 id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    #                 type INTEGER NOT NULL,
+    #                 importance INTEGER NOT NULL,
+    #                 ts INTEGER NOT NULL,
+    #                 metadata TEXT
+    #             );
+    #         """
+    #     )
+    #     # maker/attacker
+    #     self.db.execute("""SELECT AddGeometryColumn('events', 'active_pos', 0, 'POINT', 'XY', 1);""")
+    #     # taker/target
+    #     self.db.execute("""SELECT AddGeometryColumn('events', 'passive_pos', 0, 'POINT', 'XY', 1);""")
 
     def __insert(self, query: str, values: tuple[Any]) -> int:
         # lock mutex
@@ -185,7 +208,7 @@ class DatabaseHandler(BaseDatabaseHandler):
         self.db = self._load_sqlean(path, ["mod_spatialite"])
         if db_first_launch:
             self._init_db()
-            self._use_initial_queries()
+            self._use_initial_queries(self.init_queries)
 
         self.db.create_function("decayFunction", 3, decayFunction)
         self.db.create_function("average", 3, average)
