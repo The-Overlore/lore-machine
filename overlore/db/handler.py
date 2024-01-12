@@ -4,13 +4,16 @@ import json
 import os
 from sqlite3 import Connection
 from threading import Lock
-from typing import Any
+from typing import Any, cast
 
 import sqlean
 
 from overlore.eternum.constants import Realms
+from overlore.eternum.types import AttackingEntityIds, RealmPosition, ResourceAmounts
 from overlore.graphql.constants import EventType as EventKeyHash
 from overlore.sqlite.constants import EventType as SqLiteEventType
+from overlore.sqlite.types import StoredEvent
+from overlore.types import EventData, EventKeys, ParsedEvent, ToriiEvent
 
 
 class DatabaseHandler:
@@ -73,20 +76,22 @@ class DatabaseHandler:
         self.db.execute("""SELECT AddGeometryColumn('events', 'passive_pos', 0, 'POINT', 'XY', 1);""")
 
     def __insert(self, query: str, values: tuple[Any]) -> int:
+        # lock mutex
         self.__lock()
         cursor = self.db.cursor()
         cursor.execute(query, values)
         self.db.commit()
         added_id = cursor.lastrowid if cursor.lastrowid else 0
+        # unlock mutex
         self.__release()
         return added_id
 
-    def __add(self, obj: dict[Any, Any]) -> int:
+    def __add(self, obj: ParsedEvent) -> int:
         event_type = obj["type"]
         del obj["type"]
-        active_pos = obj["active_pos"]
+        active_pos = cast(RealmPosition, obj["active_pos"])
         del obj["active_pos"]
-        passive_pos = obj["passive_pos"]
+        passive_pos = cast(RealmPosition, obj["passive_pos"])
         del obj["passive_pos"]
         ts = obj["ts"]
         del obj["ts"]
@@ -110,10 +115,10 @@ class DatabaseHandler:
         added_id = self.__insert(query, values)
         return added_id
 
-    def __get_event_type(self, obj: Any) -> str:
-        return str(obj.get("eventEmitted").get("keys")[0])
+    def __get_event_type(self, keys: EventKeys) -> str:
+        return str(keys[0])
 
-    def __parse_resources(self, data: list[Any]) -> tuple[list[Any], list[dict[str, int]]]:
+    def __parse_resources(self, data: list[str]) -> tuple[list[str], ResourceAmounts]:
         resource_len = int(data[0], base=16)
         end_idx_resources = resource_len * 2
         resources = [
@@ -122,18 +127,12 @@ class DatabaseHandler:
         ]
         return (data[end_idx_resources + 1 :], resources)
 
-    def __parse_attacking_entity_ids(self, data: list[Any]) -> tuple[list[Any], list[int]]:
+    def __parse_attacking_entity_ids(self, data: list[str]) -> tuple[list[str], AttackingEntityIds]:
         length = int(data[0], base=16)
         attacking_entity_ids = [int(data[i], base=16) for i in range(1, length)]
         return (data[1 + length :], attacking_entity_ids)
 
-    def __parse_combat_outcome_event(self, event: dict[str, Any]) -> dict[str, Any]:
-        event_emitted = event.get("eventEmitted")
-        if event_emitted is None:
-            raise RuntimeError("eventEmitted no present in event")
-        keys = event_emitted.get("keys")
-        data = event_emitted.get("data")
-
+    def __parse_combat_outcome_event(self, keys: EventKeys, data: EventData) -> ParsedEvent:
         attacker_realm_id = int(keys[1], base=16)
         target_realm_entity_id = int(keys[2], base=16)
 
@@ -144,7 +143,7 @@ class DatabaseHandler:
         damage = int(data[1], base=16)
         ts = int(data[2], base=16)
 
-        parsed_event = {
+        parsed_event: ParsedEvent = {
             "type": SqLiteEventType.COMBAT_OUTCOME.value,
             "active_pos": self.realms.position_by_id(attacker_realm_id),
             "passive_pos": self.realms.position_by_id(target_realm_entity_id),
@@ -157,13 +156,7 @@ class DatabaseHandler:
         }
         return parsed_event
 
-    def __parse_trade_event(self, event: dict[str, Any]) -> dict[str, Any]:
-        event_emitted = event.get("eventEmitted")
-        if event_emitted is None:
-            raise RuntimeError("eventEmitted no present in event")
-        keys = event_emitted.get("keys")
-        data = event_emitted.get("data")
-
+    def __parse_trade_event(self, keys: EventKeys, data: EventData) -> ParsedEvent:
         _trade_id = int(keys[1], base=16)
         maker_id = int(data[0], base=16)
         taker_id = int(data[1], base=16)
@@ -174,7 +167,7 @@ class DatabaseHandler:
         (data, resources_taker) = self.__parse_resources(data)
         ts = int(data[0], base=16)
 
-        parsed_event = {
+        parsed_event: ParsedEvent = {
             "type": SqLiteEventType.ORDER_ACCEPTED.value,
             "active_pos": self.realms.position_by_id(maker_id),
             "passive_pos": self.realms.position_by_id(taker_id),
@@ -195,39 +188,46 @@ class DatabaseHandler:
         self.realms = Realms.instance().init()
         return self
 
-    def get_by_id(self, event_id: int) -> Any:
+    def get_by_id(self, event_id: int) -> StoredEvent:
+        # lock mutex
         self.__lock()
         cursor = self.db.cursor()
-        cursor.execute("SELECT id, type, importance, ts, metadata FROM events WHERE id=?", (event_id,))
-        ret = cursor.fetchall()
-        events_pos = self.get_events_pos_by_id(event_id)
-        ret = list(ret) + events_pos
+        cursor.execute(
+            "SELECT id, type, importance, ts, metadata, X(active_pos), Y(active_pos), X(passive_pos), Y(passive_pos)"
+            " FROM events WHERE id=?",
+            (event_id,),
+        )
+        record = cursor.fetchall()
+        # unlock mutex
         self.__release()
-        return ret
+        record = list(record[0])
+        record = record[:5] + [(record[5], record[6]), (record[7], record[8])]
+        return record
 
-    def get_events_pos_by_id(self, event_id: int) -> Any:
-        query = """SELECT X(active_pos), Y(active_pos), X(passive_pos), Y(passive_pos) from events WHERE id=?"""
-        cursor = self.db.cursor()
-        cursor.execute(query, (event_id,))
-        records = cursor.fetchall()
-        return [(records[0][0], records[0][1]), (records[0][2], records[0][3])]
-
-    def get_all(self) -> Any:
-        query = """SELECT * from events"""
+    def get_all(self) -> list[StoredEvent]:
+        # lock mutex
+        self.__lock()
+        query = """SELECT id, type, importance, ts, metadata, X(active_pos), Y(active_pos), X(passive_pos), Y(passive_pos) from events"""
         cursor = self.db.cursor()
         cursor.execute(query)
         records = cursor.fetchall()
-        print("Total rows are:  ", len(records))
-        print("Printing each row")
-        for row in records:
-            for elem in row:
-                print(elem)
-            print("\n")
+        # unlock mutex
+        self.__release()
+        records = [[*list(tup[:5]), (tup[5], tup[6]), (tup[7], tup[8])] for tup in records]
         return records
 
-    def process_event(self, event: dict[str, Any]) -> int:
-        if self.__get_event_type(event) == EventKeyHash.COMBAT_OUTCOME.value:
-            parsed_event = self.__parse_combat_outcome_event(event)
+    def process_event(self, event: ToriiEvent) -> int:
+        event_emitted = event.get("eventEmitted")
+        if not event_emitted:
+            raise RuntimeError("eventEmitted no present in event")
+        keys = cast(EventKeys, event_emitted.get("keys"))
+        if not keys:
+            raise RuntimeError("Event had no keys")
+        data = cast(EventData, event_emitted.get("data"))
+        if not data:
+            raise RuntimeError("Event had no data")
+        if self.__get_event_type(keys=keys) == EventKeyHash.COMBAT_OUTCOME.value:
+            parsed_event = self.__parse_combat_outcome_event(keys=keys, data=data)
         else:
-            parsed_event = self.__parse_trade_event(event)
+            parsed_event = self.__parse_trade_event(keys=keys, data=data)
         return self.__add(parsed_event)

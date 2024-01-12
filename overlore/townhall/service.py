@@ -3,7 +3,7 @@ import functools
 import json
 import os
 import signal
-from typing import Any
+from types import FrameType
 
 from dotenv import load_dotenv
 from websockets import WebSocketServerProtocol, serve
@@ -27,11 +27,11 @@ TORII_GRAPHQL = os.environ.get("DEV_TORII_GRAPHQL")
 args = parse_cli_args()
 
 
-def handle_sigint(a: Any, b: Any) -> None:
+def handle_sigint(_signum: int, _b: FrameType | None) -> None:
     exit(0)
 
 
-async def service(websocket: WebSocketServerProtocol, extra_argument: dict[str, Any]) -> None:
+async def service(websocket: WebSocketServerProtocol, extra_argument: dict[str, bool]) -> None:
     async for message in websocket:
         if message is None:
             continue
@@ -51,8 +51,7 @@ async def start() -> None:
     db = DatabaseHandler.instance().init()
 
     signal.signal(signal.SIGINT, handle_sigint)
-    gpt_interface = GptInterface.instance()
-    gpt_interface.init(OPENAI_API_KEY, OPENAI_EMBEDDINGS_API_KEY)
+    GptInterface.instance().init(OPENAI_API_KEY, OPENAI_EMBEDDINGS_API_KEY)
 
     bound_handler = functools.partial(service, extra_argument={"mock": args.mock})
     overlore_pulse = serve(bound_handler, args.address, SERVICE_WS_PORT)

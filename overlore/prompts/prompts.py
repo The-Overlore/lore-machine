@@ -38,7 +38,7 @@ class GptInterface:
         data = event.get("data")
 
         if keys is None or data is None:
-            raise RuntimeError("Couldn't convert event to natural language")
+            raise RuntimeError("Event didn't have any keys or data")
 
         if "tradeCompleted" in keys:
             return (
