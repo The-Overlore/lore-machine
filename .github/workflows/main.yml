@@ -34,11 +34,13 @@ jobs:
         run: sudo apt-get update -y && sudo apt-get install -y libsqlite3-mod-spatialite && cp $(sudo find / -name mod_spatialite.so) ~/.cache/
 
       - name: Copy mod-spatialite.so to LD_LIBRARY_PATH
-        run: sudo cp ~/.cache/mod_spatialite.so /opt/hostedtoolcache/Python/3.11.7/x64/lib
+        run: sudo cp ~/.cache/mod_spatialite.so $LD_LIBRARY_PATH
+
+      - name: ls $LD_LIBRARY_PATH
+        run: ls $LD_LIBRARY_PATH
 
       - name: Run tests
         run: echo $LD_LIBRARY_PATH && make test
-        shell: bash -leo pipefail {0}
 
   format-and-typing:
     runs-on: ubuntu-latest
