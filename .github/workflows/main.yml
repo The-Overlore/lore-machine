@@ -26,16 +26,16 @@ jobs:
         id: cached-mod_libspatialite
         uses: actions/cache@v3
         with:
-          path: /mod_spatialite.so
+          path: ~/.cache/mod_spatialite.so
           key: venv-${{ runner.os }}-mod_spatialite
 
       - name: Install mod_libspatialite
         if: steps.cached-mod_libspatialite.outputs.cache-hit != 'true'
-        run: sudo apt-get update -y && sudo apt-get install -y libsqlite3-mod-spatialite && cp $(sudo find / -name mod_spatialite.so) /
+        run: sudo apt-get update -y && sudo apt-get install -y libsqlite3-mod-spatialite && cp $(sudo find / -name mod_spatialite.so) ~/.cache/
         shell: bash
 
       - name: Add mod_libspatialite.so to libpath
-        run: echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/mod_spatialite.so" >> ~/.bashrc
+        run: echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:~/.cache/mod_spatialite.so" >> ~/.bashrc
 
       - name: Run tests
         run: make test
