@@ -35,6 +35,7 @@ jobs:
 
       - name: Run tests
         run: echo $LD_LIBRARY_PATH && make test
+        shell: bash -leo pipefail {0}
 
   format-and-typing:
     runs-on: ubuntu-latest
