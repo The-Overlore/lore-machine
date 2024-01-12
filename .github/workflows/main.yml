@@ -22,21 +22,9 @@ jobs:
       - name: Set up poetry environment
         uses: ./.github/actions/setup-poetry-env
 
-      - name: Load cached mod_libspatialite
-        id: cached-mod_spatialite
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/spatialite
-          key: venv-${{ runner.os }}-mod_spatialite
-
       - name: Install mod_spatialite
-        if: steps.cached-mod_spatialite.outputs.cache-hit != 'true'
-        run: sudo apt-get update -y && sudo apt-get install -y libsqlite3-mod-spatialite && mkdir ~/.cache/spatialite/ && sudo cp -r /usr/lib/x86_64-linux-gnu ~/.cache/spatialite
+        run: sudo apt-get update -y && sudo apt-get install -y libsqlite3-mod-spatialite
         shell: bash
-
-      - name: Copy to apt-get install folder
-        if: steps.cached-mod_spatialite.outputs.cache-hit == 'true'
-        run: sudo cp -r ~/.cache/spatialite /usr/lib/x86_64-linux-gnu && sudo cp -r ~/.cache/spatialite /opt/hostedtoolcache/Python/3.11.7/x64/lib/
 
       - name: Run tests
         run: make test
