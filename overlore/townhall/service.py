@@ -53,8 +53,6 @@ async def start() -> None:
     overlore_pulse = serve(bound_handler, args.address, SERVICE_WS_PORT)
 
     print(f"great job, starting this service on port {SERVICE_WS_PORT}. everything is perfect from now on.")
-    # arbitrarily choose just the first realm to sub to events on
-    process_event_bound_handler = functools.partial(process_event, extra_argument=events_db)
     await asyncio.gather(
         overlore_pulse,
         torii_event_sub(TORII_WS, process_event_bound_handler, Subscriptions.COMBAT_OUTCOME_EVENT_EMITTED),

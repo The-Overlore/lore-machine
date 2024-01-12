@@ -29,6 +29,7 @@ def parse_cli_args() -> Namespace:
         help="Use mock data for GPT response instead of querying the API. (saves API calls)",
     )
     parser.add_argument("-a", "--address", help="Host address for connection", type=str, default="localhost")
+    parser.add_argument("-w", "--world_db", help="location of the world db", type=str, default="/litefs/world.db")
     return parser.parse_args()
 
 
