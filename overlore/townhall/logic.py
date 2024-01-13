@@ -5,8 +5,11 @@ from overlore.prompts.prompts import GptInterface
 from overlore.townhall.mocks import fetch_events, fetch_users, fetch_villagers, load_mock_gpt_response
 from overlore.utils import str_to_json
 
-A_RESOURCES = 1 / 10
-A_DAMAGES = 1 / 100
+# A is calculated by setting a max amount of resources, any value equal to or higher than MAX will get attributed a score of 10.
+# The linear equation is then a * MAX + 0 = 10. We can derive a easily from there
+A_RESOURCES = 10 / 100
+# Same as above
+A_DAMAGES = 10 / 1000
 
 
 async def gen_prompt(users: list[Any], events: list[Any], villagers: list[Any]) -> str:
@@ -30,6 +33,10 @@ async def gen_townhall(message: str, mock: bool) -> str:
 
 
 def get_importance_from_resources(resources: ResourceAmounts) -> float:
+    """
+    Takes the total amount of resources traded and assigns a score based on the following linear equation: A_RESOURCES * total_resources_amount
+    The slope of A is ascending, the more resources, the higher the score
+    """
     total_resources_amount = sum([resource["amount"] for resource in resources])
     return 10.0 if total_resources_amount > 100 else A_RESOURCES * total_resources_amount
 
@@ -39,6 +46,11 @@ def get_trade_importance(resources: ResourceAmounts) -> float:
 
 
 def get_combat_outcome_importance(stolen_resources: ResourceAmounts, damage: int) -> float:
+    """
+    Checks if we stole resources or if someone suffered damages (one can't happen if the other is true).
+        - If damages the score will be A_DAMAGES * damage
+        - If resources the score will be calculated by get_importance_from_resources
+    """
     if damage > 0 and len(stolen_resources) == 0:
         return 10.0 if damage > 1000 else A_DAMAGES * damage
     elif damage == 0 and len(stolen_resources) > 0:
@@ -48,5 +60,5 @@ def get_combat_outcome_importance(stolen_resources: ResourceAmounts, damage: int
     elif damage == 0 and len(stolen_resources) == 0:
         raise RuntimeError("Unexpected combat outcome: no damage and no stolen resources")
     else:
-        # will never happen, mypy needs this
+        # will never happen but mypy needs this to feel secure
         return 0.0
