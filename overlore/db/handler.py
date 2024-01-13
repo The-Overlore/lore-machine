@@ -196,6 +196,7 @@ class DatabaseHandler:
         ts = int(data[0], base=16)
 
         importance = get_trade_importance(resources_maker + resources_taker)
+
         parsed_event: ParsedEvent = {
             "type": SqLiteEventType.ORDER_ACCEPTED.value,
             "active_pos": self.realms.position_by_id(maker_id),
