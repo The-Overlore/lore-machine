@@ -18,9 +18,10 @@ from overlore.types import EventData, EventKeys, ParsedEvent, ToriiEvent
 
 MAX_TIME_DAYS = 7
 MAX_TIME_S = MAX_TIME_DAYS * 24.0 * 60.0 * 60.0
+MAX_DISTANCE_M = 10000
 
 A_TIME = float(-10.0 / MAX_TIME_S)
-A_DISTANCE = -1 / 1000
+A_DISTANCE = float(-10.0 / MAX_DISTANCE_M)
 
 
 def decayFunction(a: float, b: float, x: float) -> float:
@@ -206,6 +207,9 @@ class DatabaseHandler:
         }
         return parsed_event
 
+    def close_conn(self) -> None:
+        self.db.close()
+
     def init(self, path: str = "./events.db") -> DatabaseHandler:
         db_first_launch = not os.path.exists(path)
         self.db = self.__load_sqlean(path)
@@ -254,6 +258,7 @@ class DatabaseHandler:
 
     def fetch_most_relevant(self, realm_position: list[int], current_time: int) -> Any:
         query = """SELECT
+                        id,
                         average(
                             decayFunction(?, 10,
                                 MIN(
@@ -264,7 +269,7 @@ class DatabaseHandler:
                             decayFunction(?, 10, ? - ts),
                             importance
                         )
-                    as RET from events ORDER BY RET DESC"""
+                    as RET from events ORDER BY RET DESC LIMIT 5"""
         params = (
             A_DISTANCE,
             realm_position[0],
