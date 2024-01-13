@@ -5,4 +5,4 @@ from overlore.eternum.types import AttackingEntityIds, RealmPosition, ResourceAm
 EventKeys: TypeAlias = list[str]
 EventData: TypeAlias = list[str]
 ToriiEvent: TypeAlias = dict[str, dict[str, str | EventKeys | EventData]]
-ParsedEvent: TypeAlias = dict[str, int | RealmPosition | ResourceAmounts | AttackingEntityIds]
+ParsedEvent: TypeAlias = dict[str, int | RealmPosition | ResourceAmounts | AttackingEntityIds | float]

@@ -13,6 +13,7 @@ from overlore.eternum.types import AttackingEntityIds, RealmPosition, ResourceAm
 from overlore.graphql.constants import EventType as EventKeyHash
 from overlore.sqlite.constants import EventType as SqLiteEventType
 from overlore.sqlite.types import StoredEvent
+from overlore.townhall.logic import get_combat_outcome_importance, get_trade_importance
 from overlore.types import EventData, EventKeys, ParsedEvent, ToriiEvent
 
 
@@ -61,14 +62,14 @@ class DatabaseHandler:
         # -> metadata ()
         self.db.execute(
             """
-                            CREATE TABLE IF NOT EXISTS events (
-                                id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-                                type INTEGER NOT NULL,
-                                importance INTEGER NOT NULL,
-                                ts INTEGER NOT NULL,
-                                metadata TEXT
-                            );
-                        """
+                CREATE TABLE IF NOT EXISTS events (
+                    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                    type INTEGER NOT NULL,
+                    importance FLOAT NOT NULL,
+                    ts INTEGER NOT NULL,
+                    metadata TEXT
+                );
+            """
         )
         # maker/attacker
         self.db.execute("""SELECT AddGeometryColumn('events', 'active_pos', 0, 'POINT', 'XY', 1);""")
@@ -95,7 +96,7 @@ class DatabaseHandler:
         del obj["passive_pos"]
         ts = obj["ts"]
         del obj["ts"]
-        obj["importance"]
+        importance = obj["importance"]
         del obj["importance"]
         additional_data = json.dumps(obj)
         query = (
@@ -104,7 +105,7 @@ class DatabaseHandler:
         )
         values: tuple[Any, ...] = (
             event_type,
-            4,
+            importance,
             ts,
             additional_data,
             active_pos[0],
@@ -143,6 +144,8 @@ class DatabaseHandler:
         damage = int(data[1], base=16)
         ts = int(data[2], base=16)
 
+        importance = get_combat_outcome_importance(stolen_resources=stolen_resources, damage=damage)
+        print(importance)
         parsed_event: ParsedEvent = {
             "type": SqLiteEventType.COMBAT_OUTCOME.value,
             "active_pos": self.realms.position_by_id(attacker_realm_id),
@@ -151,7 +154,7 @@ class DatabaseHandler:
             "stolen_resources": stolen_resources,
             "winner": winner,
             "damage": damage,
-            "importance": 0,
+            "importance": importance,
             "ts": ts,
         }
         return parsed_event
@@ -167,13 +170,15 @@ class DatabaseHandler:
         (data, resources_taker) = self.__parse_resources(data)
         ts = int(data[0], base=16)
 
+        importance = get_trade_importance(resources_maker + resources_taker)
+        print(f"Importance is: {importance}")
         parsed_event: ParsedEvent = {
             "type": SqLiteEventType.ORDER_ACCEPTED.value,
             "active_pos": self.realms.position_by_id(maker_id),
             "passive_pos": self.realms.position_by_id(taker_id),
             "resources_maker": resources_maker,
             "resources_taker": resources_taker,
-            "importance": 0,
+            "importance": importance,
             "ts": ts,
         }
         return parsed_event
@@ -201,19 +206,18 @@ class DatabaseHandler:
         # unlock mutex
         self.__release()
         record = list(record[0])
-        record = record[:5] + [(record[5], record[6]), (record[7], record[8])]
-        return record
+        return [*record[:5], (record[5], record[6]), (record[7], record[8])]
 
     def get_all(self) -> list[StoredEvent]:
         # lock mutex
         self.__lock()
-        query = """SELECT id, type, importance, ts, metadata, X(active_pos), Y(active_pos), X(passive_pos), Y(passive_pos) from events"""
+        query = """SELECT id, type, importance, ts, metadata, X(active_pos), Y(active_pos), X(passive_pos), Y(passive_pos) from events ORDER BY id ASC"""
         cursor = self.db.cursor()
         cursor.execute(query)
         records = cursor.fetchall()
         # unlock mutex
         self.__release()
-        records = [[*list(tup[:5]), (tup[5], tup[6]), (tup[7], tup[8])] for tup in records]
+        records = [[*tup[:5], (tup[5], tup[6]), (tup[7], tup[8])] for tup in records]
         return records
 
     def process_event(self, event: ToriiEvent) -> int:
