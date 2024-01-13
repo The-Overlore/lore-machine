@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any
+from typing import TypeAlias, cast
 
 from overlore.eternum.types import RealmPosition
 from overlore.utils import open_json_file
+
+RealmGeodata: TypeAlias = dict[str, list[float] | int | str]
 
 
 class ResourceIds(Enum):
@@ -42,7 +44,7 @@ class Winner(Enum):
 
 class Realms:
     _instance = None
-    geodata: list[dict[str, Any]]
+    geodata: list[RealmGeodata]
 
     @classmethod
     def instance(cls) -> Realms:
@@ -54,15 +56,21 @@ class Realms:
     def __init__(self) -> None:
         raise RuntimeError("Call instance() instead")
 
-    def load_geodata(self) -> Any:
-        geodata_file = open_json_file("./data/realms_geodata.json")
-        return geodata_file.get("features")
+    def load_geodata(self, path: str) -> list[RealmGeodata]:
+        geodata_file = open_json_file(path)
+        features: list[RealmGeodata] = geodata_file["features"]
+        return features
 
-    def init(self) -> Realms:
-        self.geodata = self.load_geodata()
+    def init(self, path: str = "./data/realms_geodata.json") -> Realms:
+        self.geodata = self.load_geodata(path)
         return self
 
     def position_by_id(self, i: int) -> RealmPosition:
         if i <= 0 or i > 8000 or self.geodata[i - 1].get("xy") is None:
             raise RuntimeError("Error with input or geodata")
-        return tuple(self.geodata[i - 1]["xy"])
+        xy: list[float] = cast(list[float], self.geodata[i - 1]["xy"])
+        ret: tuple[float, float] = (
+            float(xy[0]),
+            float(xy[1]),
+        )
+        return ret

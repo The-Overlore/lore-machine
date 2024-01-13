@@ -16,6 +16,31 @@ from overlore.sqlite.types import StoredEvent
 from overlore.townhall.logic import get_combat_outcome_importance, get_trade_importance
 from overlore.types import EventData, EventKeys, ParsedEvent, ToriiEvent
 
+MAX_TIME_DAYS = 7
+MAX_TIME_S = MAX_TIME_DAYS * 24.0 * 60.0 * 60.0
+MAX_DISTANCE_M = 10000
+
+A_TIME = float(-10.0 / MAX_TIME_S)
+A_DISTANCE = float(-10.0 / MAX_DISTANCE_M)
+
+
+def decayFunction(a: float, b: float, x: float) -> float:
+    y = (a * x) + b
+    if y < 0.0:
+        return 0.0
+    if y > 10.0:
+        return 10.0
+    else:
+        return y
+
+
+def minus(a: float, b: float) -> float:
+    return a - b
+
+
+def average(a: float, b: float, c: float) -> float:
+    return (a + b + c) / 3
+
 
 class DatabaseHandler:
     path: str
@@ -171,7 +196,7 @@ class DatabaseHandler:
         ts = int(data[0], base=16)
 
         importance = get_trade_importance(resources_maker + resources_taker)
-        print(f"Importance is: {importance}")
+
         parsed_event: ParsedEvent = {
             "type": SqLiteEventType.ORDER_ACCEPTED.value,
             "active_pos": self.realms.position_by_id(maker_id),
@@ -183,6 +208,9 @@ class DatabaseHandler:
         }
         return parsed_event
 
+    def close_conn(self) -> None:
+        self.db.close()
+
     def init(self, path: str = "./events.db") -> DatabaseHandler:
         db_first_launch = not os.path.exists(path)
         self.db = self.__load_sqlean(path)
@@ -190,11 +218,20 @@ class DatabaseHandler:
             self.__init_db()
             self.__use_initial_queries()
 
+        self.db.create_function("decayFunction", 3, decayFunction)
+        self.db.create_function("average", 3, average)
+        self.db.create_function("minus", 2, average)
+
         self.realms = Realms.instance().init()
         return self
 
+    def execute_query(self, query: str, params: tuple[float, int, int, int, int, float, int]) -> list[Any]:
+        cursor = self.db.cursor()
+        cursor.execute(query, params)
+        records = cursor.fetchall()
+        return records
+
     def get_by_id(self, event_id: int) -> StoredEvent:
-        # lock mutex
         self.__lock()
         cursor = self.db.cursor()
         cursor.execute(
@@ -219,6 +256,31 @@ class DatabaseHandler:
         self.__release()
         records = [[*tup[:5], (tup[5], tup[6]), (tup[7], tup[8])] for tup in records]
         return records
+
+    def fetch_most_relevant(self, realm_position: list[int], current_time: int) -> Any:
+        query = """SELECT
+                        id,
+                        average(
+                            decayFunction(?, 10,
+                                MIN(
+                                    Distance(MakePoint(?,?), active_pos),
+                                    Distance(MakePoint(?,?), passive_pos)
+                                )
+                            ),
+                            decayFunction(?, 10, ? - ts),
+                            importance
+                        )
+                    as RET from events ORDER BY RET DESC LIMIT 5"""
+        params = (
+            A_DISTANCE,
+            realm_position[0],
+            realm_position[1],
+            realm_position[0],
+            realm_position[1],
+            A_TIME,
+            current_time,
+        )
+        return self.execute_query(query=query, params=params)
 
     def process_event(self, event: ToriiEvent) -> int:
         event_emitted = event.get("eventEmitted")

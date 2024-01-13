@@ -60,5 +60,5 @@ def get_combat_outcome_importance(stolen_resources: ResourceAmounts, damage: int
     elif damage == 0 and len(stolen_resources) == 0:
         raise RuntimeError("Unexpected combat outcome: no damage and no stolen resources")
     else:
-        # will never happen but mypy needs this to feel secure
+        # will never happen but mypy needs this to feel secure, and mypy is ourpy
         return 0.0

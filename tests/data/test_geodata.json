@@ -1,0 +1,11 @@
+{
+    "type": "FeatureCollection",
+    "features": [
+        { "xy": [0.0, 0.0], "id": 1, "name": "test1" },
+        { "xy": [0.0, 2000.0], "id": 2, "name": "test2" },
+        { "xy": [0.0, 4000.0], "id": 3, "name": "test3" },
+        { "xy": [0.0, 6000.0], "id": 4, "name": "test4" },
+        { "xy": [0.0, 8000.0], "id": 5, "name": "test5" },
+        { "xy": [9999, 9999], "id": 6, "name": "MAX DISTANCE" }
+    ]
+}
