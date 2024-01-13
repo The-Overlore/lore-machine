@@ -1,121 +1,269 @@
 import pytest
 
 from overlore.db.handler import DatabaseHandler
-from overlore.types import ToriiEvent
 
 
 @pytest.mark.asyncio
-async def test_combat_outcome_event():
-    db = DatabaseHandler.instance().init(":memory:")
-    test_message: ToriiEvent = {
-        "eventEmitted": {
-            "id": "0x00000000000000000000000000000000000000000000000000000000000001c8:0x0000:0x0002",
-            "keys": [
-                "0x1736c207163ad481e2a196c0fb6394f90c66c2e2b52e0c03d4a077ac6cea918",
-                "0x4b",
-                "0x49",
-                "0x1b0a83a27a357e0574393ab06c0c774db7312a0993538cc0186d054f75ee84e",
-            ],
-            "data": ["0x1", "0x53", "0x0", "0x0", "0x0", "0x65a1bec0"],
-            "createdAt": "2024-01-02 12:35:45",
-        }
-    }
-    db_id = db.process_event(test_message)
-    actual = db.get_by_id(db_id)
-    expected = [
-        1,
-        1,
-        4,
-        1705098944,
-        '{"attacking_entity_ids": [], "stolen_resources": [], "winner": 0, "damage": 0}',
-        (-53.6529, 47.48),
-        (114.8471, 43.38),
-    ]
-    assert actual == expected
-
-
-@pytest.mark.asyncio
-async def test_trade_completed_event():
+async def test_trade_event():
     db = DatabaseHandler.instance().init(":memory:")
 
-    test_message: ToriiEvent = {
-        "eventEmitted": {
-            "id": "0x00000000000000000000000000000000000000000000000000000000000001cf:0x0000:0x0023",
-            "keys": [
-                "0x27319ec70e0f69f3988d0a1a75dd2cc3715d4d7a60acec45b51fe577a5f2bf1",
-                "0x7d",
-                "0x63cbe849cf6325e727a8d6f82f25fad7dc7eb9433767f5c1b8c59189e36c9b6",
-            ],
-            "data": ["0x4b", "0x49", "0x1", "0x8", "0x3e8", "0x1", "0x1", "0x3e8", "0x65a1dafd"],
-            "createdAt": "2024-01-02 14:36:14",
+    db_id = db.process_event(
+        {
+            "eventEmitted": {
+                "id": "0x00000000000000000000000000000000000000000000000000000000000001cf:0x0000:0x0023",
+                "keys": [
+                    "0x27319ec70e0f69f3988d0a1a75dd2cc3715d4d7a60acec45b51fe577a5f2bf1",
+                    "0x7d",
+                    "0x63cbe849cf6325e727a8d6f82f25fad7dc7eb9433767f5c1b8c59189e36c9b6",
+                ],
+                "data": ["0x4b", "0x49", "0x1", "0x8", "0x1388", "0x1", "0x1", "0x1388", "0x65a1dafd"],
+                "createdAt": "2024-01-02 14:36:14",
+            }
         }
-    }
-    db_id = db.process_event(test_message)
+    )
 
-    actual = db.get_by_id(db_id)
-    expected = [
-        1,
+    assert db.get_by_id(db_id) == [
+        db_id,
         0,
-        4,
+        1.0,
         1705106173,
-        '{"resources_maker": [{"type": 8, "amount": 1}], "resources_taker": [{"type": 1, "amount": 1}]}',
+        '{"resources_maker": [{"type": 8, "amount": 5}], "resources_taker": [{"type": 1, "amount": 5}]}',
         (-53.6529, 47.48),
         (114.8471, 43.38),
     ]
-    assert actual == expected
+
+
+@pytest.mark.asyncio
+async def test_combat_damage():
+    db = DatabaseHandler.instance().init(":memory:")
+    db_id = db.process_event(
+        {
+            "eventEmitted": {
+                "id": "0x00000000000000000000000000000000000000000000000000000000000001c8:0x0000:0x0002",
+                "keys": [
+                    "0x1736c207163ad481e2a196c0fb6394f90c66c2e2b52e0c03d4a077ac6cea918",
+                    "0x4b",
+                    "0x49",
+                    "0x1b0a83a27a357e0574393ab06c0c774db7312a0993538cc0186d054f75ee84e",
+                ],
+                "data": ["0x1", "0x53", "0x0", "0x0", "0x64", "0x65a1bec0"],
+                "createdAt": "2024-01-02 12:35:45",
+            }
+        }
+    )
+    assert db.get_by_id(db_id) == [
+        db_id,
+        1,
+        1.0,
+        1705098944,
+        '{"attacking_entity_ids": [], "stolen_resources": [], "winner": 0, "damage": 100}',
+        (-53.6529, 47.48),
+        (114.8471, 43.38),
+    ]
+    db_id = db.process_event(
+        {
+            "eventEmitted": {
+                "id": "0x00000000000000000000000000000000000000000000000000000000000001c8:0x0000:0x0002",
+                "keys": [
+                    "0x1736c207163ad481e2a196c0fb6394f90c66c2e2b52e0c03d4a077ac6cea918",
+                    "0x4b",
+                    "0x49",
+                    "0x1b0a83a27a357e0574393ab06c0c774db7312a0993538cc0186d054f75ee84e",
+                ],
+                "data": ["0x1", "0x53", "0x0", "0x0", "0x3e8", "0x65a1bec0"],
+                "createdAt": "2024-01-02 12:35:45",
+            }
+        }
+    )
+    assert db.get_by_id(db_id) == [
+        db_id,
+        1,
+        10.0,
+        1705098944,
+        '{"attacking_entity_ids": [], "stolen_resources": [], "winner": 0, "damage": 1000}',
+        (-53.6529, 47.48),
+        (114.8471, 43.38),
+    ]
+
+
+@pytest.mark.asyncio
+async def test_combat_steal():
+    db = DatabaseHandler.instance().init(":memory:")
+
+    db_id = db.process_event(
+        {
+            "eventEmitted": {
+                "id": "0x00000000000000000000000000000000000000000000000000000000000001c8:0x0000:0x0002",
+                "keys": [
+                    "0x1736c207163ad481e2a196c0fb6394f90c66c2e2b52e0c03d4a077ac6cea918",
+                    "0x4b",
+                    "0x49",
+                    "0x1b0a83a27a357e0574393ab06c0c774db7312a0993538cc0186d054f75ee84e",
+                ],
+                "data": ["0x1", "0x53", "0x1", "0x8", "0x2710", "0x0", "0x0", "0x65a1bec0"],
+                "createdAt": "2024-01-02 12:35:45",
+            }
+        }
+    )
+    assert db.get_by_id(db_id) == [
+        db_id,
+        1,
+        1.0,
+        1705098944,
+        '{"attacking_entity_ids": [], "stolen_resources": [{"type": 8, "amount": 10}], "winner": 0, "damage": 0}',
+        (-53.6529, 47.48),
+        (114.8471, 43.38),
+    ]
+
+    db_id = db.process_event(
+        {
+            "eventEmitted": {
+                "id": "0x00000000000000000000000000000000000000000000000000000000000001c8:0x0000:0x0002",
+                "keys": [
+                    "0x1736c207163ad481e2a196c0fb6394f90c66c2e2b52e0c03d4a077ac6cea918",
+                    "0x4b",
+                    "0x49",
+                    "0x1b0a83a27a357e0574393ab06c0c774db7312a0993538cc0186d054f75ee84e",
+                ],
+                "data": ["0x1", "0x53", "0x1", "0x8", "0xc350", "0x0", "0x0", "0x65a1bec0"],
+                "createdAt": "2024-01-02 12:35:45",
+            }
+        }
+    )
+    assert db.get_by_id(db_id) == [
+        db_id,
+        1,
+        5.0,
+        1705098944,
+        '{"attacking_entity_ids": [], "stolen_resources": [{"type": 8, "amount": 50}], "winner": 0, "damage": 0}',
+        (-53.6529, 47.48),
+        (114.8471, 43.38),
+    ]
+
+
+@pytest.mark.asyncio
+async def test_combat_damage_stolen_resources_set():
+    db = DatabaseHandler.instance().init(":memory:")
+
+    with pytest.raises(RuntimeError):
+        db.process_event(
+            {
+                "eventEmitted": {
+                    "id": "0x00000000000000000000000000000000000000000000000000000000000001c8:0x0000:0x0002",
+                    "keys": [
+                        "0x1736c207163ad481e2a196c0fb6394f90c66c2e2b52e0c03d4a077ac6cea918",
+                        "0x4b",
+                        "0x49",
+                        "0x1b0a83a27a357e0574393ab06c0c774db7312a0993538cc0186d054f75ee84e",
+                    ],
+                    "data": ["0x1", "0x53", "0x1", "0x8", "0x2710", "0x0", "0x3e8", "0x65a1bec0"],
+                    "createdAt": "2024-01-02 12:35:45",
+                }
+            }
+        )
 
 
 @pytest.mark.asyncio
 async def test_get_all():
     db = DatabaseHandler.instance().init(":memory:")
-
-    test_message: ToriiEvent = {
-        "eventEmitted": {
-            "id": "0x00000000000000000000000000000000000000000000000000000000000001cf:0x0000:0x0023",
-            "keys": [
-                "0x27319ec70e0f69f3988d0a1a75dd2cc3715d4d7a60acec45b51fe577a5f2bf1",
-                "0x7d",
-                "0x63cbe849cf6325e727a8d6f82f25fad7dc7eb9433767f5c1b8c59189e36c9b6",
-            ],
-            "data": ["0x4b", "0x49", "0x1", "0x8", "0x3e8", "0x1", "0x1", "0x3e8", "0x65a1dafd"],
-            "createdAt": "2024-01-02 14:36:14",
+    db.process_event(
+        {
+            "eventEmitted": {
+                "id": "0x00000000000000000000000000000000000000000000000000000000000001c8:0x0000:0x0002",
+                "keys": [
+                    "0x1736c207163ad481e2a196c0fb6394f90c66c2e2b52e0c03d4a077ac6cea918",
+                    "0x4b",
+                    "0x49",
+                    "0x1b0a83a27a357e0574393ab06c0c774db7312a0993538cc0186d054f75ee84e",
+                ],
+                "data": ["0x1", "0x53", "0x1", "0x8", "0x2710", "0x0", "0x0", "0x65a1bec0"],
+                "createdAt": "2024-01-02 12:35:45",
+            }
         }
-    }
-    db.process_event(test_message)
-    test_message: ToriiEvent = {
-        "eventEmitted": {
-            "id": "0x00000000000000000000000000000000000000000000000000000000000001c8:0x0000:0x0002",
-            "keys": [
-                "0x1736c207163ad481e2a196c0fb6394f90c66c2e2b52e0c03d4a077ac6cea918",
-                "0x4b",
-                "0x49",
-                "0x1b0a83a27a357e0574393ab06c0c774db7312a0993538cc0186d054f75ee84e",
-            ],
-            "data": ["0x1", "0x53", "0x0", "0x0", "0x0", "0x65a1bec0"],
-            "createdAt": "2024-01-02 12:35:45",
+    )
+    db.process_event(
+        {
+            "eventEmitted": {
+                "id": "0x00000000000000000000000000000000000000000000000000000000000001c8:0x0000:0x0002",
+                "keys": [
+                    "0x1736c207163ad481e2a196c0fb6394f90c66c2e2b52e0c03d4a077ac6cea918",
+                    "0x4b",
+                    "0x49",
+                    "0x1b0a83a27a357e0574393ab06c0c774db7312a0993538cc0186d054f75ee84e",
+                ],
+                "data": ["0x1", "0x53", "0x1", "0x8", "0xc350", "0x0", "0x0", "0x65a1bec0"],
+                "createdAt": "2024-01-02 12:35:45",
+            }
         }
-    }
-    db.process_event(test_message)
+    )
 
-    actual = db.get_all()
-    expected = [
+    db.process_event(
+        {
+            "eventEmitted": {
+                "id": "0x00000000000000000000000000000000000000000000000000000000000001c8:0x0000:0x0002",
+                "keys": [
+                    "0x1736c207163ad481e2a196c0fb6394f90c66c2e2b52e0c03d4a077ac6cea918",
+                    "0x4b",
+                    "0x49",
+                    "0x1b0a83a27a357e0574393ab06c0c774db7312a0993538cc0186d054f75ee84e",
+                ],
+                "data": ["0x1", "0x53", "0x0", "0x0", "0x64", "0x65a1bec0"],
+                "createdAt": "2024-01-02 12:35:45",
+            }
+        }
+    )
+
+    db.process_event(
+        {
+            "eventEmitted": {
+                "id": "0x00000000000000000000000000000000000000000000000000000000000001c8:0x0000:0x0002",
+                "keys": [
+                    "0x1736c207163ad481e2a196c0fb6394f90c66c2e2b52e0c03d4a077ac6cea918",
+                    "0x4b",
+                    "0x49",
+                    "0x1b0a83a27a357e0574393ab06c0c774db7312a0993538cc0186d054f75ee84e",
+                ],
+                "data": ["0x1", "0x53", "0x0", "0x0", "0x3e8", "0x65a1bec0"],
+                "createdAt": "2024-01-02 12:35:45",
+            }
+        }
+    )
+
+    assert db.get_all() == [
         [
             1,
-            0,
-            4,
-            1705106173,
-            '{"resources_maker": [{"type": 8, "amount": 1}], "resources_taker": [{"type": 1, "amount": 1}]}',
+            1,
+            1.0,
+            1705098944,
+            '{"attacking_entity_ids": [], "stolen_resources": [{"type": 8, "amount": 10}], "winner": 0, "damage": 0}',
             (-53.6529, 47.48),
             (114.8471, 43.38),
         ],
         [
             2,
             1,
-            4,
+            5.0,
             1705098944,
-            '{"attacking_entity_ids": [], "stolen_resources": [], "winner": 0, "damage": 0}',
+            '{"attacking_entity_ids": [], "stolen_resources": [{"type": 8, "amount": 50}], "winner": 0, "damage": 0}',
+            (-53.6529, 47.48),
+            (114.8471, 43.38),
+        ],
+        [
+            3,
+            1,
+            1.0,
+            1705098944,
+            '{"attacking_entity_ids": [], "stolen_resources": [], "winner": 0, "damage": 100}',
+            (-53.6529, 47.48),
+            (114.8471, 43.38),
+        ],
+        [
+            4,
+            1,
+            10.0,
+            1705098944,
+            '{"attacking_entity_ids": [], "stolen_resources": [], "winner": 0, "damage": 1000}',
             (-53.6529, 47.48),
             (114.8471, 43.38),
         ],
     ]
-    assert actual == expected
