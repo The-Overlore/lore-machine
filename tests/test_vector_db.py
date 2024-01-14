@@ -17,8 +17,8 @@ async def test_vss_version():
 async def test_insert():
     db = VectorDatabaseHandler.instance().init(":memory:")
 
-    with open("tests/data/embeddings/skewed_emb.json") as file:
-        mock_data = json.load(file)
+    with open("tests/data/embeddings.json") as file:
+        mock_data = (json.load(file))[2]
 
     for row in mock_data:
         db.mock_insert(row)
@@ -32,14 +32,14 @@ async def test_insert():
 async def test_query_nearest_neighbour():
     db = VectorDatabaseHandler.instance().init(":memory:")
 
-    with open("tests/data/embeddings/skewed_emb.json") as file:
-        mock_data = json.load(file)
+    with open("tests/data/embeddings.json") as file:
+        mock_data = (json.load(file))[2]
 
     for row in mock_data:
         db.mock_insert(row)
 
-    with open("tests/data/embeddings/query_embeddings.json") as file:
-        query_data = json.load(file)
+    with open("tests/data/embeddings.json") as file:
+        query_data = (json.load(file))[1]
 
     for row in query_data:
         res = db.query_nn(row["embedding"], 1)
@@ -73,8 +73,8 @@ async def test_query_nearest_neighbour():
 async def test_query_event_id():
     db = VectorDatabaseHandler.instance().init(":memory:")
 
-    with open("tests/data/embeddings/skewed_emb.json") as file:
-        mock_data = json.load(file)
+    with open("tests/data/embeddings.json") as file:
+        mock_data = (json.load(file))[2]
 
     for row in mock_data:
         db.mock_insert(row)

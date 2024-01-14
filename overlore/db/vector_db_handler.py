@@ -14,12 +14,12 @@ class VectorDatabaseHandler(BaseDatabaseHandler):
     gpt_conn: None | GptInterface = None
     init_queries: list[str] = [
         """
-                CREATE TABLE IF NOT EXISTS townhall (
-                    discussion text,
-                    realmID int,
-                    events_ids text,
-                    ts text
-                );
+            CREATE TABLE IF NOT EXISTS townhall (
+                discussion text,
+                realmID int,
+                events_ids text,
+                ts text
+            );
         """,
         """
             CREATE VIRTUAL TABLE vss_townhall using vss0(
