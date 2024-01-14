@@ -15,6 +15,8 @@ A_DAMAGES = 10 / 1000
 async def gen_prompt(users: list[Any], events: list[Any], villagers: list[Any]) -> str:
     gpt_interface = GptInterface.instance()
     gpt_response = await gpt_interface.generateTownHallDiscussion(villagers, events)
+
+    # return gpt_response
     print(f"Generated response: {gpt_response}")
     # Logic to generate prompt based on users, events and villagers presumably in a overlore/prompt directory
     prompt = f"NPCs that all want to overthrow their lord: {users}"
@@ -28,7 +30,9 @@ async def gen_townhall(message: str, mock: bool) -> str:
     users = fetch_users(data.get("user"))
     events = fetch_events(data.get("day"))
     villagers = fetch_villagers()
+
     prompt = await load_mock_gpt_response(data.get("day")) if mock else await gen_prompt(users, events, villagers)
+
     return prompt
 
 

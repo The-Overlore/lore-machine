@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from sqlite3 import Connection
 from threading import Lock
-from typing import Generic, TypeVar, cast
+from typing import Any, Generic, TypeVar, cast
 
 import sqlean
 
@@ -10,7 +10,6 @@ T = TypeVar("T", bound="BaseDatabaseHandler")
 
 
 class BaseDatabaseHandler(Generic[T]):
-    path: str
     db: Connection
     # _instance = None
     _instances: dict[type[T], T] = {}
@@ -22,7 +21,6 @@ class BaseDatabaseHandler(Generic[T]):
     def _release(self) -> None:
         self.lock.release()
 
-    # @classmethod
     def __init__(self) -> None:
         raise RuntimeError("Call instance() instead")
 
@@ -33,8 +31,7 @@ class BaseDatabaseHandler(Generic[T]):
             conn.execute("SELECT load_extension(?)", (ext,))
         return conn
 
-    # TO FIX: Any
-    def _insert(self, query: str, values: tuple[int, str] | tuple[str]) -> int:
+    def _insert(self, query: str, values: tuple[int, str] | tuple[str] | tuple[Any, Any, str, Any]) -> int:
         self._lock()
         cursor = self.db.cursor()
         cursor.execute(query, values)
@@ -67,7 +64,4 @@ class BaseDatabaseHandler(Generic[T]):
         if cls not in cls._instances:
             print(f"Creating {cls.__name__} interface")
             cls._instances[cls] = cls.__new__(cls)
-            # Initialize the instance if needed
-            # For example, you might call an init method here (not __init__)
-            # cls._instances[cls].init()
         return cast(T, cls._instances[cls])

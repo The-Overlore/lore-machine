@@ -1,21 +1,24 @@
 from __future__ import annotations
 
 import json
-import math
 import os
-import struct
+from datetime import datetime
 from typing import Any
 
-from openai import OpenAI
-
 from overlore.db.base_db_handler import BaseDatabaseHandler
+from overlore.db.utils import calculate_cosine_similarity, save_to_file
+from overlore.prompts.prompts import GptInterface
 
 
 class VectorDatabaseHandler(BaseDatabaseHandler):
-    init_queries = [
+    gpt_conn: None | GptInterface = None
+    init_queries: list[str] = [
         """
                 CREATE TABLE IF NOT EXISTS townhall (
-                    discussion text
+                    discussion text,
+                    realmID int,
+                    events_ids text,
+                    ts text
                 );
         """,
         """
@@ -25,71 +28,22 @@ class VectorDatabaseHandler(BaseDatabaseHandler):
         """,
     ]
 
-    # def _use_initial_queries(self) -> None:
-    #     self.db.execute(
-    #         """
-    #             CREATE TABLE IF NOT EXISTS townhall (
-    #                 discussion text
-    #             );
-    #         """
-    #     )
-    #     self.db.execute(
-    #         """
-    #             CREATE VIRTUAL TABLE vss_townhall using vss0(
-    #                 embedding(1536)
-    #             );
-    #         """
-    #     )
+    #### Methods used purely for testing
+    def vss_version(self) -> str:
+        cursor = self.db.cursor()
+        (version,) = cursor.execute("select vss_version()").fetchone()
+        return str(version)
 
-    def _create_openai_embedding(self, text: str, model: str = "text-embedding-ada-002") -> list[float]:
-        client = OpenAI()
-        text = text.replace("\n", " ")
-        return client.embeddings.create(input=[text], model=model).data[0].embedding
-
-    def _calculate_cosine_similarity(self, v1: list[float], v2: list[float]) -> float:
-        dot_prod = 0.0
-        v1_sqr_sum = 0.0
-        v2_sqr_sum = 0.0
-
-        for i in range(len(v1)):
-            dot_prod += v1[i] * v2[i]
-            v1_sqr_sum += v1[i] ** 2
-            v2_sqr_sum += v2[i] ** 2
-
-        return dot_prod / (math.sqrt(v1_sqr_sum) * math.sqrt(v2_sqr_sum))
-
-    def _save_to_file(self, discussion: str, rowid: str, embedding: str) -> None:
-        # Writing the discussion, embedding, and rowid to a file
-        with open("Output.json", "a") as file:  # 'a' mode appends to the file without overwriting existing data
-            data_to_save = {"rowid": rowid, "discussion": discussion, "embedding": embedding}
-            json.dump(data_to_save, file)
-            file.write("\n")  # Add a newline to separate entries
-
-    def init(self, path: str = "./vector.db") -> VectorDatabaseHandler:
-        db_first_launch = not os.path.exists(path)
-        self.db = self._load_sqlean(path, ["vector0", "vss0"])
-        if db_first_launch:
-            self._use_initial_queries(self.init_queries)
-        return self
-
-    def serialize(self, vector: list[float]) -> bytes:
-        """serializes a list of floats into a compact "raw bytes" format"""
-        return struct.pack("%sf" % len(vector), *vector)
-
-    def insert(self, discussion: str) -> None:
-        discussion = discussion.strip()
-        rowid = self._insert("INSERT INTO townhall (discussion) VALUES (?);", (discussion,))
-        embedding = self._create_openai_embedding(discussion)
-        self._insert("INSERT INTO vss_townhall(rowid, embedding) VALUES (?, ?)", (rowid, json.dumps(embedding)))
-
-        # self._save_to_file(discussion, rowid, embedding)
-
-    def mock_insert(self, data: Any) -> None:
-        rowid = self._insert("INSERT INTO townhall (discussion) VALUES (?);", (data["discussion"],))
+    def mock_insert(self, data: dict[str, Any]) -> None:
+        ts = data["ts"]
+        rowid = self._insert(
+            "INSERT INTO townhall (discussion, realmID, events_ids, ts) VALUES (?, ?, ?, ?);",
+            (data["discussion"], data["realmID"], json.dumps(data["events_ids"]), ts),
+        )
         embedding = data["embedding"]
         self._insert("INSERT INTO vss_townhall(rowid, embedding) VALUES (?, ?)", (rowid, json.dumps(embedding)))
 
-    def get_all(self, printEnabled: bool = False) -> Any:
+    def get_all(self) -> tuple[int, int]:
         query = "SELECT * from townhall"
         cursor = self.db.cursor()
         cursor.execute(query)
@@ -100,42 +54,43 @@ class VectorDatabaseHandler(BaseDatabaseHandler):
         cursor.execute(query_vss)
         records_vss = cursor.fetchall()
 
-        if printEnabled:
-            print("Printing each row\n")
-            for row, row_vss in zip(records, records_vss):
-                for elem, elem_vss in zip(row, row_vss):
-                    print(elem)
-                    print("\n")
-                    print(elem_vss[:10], end="")
-                    print("...")
-                print("\n\n")
-            return records, records_vss
         return len(records), len(records_vss)
 
-    def query_nn(self, query_embedding: str, limit: int = 5) -> list[str]:
-        # SQLite version 3.41+
-        # cur.execute("""
-        #     select rowid, distance from vss_townhall
-        #     where vss_search(embedding, ?)
-        #     limit 5
-        # """, (json.dumps(query_embedding),))
-        # results = cur.fetchall()
-        # return results
+    ####
 
+    def init(self, path: str = "./vector.db", gpt: None | GptInterface = None) -> VectorDatabaseHandler:
+        db_first_launch = not os.path.exists(path)
+        self.db = self._load_sqlean(path, ["vector0", "vss0"])
+        if db_first_launch:
+            self._use_initial_queries(self.init_queries)
+        self.gpt_conn = gpt
+        return self
+
+    async def insert(self, discussion: str, realmId: int, event_ids: str, save: bool = False) -> None:
+        discussion = discussion.strip()
+        ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        rowid = self._insert(
+            "INSERT INTO townhall (discussion, realmID, events_ids, ts) VALUES (?, ?, json_array(?), ?);",
+            (discussion, realmId, event_ids, ts),
+        )
+        if self.gpt_conn:
+            embedding = await self.gpt_conn.generateEmbedding(discussion)
+            embedding = embedding["data"][0].get("embedding")
+            self._insert("INSERT INTO vss_townhall(rowid, embedding) VALUES (?, ?)", (rowid, json.dumps(embedding)))
+
+        if save:
+            save_to_file(discussion, rowid, embedding)
+
+    def query_nn(self, query_embedding: str, realm_id: int = 2, limit: int = 5) -> list[str]:
         # SQLite version < 3.41
         cursor = self.db.cursor()
         cursor.execute(
             """
-            select rowid, distance from vss_townhall
-            where vss_search(
-                embedding,
-                vss_search_params(
-                    ?,
-                    ?
-                )
-            )
+            select v.rowid, v.distance from vss_townhall v
+            inner join townhall t on v.rowid = t.rowid
+            where t.realmID = ? and vss_search(embedding, vss_search_params(?, ?))
             """,
-            (json.dumps(query_embedding), limit),
+            (realm_id, json.dumps(query_embedding), limit),
         )
         results = cursor.fetchall()
         return results
@@ -149,38 +104,26 @@ class VectorDatabaseHandler(BaseDatabaseHandler):
         )
         results = cursor.fetchall()
 
-        # print("Cosine similarity")
         res = []
         for row in results:
-            res.append({row[0]: self._calculate_cosine_similarity(query_embedding, row[1])})
-            # print(f"{row[0]}: {res}")
-
-        # print(res)
+            res.append({row[0]: calculate_cosine_similarity(query_embedding, row[1])})
         return res
 
-    def find_lowest_second_param(self, data: Any) -> Any:
-        # Find the dictionary with the lowest value
-        lowest_dict = min(data, key=lambda x: list(x.values())[0])
-        # Return the key of this dictionary
-        return list(lowest_dict.keys())[0]
-
-    def find_closest_to_one(self, data: Any) -> Any:
-        # Initialize a variable to store the closest value and its key
-        closest_key = None
-        closest_value = float("-inf")  # Start with the lowest possible value
-
-        for d in data:
-            # Extract key and value from the dictionary
-            key, value = list(d.items())[0]
-
-            # Check if this value is closer to 1 than the current closest value
-            if closest_value < value <= 1:
-                closest_value = value
-                closest_key = key
-
-        return closest_key
-
-    def vss_version(self) -> Any:
+    def query_event_ids(self, event_id: int) -> tuple[int | str, bool]:
         cursor = self.db.cursor()
-        (version,) = cursor.execute("select vss_version()").fetchone()
-        return version
+        cursor.execute(
+            """
+            select townhall.discussion from townhall, json_each(townhall.events_ids) as ev_id
+            where ev_id.value = ?
+            ORDER BY townhall.ts DESC
+            LIMIT 1;
+            """,
+            (event_id,),
+        )
+        results = cursor.fetchall()
+
+        if not results:
+            return event_id, False
+
+        # results: list[tuple]
+        return results[0][0], True

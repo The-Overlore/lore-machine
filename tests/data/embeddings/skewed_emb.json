@@ -4,6 +4,12 @@
 
         "discussion": "Nancy: The fields whisper tales of our victory, but what worth is gold if our stomachs echo with emptiness?\n    James: That's just it, isn't it? We've struck the earth till our hands bled, only to trade our fish for a pitiful sum of gold. Fools' math!\n    Lisa: Let peace fill your hearts, friends. We grieve for the fallen, yet our defenses still stand. There is hope in our unity.\n    Daniel: Hope? Speak not to me of hope when swords clash outside our doors. We must fortify, prepare! Besides, the mines won't shield us nor fill our plates.\n    Paul: Our plows lay idle and our nets gather dust. What good is coin when the wheat does not sway and the fish leap away from our grasp?\n    James: Rage swells within! What good is a war won when our own people lie dead? Tell me that, friends! Tell me!\n    Nancy: Listen to the wind, for it carries both the songs of triumph and the cries of the hungry. Victory is a fickle mistress.\n    Lisa: Peace, James. Let not anger cloud our judgment. The earth has riches yet to yield, and the seas will provide. We must toil together.\n    Daniel: Toil, you say! It's time to wield the pickaxe as a spear if need be. Our brethren were not lost to toil, but to bloodshed.\n    Paul: Aye, it's the toil that's forgotten once the blood dries. Perhaps the lesson here lies not in the clashing of swords but in the joining of hands.\n    Nancy: With a bounty of gold and an ache in our bellies, we stand at a crossroads. Shall we eat or shall we arm? That is the question, and the crops won't wait.",
 
+        "realmID": 2,
+
+        "events_ids": [5, 3, 2, 1, 8],
+
+        "ts": "2024-01-13 11:21:06",
+
         "embedding": [
             0.0009278534, -0.023926267, 0.008837021, 0.0016256465, -0.009141512,
             0.024832977, -0.017552245, -0.011489481, -0.021368539, -0.030097296,
@@ -340,6 +346,12 @@
 
         "discussion": "Nancy: The wheat fields are bountiful this year. Our bellies are full, and our hearts content.\n    James: Yes, but remember, a strong defense is as vital as a full stomach. We must not forget to fortify.\n    Lisa: True, but let's not dwell on fears. The festival brought joy and unity to us all.\n    Daniel: Unity is good, but we must stay vigilant. Our prosperity could attract envy.\n    Paul: Vigilance aside, let's not forget to enjoy our harvest and trade success. We've worked hard for this peace.\n    Nancy: Indeed, the air is filled with satisfaction. May our realm continue to prosper.\n    Lisa: Let's not forget the importance of our recent trades. They've brought wealth and stability.\n    Daniel: Stability, yes, but let's not grow complacent. We must maintain our defenses.\n    Paul: Complacency is not in our nature. We are a strong, united community, ready for any challenge.\n    James: Agreed. We must balance our joy with preparedness. Let's celebrate but remain alert.",
 
+        "realmID": 1,
+
+        "events_ids": [5, 3, 2, 1, 7],
+
+        "ts": "2024-01-12 11:21:06",
+
         "embedding": [
             -0.005991403, -0.02368951, 0.0184988, 0.0006432303, -0.016621312,
             0.024766305, -0.025553195, -0.0005302012, -0.022350417,
@@ -675,6 +687,12 @@
 
         "discussion": "Nancy: What a joyous time! The alliance and trade agreement have opened new doors for us.\n    James: Indeed, but we must remember to keep our defenses impenetrable, even in times of joy.\n    Lisa: Let's focus on the positive. Our cultural festival was a resounding success, bringing us closer together.\n    Daniel: True, but an alliance means we must also be prepared for any responsibilities it brings.\n    Paul: Responsibilities, yes, but also opportunities. We have much to gain from these new relationships.\n    Nancy: The realm feels like a different place now, full of hope and excitement.\n    Lisa: It's a time for cultural enrichment. We're learning so much from the exotic spices and silver trades.\n    Daniel: Let's not lose sight of our own traditions in the process. We must remain true to our roots.\n    Paul: Our roots are strong, and so is our curiosity. Embracing new cultures only makes us richer.\n    James: Richer in spirit and in resources. Let's use these opportunities wisely.",
 
+        "realmID": 1,
+
+        "events_ids": [5, 3, 2, 1, 7],
+
+        "ts": "2024-01-14 11:21:06",
+
         "embedding": [
             0.0014771993, -0.024129877, 0.027194208, -0.011810723, -0.020131133,
             0.036167335, -0.01038849, 0.012332896, -0.0026727, -0.03641468,
@@ -1006,6 +1024,12 @@
         "rowid": 4,
 
         "discussion": "Nancy: The discovery of the gold vein has brought an unexpected fortune. Our granaries overflow as well!\n    James: Fortune is fine, but what about the safety of our miners? These new methods must be secure.\n    Lisa: The Harvest Festival reminded us of our community's strength. Let's not forget that in our pursuit of gold.\n    Daniel: Gold's good, but I'm more excited about the artisan fair. It's a showcase of our realm's talents.\n    Paul: Yes, the fair brought us together, celebrating our crafts and skills. It's as important as any gold vein.\n    Nancy: Our realm feels like a land of plenty now, with enough food and gold for all.\n    Lisa: And let's not overlook the importance of joy and celebration. It keeps our spirits high.\n    Daniel: High spirits are good, but let's keep our defenses strong. Prosperity can attract envy.\n    Paul: We've always balanced prosperity with caution. Our unity is our greatest defense.\n    James: True. Let's enjoy our successes but stay vigilant. Prosperity and safety go hand in hand.",
+
+        "realmID": 1,
+
+        "events_ids": [5, 3, 2, 1, 7],
+
+        "ts": "2024-01-09 11:21:06",
 
         "embedding": [
             0.009251787, -0.024469359, 0.023036469, -0.014921349, -0.015513794,
@@ -1344,6 +1368,12 @@
 
         "discussion": "Nancy: The opening of the new trade route has brought us sufficient resources. It's a time of satisfaction.\n    James: Satisfaction, yes, but let's not overlook our educational reforms. Knowledge is a resource too.\n    Lisa: And our architectural advancements have made our buildings stronger and safer.\n    Daniel: These advancements are great, but we must remain alert. A solid defense is crucial.\n    Paul: True, but let's also celebrate our achievements. We've come far in improving our realm.\n    Nancy: It's amazing to see how far we've progressed. We're self-sufficient and stronger than ever.\n    Lisa: The improvements in education will bear fruit for generations to come. It's an exciting time.\n    Daniel: Exciting, yes, but let's not forget to keep our eyes on the horizon. Threats can come from anywhere.\n    Paul: Our eyes are open, but so are our hearts. We're a community that grows together.\n    James: Growing together, indeed. Let's use these new routes and advancements to strengthen our realm further.",
 
+        "realmID": 1,
+
+        "events_ids": [5, 3, 2, 1, 7],
+
+        "ts": "2024-01-15 11:21:06",
+
         "embedding": [
             0.014186602, -0.011322739, 0.018161085, -0.006090949, 0.0038801858,
             0.03629423, -0.009010692, -0.0040827515, -0.0057137567, -0.03802652,
@@ -1675,6 +1705,12 @@
         "rowid": 6,
 
         "discussion": "Nancy: The new farming techniques have revolutionized our food production. We're more fulfilled than ever.\n    James: Fulfilled in food, but what about our miners? These new innovations must benefit everyone.\n    Lisa: The cultural exchange has brought new perspectives. It's refreshing to see such diversity in our realm.\n    Daniel: Diversity is good, but let's not forget our own heritage. We must balance innovation with tradition.\n    Paul: Tradition and innovation can coexist. They're both parts of our identity as a realm.\n    Nancy: It's a time of plenty, with food and ideas flowing freely. We're truly fortunate.\n    Lisa: Fortunate, yes, but let's ensure that everyone benefits equally from these advancements.\n    Daniel: Equality in benefits, but let's also keep our defenses fortified. Prosperity must be protected.\n    Paul: Our defenses are strong, and our community is united. We're ready for any challenge.\n    James: Challenges will come, but together, we can turn them into opportunities for even greater prosperity.",
+
+        "realmID": 1,
+
+        "events_ids": [0, 3, 2, 1, 7],
+
+        "ts": "2024-01-16 11:21:06",
 
         "embedding": [
             -0.006932843, -0.021420663, 0.016732315, -0.0073968656,

@@ -4,6 +4,10 @@
 
         "discussion": "In \"Eternum,\" a community dialogue unfolds concerning the recent victory at war that cost the lives of 102 soldiers and an ongoing crisis of food scarcity despite the happy state of the realm. Nancy, James, Lisa, Daniel, and Paul express a spectrum of emotions from happiness and euphoria to agitation and rage. They debate the value of the war's loot against the immediate need for food and the persistent threat to their defenses. Nancy highlights the paradox of wealth amidst hunger, while James fumes over the casualties and poor trade-off from their latest transaction. Lisa preaches unity and resiliency whereas Daniel stresses the necessity of a defensive stance and Paul adds that cooperation is key in overcoming their hardships. The conversation reveals a community grappling with the tension between survival and security, with an undercurrent suggesting the potential for greater collaboration to address their challenges.",
 
+        "realmID": 2,
+
+        "events_ids": [5, 3, 2, 1, 7],
+
         "embedding": [
             0.0032679962, -0.013811777, -0.009533546, -0.028558763,
             -0.0049587004, 0.014405007, -0.025027303, -0.007076878, -0.02716293,
@@ -337,6 +341,10 @@
         "rowid": 2,
 
         "discussion": "In \"Eternum,\" amidst a time of plenty and sturdy defenses, the community engages in a reflective dialogue about their recent gains contrasted against the cost of human lives. Nancy, James, Lisa, Daniel, and Paul navigate their mixed emotions, from worry and unease to optimism and cheerfulness. They discuss the importance of recognizing the sacrifices made for their current wealth, the need for continual vigilance, and the power of unity to face future challenges. The conversation underscores a community's struggle to reconcile their prosperity with the lingering memories of those lost and the ever-present threat of war.",
+
+        "realmID": 1,
+
+        "events_ids": [5, 3, 2, 1, 7],
 
         "embedding": [
             0.00827405, -0.021170396, -0.011332306, -0.03574948, -0.0049120625,
@@ -673,6 +681,10 @@
 
         "discussion": "As \"Eternum\" revels in abundant food and wealth, its inhabitants, Nancy, James, Lisa, Daniel, and Paul, voice their mixed feelings of joy and apprehension amidst weakening defenses. They ponder the value of their prosperity against the backdrop of potential threats, discussing the importance of enjoying the present while remaining vigilant for the future. Their dialogue reflects a community caught between celebrating their current state and the looming uncertainty of their safety, emphasizing a collective need for preparedness and fortitude.",
 
+        "realmID": 1,
+
+        "events_ids": [5, 3, 2, 1, 7],
+
         "embedding": [
             0.0073657525, -0.01853946, -0.01765001, -0.030852774, -0.009061265,
             0.028934898, -0.03257608, -0.0007487357, -0.03193679, -0.027642418,
@@ -1008,6 +1020,10 @@
         "rowid": 4,
 
         "discussion": "In the moderately fed and tensely happy realm of \"Eternum,\" the characters Nancy, James, Lisa, Daniel, and Paul grapple with the complexities of their reinforced defenses and the lingering hunger. They deliberate the balance between physical safety and emotional well-being, acknowledging the reinforced defenses while also feeling the bite of hunger and the unease of an uncertain future. Their conversation underscores a community striving for more than survival, yearning for a peace that satisfies both body and mind.",
+
+        "realmID": 1,
+
+        "events_ids": [5, 3, 2, 1, 7],
 
         "embedding": [
             0.009321351, -0.009648781, -0.0054200375, -0.02928771,
@@ -1346,6 +1362,10 @@
 
         "discussion": "In \"Eternum,\" with crumbled defenses and low food, the community faces a dire situation. Nancy, James, Lisa, Daniel, and Paul express deep despair and frustration over their perilous state. They mourn the loss of safety and sustenance, questioning the value of their sacrifices and longing for a sign of hope. The dialogue paints a bleak picture of a community on the brink, desperate for a reversal of their fortunes and a path towards recovery and security.",
 
+        "realmID": 1,
+
+        "events_ids": [5, 3, 2, 1, 7],
+
         "embedding": [
             0.0068353005, -0.013393728, -0.022260584, -0.020488596,
             -0.0068595265, 0.032366443, -0.020862374, -0.005007939, -0.01936726,
@@ -1682,6 +1702,10 @@
 
         "discussion": "As \"Eternum\" enjoys fortified defenses and an excessive bounty, its inhabitants, including Nancy, James, Lisa, Daniel, and Paul, reflect on the burdens of their prosperity. They contemplate the physical and emotional ramifications of their current state, expressing feelings of resignation, irritability, and concern. The dialogue highlights the paradox of abundance and security, prompting a deeper examination of their meaning and purpose beyond mere survival.",
 
+        "realmID": 1,
+
+        "events_ids": [5, 3, 2, 1, 7],
+
         "embedding": [
             0.0057976837, -0.019855566, -0.011171405, -0.038919736,
             -0.011673094, 0.033549547, -0.03400177, 0.0046388535, -0.027826056,
@@ -2017,6 +2041,10 @@
         "rowid": 7,
 
         "discussion": "\"Eternum\" faces a critical crisis with deteriorating defenses and a scarcity of food, invoking a sense of restlessness among its people. Nancy, James, Lisa, Daniel, and Paul each express profound anxiety, agitation, and worry over their grim circumstances. They confront the harsh reality of their declining situation, questioning their future and seeking any glimmer of hope or solution to reverse their dire fortunes. The dialogue captures the essence of a community on edge, desperate for relief and change.",
+
+        "realmID": 1,
+
+        "events_ids": [5, 3, 2, 1, 7],
 
         "embedding": [
             -0.0040766764, -0.011960554, -0.01988589, -0.021710029,
