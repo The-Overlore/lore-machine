@@ -3,9 +3,9 @@ from __future__ import annotations
 import json
 from typing import Any, cast
 
-from overlore.db.base_db_handler import Database
 from overlore.eternum.constants import Realms
 from overlore.eternum.types import RealmPosition
+from overlore.sqlite.db import Database
 from overlore.sqlite.types import StoredEvent
 from overlore.types import ParsedEvent
 

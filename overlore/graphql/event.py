@@ -3,12 +3,12 @@ from typing import Callable, cast
 from gql import Client, gql  # pip install --pre gql[websockets]
 from gql.transport.websockets import WebsocketsTransport
 
-from overlore.db.db_handler import EventsDatabase
 from overlore.eternum.constants import Realms
 from overlore.eternum.types import AttackingEntityIds, ResourceAmounts
 from overlore.graphql.constants import EventType as EventKeyHash
 from overlore.graphql.constants import Subscriptions
 from overlore.sqlite.constants import EventType as SqLiteEventType
+from overlore.sqlite.events_db import EventsDatabase
 from overlore.townhall.logic import get_combat_outcome_importance, get_trade_importance
 from overlore.types import EventData, EventKeys, ParsedEvent, ToriiEvent
 

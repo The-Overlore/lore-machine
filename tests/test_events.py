@@ -1,8 +1,8 @@
 import pytest
 
-from overlore.db.db_handler import EventsDatabase
 from overlore.eternum.constants import Realms
 from overlore.graphql.event import process_event
+from overlore.sqlite.events_db import EventsDatabase
 
 
 @pytest.mark.asyncio
