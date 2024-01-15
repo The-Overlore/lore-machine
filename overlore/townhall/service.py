@@ -8,9 +8,9 @@ from types import FrameType
 from dotenv import load_dotenv
 from websockets import WebSocketServerProtocol, serve
 
-from overlore.db.db_handler import DatabaseHandler
+from overlore.db.db_handler import EventsDatabase
 from overlore.graphql.constants import Subscriptions
-from overlore.graphql.event_sub import torii_event_sub
+from overlore.graphql.event import process_event, torii_event_sub
 from overlore.prompts.prompts import GptInterface
 from overlore.townhall.logic import gen_townhall
 from overlore.utils import parse_cli_args
@@ -49,8 +49,8 @@ async def start() -> None:
     if TORII_WS is None:
         raise RuntimeError("Failure to provide WS url")
 
-    db = DatabaseHandler.instance().init()
-    # vec_db = VectorDatabaseHandler.instance.init()
+    events_db = EventsDatabase.instance().init()
+    # vec_db = VectorDatabase.instance.init()
 
     signal.signal(signal.SIGINT, handle_sigint)
     GptInterface.instance().init(OPENAI_API_KEY, OPENAI_EMBEDDINGS_API_KEY)
@@ -60,10 +60,11 @@ async def start() -> None:
 
     print(f"great job, starting this service on port {SERVICE_WS_PORT}. everything is perfect from now on.")
     # arbitrarily choose just the first realm to sub to events on
+    process_event_bound_handler = functools.partial(process_event, extra_argument=events_db)
     await asyncio.gather(
         overlore_pulse,
-        torii_event_sub(TORII_WS, db.process_event, Subscriptions.COMBAT_OUTCOME_EVENT_EMITTED),
-        torii_event_sub(TORII_WS, db.process_event, Subscriptions.ORDER_ACCEPTED_EVENT_EMITTED),
+        torii_event_sub(TORII_WS, process_event_bound_handler, Subscriptions.COMBAT_OUTCOME_EVENT_EMITTED),
+        torii_event_sub(TORII_WS, process_event_bound_handler, Subscriptions.ORDER_ACCEPTED_EVENT_EMITTED),
     )
 
 

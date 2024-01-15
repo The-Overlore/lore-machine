@@ -5,12 +5,12 @@ import os
 from datetime import datetime
 from typing import Any
 
-from overlore.db.base_db_handler import BaseDatabaseHandler
+from overlore.db.base_db_handler import Database
 from overlore.db.utils import calculate_cosine_similarity, save_to_file
 from overlore.prompts.prompts import GptInterface
 
 
-class VectorDatabaseHandler(BaseDatabaseHandler):
+class VectorDatabase(Database):
     gpt_conn: None | GptInterface = None
     init_queries: list[str] = [
         """
@@ -56,9 +56,15 @@ class VectorDatabaseHandler(BaseDatabaseHandler):
 
         return len(records), len(records_vss)
 
-    ####
+    def init(self, path: str = "./vector.db", gpt: None | GptInterface = None) -> VectorDatabase:
+        # Call parent init function
+        self._init(
+            path,
+            self.EXTENSIONS,
+            self.FIRST_BOOT_QUERIES,
+            [],
+        )
 
-    def init(self, path: str = "./vector.db", gpt: None | GptInterface = None) -> VectorDatabaseHandler:
         db_first_launch = not os.path.exists(path)
         self.db = self._load_sqlean(path, ["vector0", "vss0"])
         if db_first_launch:
@@ -81,7 +87,7 @@ class VectorDatabaseHandler(BaseDatabaseHandler):
         if save:
             save_to_file(discussion, rowid, embedding)
 
-    def query_nn(self, query_embedding: str, realm_id: int = 2, limit: int = 5) -> list[str]:
+    def query_nn(self, query_embedding: str, realm_id: int = 2, limit: int = 5) -> Any:
         # SQLite version < 3.41
         cursor = self.db.cursor()
         cursor.execute(
