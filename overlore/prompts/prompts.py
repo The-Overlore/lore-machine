@@ -86,7 +86,6 @@ class GptInterface:
                 "input": textInput,
                 "model": "text-embedding-ada-002",
             },
-            # Test w/ stream param
         }
         headers = {
             "Content-Type": "application/json",

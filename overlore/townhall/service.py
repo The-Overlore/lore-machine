@@ -35,7 +35,6 @@ async def service(websocket: WebSocketServerProtocol, extra_argument: dict[str, 
     async for message in websocket:
         if message is None:
             continue
-
         response = await gen_townhall(str(message), extra_argument["mock"])
         await websocket.send(json.dumps(response))
 
@@ -50,7 +49,6 @@ async def start() -> None:
         raise RuntimeError("Failure to provide WS url")
 
     events_db = EventsDatabase.instance().init()
-    # vec_db = VectorDatabase.instance.init()
 
     signal.signal(signal.SIGINT, handle_sigint)
     GptInterface.instance().init(OPENAI_API_KEY, OPENAI_EMBEDDINGS_API_KEY)
