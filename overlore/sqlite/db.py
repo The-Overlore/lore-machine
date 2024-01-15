@@ -6,6 +6,7 @@ from threading import Lock
 from typing import Any, Callable
 
 import sqlean
+import sqlite_vss
 
 FunctionCallable = Callable[..., Any | None]
 CustomFunction = tuple[str, int, FunctionCallable]
@@ -57,9 +58,17 @@ class Database:
             self.db.create_function(name=func[0], narg=func[1], func=func[2])
 
     def _init(
-        self, path: str, extensions: list[str], first_boot_queries: list[str], functions: list[CustomFunction]
+        self,
+        path: str,
+        extensions: list[str],
+        first_boot_queries: list[str],
+        functions: list[CustomFunction],
+        preload: bool = False,
     ) -> None:
         self.db: Connection = sqlean.connect(path)
+        if preload:
+            self.db.enable_load_extension(True)
+            sqlite_vss.load(self.db)
         self._load_extensions(extensions)
         db_first_launch = not os.path.exists(path)
         if db_first_launch:

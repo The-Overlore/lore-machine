@@ -19,7 +19,8 @@ def save_to_file(discussion: str, rowid: int, embedding: str) -> None:
 class VectorDatabase(Database):
     _instance: VectorDatabase | None = None
     GPT_CONN: GptInterface | None = None
-    EXTENSIONS: list[str] = ["vector0", "vss0"]
+    EXTENSIONS: list[str] = []
+    # EXTENSIONS: list[str] = ["vector0", "vss0"]
     FIRST_BOOT_QUERIES: list[str] = [
         """
             CREATE TABLE IF NOT EXISTS townhall (
@@ -48,12 +49,8 @@ class VectorDatabase(Database):
 
     def init(self, path: str = "./vector.db", gpt_interface: GptInterface | None = None) -> VectorDatabase:
         # Call parent init function
-        self._init(
-            path,
-            self.EXTENSIONS,
-            self.FIRST_BOOT_QUERIES,
-            [],
-        )
+
+        self._init(path, self.EXTENSIONS, self.FIRST_BOOT_QUERIES, [], preload=True)
         self.GPT_CONN = gpt_interface
         return self
 
