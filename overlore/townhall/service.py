@@ -8,10 +8,10 @@ from types import FrameType
 from dotenv import load_dotenv
 from websockets import WebSocketServerProtocol, serve
 
-from overlore.db.db_handler import EventsDatabase
 from overlore.graphql.constants import Subscriptions
 from overlore.graphql.event import process_event, torii_event_sub
 from overlore.prompts.prompts import GptInterface
+from overlore.sqlite.events_db import EventsDatabase
 from overlore.townhall.logic import gen_townhall
 from overlore.utils import parse_cli_args
 

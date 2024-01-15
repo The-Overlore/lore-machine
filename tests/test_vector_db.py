@@ -1,78 +1,82 @@
-# @pytest.mark.asyncio
-# async def test_vss_version():
-#     db = VectorDatabase.instance().init(":memory:")
+import json
 
-#     vss_version = db.vss_version()
-#     assert vss_version == "v0.1.2"
+import pytest
 
-
-# @pytest.mark.asyncio
-# async def test_insert():
-#     db = VectorDatabase.instance().init(":memory:")
-
-#     with open("tests/data/embeddings.json") as file:
-#         mock_data = (json.load(file))[2]
-
-#     for row in mock_data:
-#         db.mock_insert(row)
-
-#     rows, vss_rows = db.get_all()
-
-#     assert rows == 6 and vss_rows == 6
+from overlore.sqlite.vector_db import VectorDatabase
 
 
-# @pytest.mark.asyncio
-# async def test_query_nearest_neighbour():
-#     db = VectorDatabase.instance().init(":memory:")
+@pytest.mark.asyncio
+async def test_vss_version():
+    db = VectorDatabase.instance().init(":memory:")
 
-#     with open("tests/data/embeddings.json") as file:
-#         mock_data = (json.load(file))[2]
-
-#     for row in mock_data:
-#         db.mock_insert(row)
-
-#     with open("tests/data/embeddings.json") as file:
-#         query_data = (json.load(file))[1]
-
-#     for row in query_data:
-#         res = db.query_nn(row["embedding"], 1)
-#     print(res)
-
-#     assert res[0][0] == 5
+    vss_version = db.vss_version()
+    assert vss_version == "v0.1.2"
 
 
-# # @pytest.mark.asyncio
-# # async def test_query_cosine_similarity():
-# #     db = VectorDatabase.instance().init(":memory:")
+@pytest.mark.asyncio
+async def test_insert():
+    db = VectorDatabase.instance().init(":memory:")
 
-# #     with open("tests/data/embeddings/skewed_emb.json") as file:
-# #         mock_data = json.load(file)
+    with open("tests/data/embeddings.json") as file:
+        mock_data = (json.load(file))[2]
 
-# #     for row in mock_data:
-# #         db.mock_insert(row)
+    for row in mock_data:
+        db.mock_insert(row)
 
-# #     with open("tests/data/embeddings/query_embeddings.json") as file:
-# #         query_data = json.load(file)
+    rows, vss_rows = db.get_all()
 
-# #     res = []
-# #     for row in query_data:
-# #         res.append(db.query_cosine_similarity(row["embedding"]))
-# #     output = find_closest_to_one(res)
-
-# #     assert output == 2
+    assert rows == 6 and vss_rows == 6
 
 
-# @pytest.mark.asyncio
-# async def test_query_event_id():
-#     db = VectorDatabase.instance().init(":memory:")
+@pytest.mark.asyncio
+async def test_query_nearest_neighbour():
+    db = VectorDatabase.instance().init(":memory:")
 
-#     with open("tests/data/embeddings.json") as file:
-#         mock_data = (json.load(file))[2]
+    with open("tests/data/embeddings.json") as file:
+        mock_data = (json.load(file))[2]
 
-#     for row in mock_data:
-#         db.mock_insert(row)
+    for row in mock_data:
+        db.mock_insert(row)
 
-#     res = db.query_event_ids(5)
+    rows, vss_rows = db.get_all()
 
-#     res = db.query_event_ids(10)
-#     assert res == (10, False)
+    assert rows == 6 and vss_rows == 6
+
+    with open("tests/data/embeddings.json") as file:
+        query_data = (json.load(file))[1]
+
+    res = db.query_nearest_neighbour(query_data[0]["embedding"], 1, 1)
+    assert res[0][0] == 5
+
+
+@pytest.mark.asyncio
+async def test_query_cosine_similarity():
+    db = VectorDatabase.instance().init(":memory:")
+
+    with open("tests/data/embeddings.json") as file:
+        mock_data = (json.load(file))[2]
+
+    for row in mock_data:
+        db.mock_insert(row)
+
+    with open("tests/data/embeddings.json") as file:
+        query_data = (json.load(file))[1]
+
+    res = db.query_cosine_similarity(query_data[0]["embedding"])
+    assert res[0] == (1, 0.8161537647247314)
+
+
+@pytest.mark.asyncio
+async def test_query_event_id():
+    db = VectorDatabase.instance().init(":memory:")
+
+    with open("tests/data/embeddings.json") as file:
+        mock_data = (json.load(file))[2]
+
+    for row in mock_data:
+        db.mock_insert(row)
+
+    res = db.query_event_ids(5)
+
+    res = db.query_event_ids(10)
+    assert res == (10, False)
