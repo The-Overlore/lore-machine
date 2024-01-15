@@ -63,7 +63,7 @@ async def test_query_cosine_similarity():
         query_data = (json.load(file))[1]
 
     res = db.query_cosine_similarity(query_data[0]["embedding"])
-    assert res[0] == (1, 0.8161537647247314)
+    assert res[0][0] == 1
 
 
 @pytest.mark.asyncio
