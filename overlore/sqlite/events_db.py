@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from sqlite3 import Connection
 from typing import Any, cast
 
 from overlore.eternum.constants import Realms
@@ -67,6 +68,22 @@ class EventsDatabase(Database):
     def __init__(self) -> None:
         raise RuntimeError("Call instance() instead")
 
+    def _preload(self, db: Connection) -> None:
+        # noop
+        pass
+
+    def init(self, path: str = "./events.db") -> EventsDatabase:
+        # Call parent init function
+        self._init(
+            path,
+            self.EXTENSIONS,
+            self.FIRST_BOOT_QUERIES,
+            [("decayFunction", 3, decayFunction), ("average", 3, average), ("minus", 2, average)],
+            self._preload,
+        )
+        self.realms = Realms.instance().init()
+        return self
+
     def insert_event(self, obj: ParsedEvent) -> int:
         event_type = obj["type"]
         del obj["type"]
@@ -95,17 +112,6 @@ class EventsDatabase(Database):
         )
         added_id: int = self._insert(query, values)
         return added_id
-
-    def init(self, path: str = "./events.db") -> EventsDatabase:
-        # Call parent init function
-        self._init(
-            path,
-            self.EXTENSIONS,
-            self.FIRST_BOOT_QUERIES,
-            [("decayFunction", 3, decayFunction), ("average", 3, average), ("minus", 2, average)],
-        )
-        self.realms = Realms.instance().init()
-        return self
 
     def get_by_id(self, event_id: int) -> StoredEvent:
         records = self.execute_query(

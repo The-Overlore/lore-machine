@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import json
 from datetime import datetime
+from sqlite3 import Connection
 from typing import Any
+
+import sqlite_vss
 
 from overlore.prompts.prompts import GptInterface
 from overlore.sqlite.db import Database
@@ -47,10 +50,12 @@ class VectorDatabase(Database):
     def __init__(self) -> None:
         raise RuntimeError("Call instance() instead")
 
+    def _preload(self, db: Connection) -> None:
+        sqlite_vss.load(db)
+
     def init(self, path: str = "./vector.db", gpt_interface: GptInterface | None = None) -> VectorDatabase:
         # Call parent init function
-
-        self._init(path, self.EXTENSIONS, self.FIRST_BOOT_QUERIES, [], preload=True)
+        self._init(path, self.EXTENSIONS, self.FIRST_BOOT_QUERIES, [], self._preload)
         self.GPT_CONN = gpt_interface
         return self
 

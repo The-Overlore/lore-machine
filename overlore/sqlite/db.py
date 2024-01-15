@@ -6,8 +6,8 @@ from threading import Lock
 from typing import Any, Callable
 
 import sqlean
-import sqlite_vss
 
+PreloadFunction = Callable[[Connection], None]
 FunctionCallable = Callable[..., Any | None]
 CustomFunction = tuple[str, int, FunctionCallable]
 
@@ -26,10 +26,8 @@ class Database:
         raise RuntimeError(f"{self.__class__.__name__}: call instance() instead")
 
     def _load_extensions(self, extensions: list[str]) -> None:
-        self.db.enable_load_extension(True)
         for ext in extensions:
             self.db.load_extension(ext)
-        self.db.enable_load_extension(False)
 
     def _insert(self, query: str, values: tuple[Any, ...]) -> int:
         self._lock()
@@ -63,13 +61,15 @@ class Database:
         extensions: list[str],
         first_boot_queries: list[str],
         functions: list[CustomFunction],
-        preload: bool = False,
+        preload: PreloadFunction,
     ) -> None:
         self.db: Connection = sqlean.connect(path)
-        if preload:
-            self.db.enable_load_extension(True)
-            sqlite_vss.load(self.db)
+
+        self.db.enable_load_extension(True)
+        preload(self.db)
         self._load_extensions(extensions)
+        self.db.enable_load_extension(False)
+
         db_first_launch = not os.path.exists(path)
         if db_first_launch:
             self._use_first_boot_queries(first_boot_queries)
