@@ -50,11 +50,11 @@ async def start() -> None:
     signal.signal(signal.SIGINT, handle_sigint)
 
     bound_handler = functools.partial(service, extra_argument={"mock": args.mock})
-    serve(bound_handler, args.address, SERVICE_WS_PORT)
+    overlore_pulse = serve(bound_handler, args.address, SERVICE_WS_PORT)
 
     print(f"great job, starting this service on port {SERVICE_WS_PORT}. everything is perfect from now on.")
 
-    conn = sqlean.connect(args.world_db)
+    sqlean.connect(args.world_db)
 
     await asyncio.gather(
         overlore_pulse,
