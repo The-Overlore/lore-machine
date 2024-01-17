@@ -4,13 +4,11 @@ import pytest
 
 from overlore.sqlite.vector_db import VectorDatabase
 
-
-@pytest.mark.asyncio
-async def test_vss_version():
-    db = VectorDatabase.instance().init(":memory:")
-
-    vss_version = db.vss_version()
-    assert vss_version == "v0.1.2"
+# data/embeddings.json structure:
+# 0. townhall discussions embeddings
+# 1. query embedding
+# 2. skewed embeddings
+# 3. summary embeddings
 
 
 @pytest.mark.asyncio

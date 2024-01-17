@@ -12,18 +12,10 @@ from overlore.sqlite.db import Database
 from overlore.sqlite.types import StoredVector, TownhallEventResponse
 
 
-def save_to_file(discussion: str, rowid: int, embedding: str) -> None:
-    with open("Output.json", "a") as file:
-        data_to_save = {"rowid": rowid, "discussion": discussion, "embedding": embedding}
-        json.dump(data_to_save, file)
-        file.write("\n")
-
-
 class VectorDatabase(Database):
     _instance: VectorDatabase | None = None
     GPT_CONN: GptInterface | None = None
     EXTENSIONS: list[str] = []
-    # EXTENSIONS: list[str] = ["vector0", "vss0"]
     FIRST_BOOT_QUERIES: list[str] = [
         """
             CREATE TABLE IF NOT EXISTS townhall (
@@ -59,10 +51,11 @@ class VectorDatabase(Database):
         self.GPT_CONN = gpt_interface
         return self
 
-    def vss_version(self) -> str:
-        cursor = self.db.cursor()
-        (version,) = cursor.execute("select vss_version()").fetchone()
-        return str(version)
+    def save_to_file(self, discussion: str, rowid: int, embedding: str) -> None:
+        with open("Output.json", "a") as file:
+            data_to_save = {"rowid": rowid, "discussion": discussion, "embedding": embedding}
+            json.dump(data_to_save, file)
+            file.write("\n")
 
     def mock_insert(self, data: dict[str, Any]) -> None:
         ts = data["ts"]
@@ -98,10 +91,10 @@ class VectorDatabase(Database):
             self._insert("INSERT INTO vss_townhall(rowid, embedding) VALUES (?, ?)", (rowid, json.dumps(embedding)))
 
         if save:
-            save_to_file(discussion, rowid, embedding)
+            self.save_to_file(discussion, rowid, embedding)
 
     def query_nearest_neighbour(self, query_embedding: str, realm_id: int, limit: int = 1) -> list[StoredVector]:
-        # SQLite version < 3.41
+        # Use vss_search for SQLite version < 3.41 else vss_search_params db function
         query = """
             select v.rowid, v.distance from vss_townhall v
             inner join townhall t on v.rowid = t.rowid
