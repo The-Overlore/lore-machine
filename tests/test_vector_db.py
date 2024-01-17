@@ -74,7 +74,7 @@ async def test_query_event_id():
     for row in mock_data:
         db.mock_insert(row)
 
-    res = db.query_event_ids(5)
+    event_ids = [1, 2, 8, 14, 15]
+    res = db.query_event_ids(event_ids)
 
-    res = db.query_event_ids(10)
-    assert res == (10, False)
+    assert res[0][0] == 8

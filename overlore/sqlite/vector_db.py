@@ -9,7 +9,7 @@ import sqlite_vss
 
 from overlore.prompts.prompts import GptInterface
 from overlore.sqlite.db import Database
-from overlore.sqlite.types import StoredVector, TownhallEventResponse
+from overlore.sqlite.types import StoredVector
 
 
 class VectorDatabase(Database):
@@ -113,16 +113,62 @@ class VectorDatabase(Database):
         values = (json.dumps(query_embedding),)
         return self.execute_query(query, values)
 
-    def query_event_ids(self, event_id: int) -> TownhallEventResponse:
+    def query_event_ids(self, event_id: list[int]) -> Any:
+        """Returns list of tuples(id_event, discussion | None)"""
+
         query = """
-            select townhall.discussion from townhall, json_each(townhall.events_ids) as ev_id
-            where ev_id.value = ?
-            ORDER BY townhall.ts DESC
-            LIMIT 1;
+            WITH GivenEventIDs(event_id) AS (VALUES (?), (?), (?), (?), (?)),
+            RecentDiscussions AS (
+                SELECT
+                    json_each.value AS event_id,
+                    T.discussion,
+                    T.ts,
+                    T.rowid,
+                    ROW_NUMBER() OVER (PARTITION BY json_each.value ORDER BY T.ts DESC) as rn
+                FROM
+                    townhall T, json_each(T.events_ids)
+                WHERE
+                    json_each.value IN ((?), (?), (?), (?), (?))
+            ),
+            DupDiscussions AS (
+                SELECT
+                    event_id,
+                    discussion,
+                    rowid,
+                    ROW_NUMBER() OVER (PARTITION BY rowid ORDER BY ts DESC) as dup_rn
+                FROM
+                    RecentDiscussions
+                WHERE
+                    rn = 1
+            )
+            SELECT
+                event_id,
+                discussion
+            FROM
+                DupDiscussions
+            WHERE
+                dup_rn = 1
+            UNION ALL
+            SELECT
+                event_id,
+                NULL AS discussion
+            FROM
+                GivenEventIDs
+            WHERE
+                event_id NOT IN (SELECT event_id FROM RecentDiscussions WHERE rn = 1)
         """
-        values = (event_id,)
+        values = (
+            event_id[0],
+            event_id[1],
+            event_id[2],
+            event_id[3],
+            event_id[4],
+            event_id[0],
+            event_id[1],
+            event_id[2],
+            event_id[3],
+            event_id[4],
+        )
         res = self.execute_query(query, values)
 
-        if not res:
-            return event_id, False
-        return res[0][0], True
+        return res
