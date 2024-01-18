@@ -10,7 +10,6 @@ from websockets import WebSocketServerProtocol, serve
 
 from overlore.graphql.constants import Subscriptions
 from overlore.graphql.event import process_event, torii_event_sub
-from overlore.llm.openAI import OpenAIHandler
 from overlore.sqlite.events_db import EventsDatabase
 from overlore.townhall.logic import gen_townhall
 from overlore.utils import parse_cli_args
@@ -49,7 +48,6 @@ async def start() -> None:
     events_db = EventsDatabase.instance().init()
 
     signal.signal(signal.SIGINT, handle_sigint)
-    OpenAIHandler.instance().init(OPENAI_API_KEY)
 
     bound_handler = functools.partial(service, extra_argument={"mock": args.mock})
     overlore_pulse = serve(bound_handler, args.address, SERVICE_WS_PORT)
