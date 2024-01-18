@@ -113,9 +113,7 @@ class VectorDatabase(Database):
         values = (json.dumps(query_embedding),)
         return self.execute_query(query, values)
 
-    def query_event_ids(self, event_id: list[int]) -> Any:
-        """Returns list of tuples(id_event, discussion | None)"""
-
+    def query_event_ids(self, event_id: list[int]) -> tuple[int, str | None]:
         query = """
             WITH GivenEventIDs(event_id) AS (VALUES (?), (?), (?), (?), (?)),
             RecentDiscussions AS (
