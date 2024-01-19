@@ -19,9 +19,11 @@ async def test_insert():
         mock_data = (json.load(file))[2]
 
     for row in mock_data:
-        db.mock_insert(row)
+        await db.insert_townhall_discussion(
+            row["discussion"], row["realmID"], json.dumps(row["events_ids"]), row["embedding"]
+        )
 
-    rows, vss_rows = db.get_all()
+    rows, vss_rows = db.get_entries_count()
 
     assert rows == 6 and vss_rows == 6
 
@@ -34,9 +36,11 @@ async def test_query_nearest_neighbour():
         mock_data = (json.load(file))[2]
 
     for row in mock_data:
-        db.mock_insert(row)
+        await db.insert_townhall_discussion(
+            row["discussion"], row["realmID"], json.dumps(row["events_ids"]), row["embedding"]
+        )
 
-    rows, vss_rows = db.get_all()
+    rows, vss_rows = db.get_entries_count()
 
     assert rows == 6 and vss_rows == 6
 
@@ -55,7 +59,9 @@ async def test_query_cosine_similarity():
         mock_data = (json.load(file))[2]
 
     for row in mock_data:
-        db.mock_insert(row)
+        await db.insert_townhall_discussion(
+            row["discussion"], row["realmID"], json.dumps(row["events_ids"]), row["embedding"]
+        )
 
     with open("tests/data/embeddings.json") as file:
         query_data = (json.load(file))[1]
@@ -65,16 +71,18 @@ async def test_query_cosine_similarity():
 
 
 @pytest.mark.asyncio
-async def test_query_event_id():
+async def test_get_townhalls_from_events():
     db = VectorDatabase.instance().init(":memory:")
 
     with open("tests/data/embeddings.json") as file:
         mock_data = (json.load(file))[2]
 
     for row in mock_data:
-        db.mock_insert(row)
+        await db.insert_townhall_discussion(
+            row["discussion"], row["realmID"], json.dumps(row["events_ids"]), row["embedding"]
+        )
 
     event_ids = [1, 2, 8, 14, 15]
-    res = db.query_event_ids(event_ids)
+    res = db.get_townhalls_from_events(event_ids)
 
-    assert res[0][0] == 8
+    assert res[0][0] == 1
