@@ -1,14 +1,14 @@
 import pytest
 
-from overlore.db.handler import DatabaseHandler
 from overlore.eternum.constants import Realms
+from overlore.graphql.event import process_event
+from overlore.sqlite.events_db import EventsDatabase
 
 
 @pytest.mark.asyncio
 async def test_trade_event():
-    db = DatabaseHandler.instance().init(":memory:")
-
-    db_id = db.process_event(
+    db = EventsDatabase.instance().init(":memory:")
+    db_id = process_event(
         {
             "eventEmitted": {
                 "id": "0x00000000000000000000000000000000000000000000000000000000000001cf:0x0000:0x0023",
@@ -20,7 +20,8 @@ async def test_trade_event():
                 "data": ["0x4b", "0x49", "0x1", "0x8", "0x1388", "0x1", "0x1", "0x1388", "0x65a1dafd"],
                 "createdAt": "2024-01-02 14:36:14",
             }
-        }
+        },
+        db,
     )
 
     assert db.get_by_id(db_id) == [
@@ -36,8 +37,8 @@ async def test_trade_event():
 
 @pytest.mark.asyncio
 async def test_combat_damage():
-    db = DatabaseHandler.instance().init(":memory:")
-    db_id = db.process_event(
+    db = EventsDatabase.instance().init(":memory:")
+    db_id = process_event(
         {
             "eventEmitted": {
                 "id": "0x00000000000000000000000000000000000000000000000000000000000001c8:0x0000:0x0002",
@@ -50,7 +51,8 @@ async def test_combat_damage():
                 "data": ["0x1", "0x53", "0x0", "0x0", "0x64", "0x65a1bec0"],
                 "createdAt": "2024-01-02 12:35:45",
             }
-        }
+        },
+        db,
     )
     assert db.get_by_id(db_id) == [
         db_id,
@@ -61,7 +63,7 @@ async def test_combat_damage():
         (-53.6529, 47.48),
         (114.8471, 43.38),
     ]
-    db_id = db.process_event(
+    db_id = process_event(
         {
             "eventEmitted": {
                 "id": "0x00000000000000000000000000000000000000000000000000000000000001c8:0x0000:0x0002",
@@ -74,7 +76,8 @@ async def test_combat_damage():
                 "data": ["0x1", "0x53", "0x0", "0x0", "0x3e8", "0x65a1bec0"],
                 "createdAt": "2024-01-02 12:35:45",
             }
-        }
+        },
+        db,
     )
     assert db.get_by_id(db_id) == [
         db_id,
@@ -89,9 +92,9 @@ async def test_combat_damage():
 
 @pytest.mark.asyncio
 async def test_combat_steal():
-    db = DatabaseHandler.instance().init(":memory:")
+    db = EventsDatabase.instance().init(":memory:")
 
-    db_id = db.process_event(
+    db_id = process_event(
         {
             "eventEmitted": {
                 "id": "0x00000000000000000000000000000000000000000000000000000000000001c8:0x0000:0x0002",
@@ -104,7 +107,8 @@ async def test_combat_steal():
                 "data": ["0x1", "0x53", "0x1", "0x8", "0x2710", "0x0", "0x0", "0x65a1bec0"],
                 "createdAt": "2024-01-02 12:35:45",
             }
-        }
+        },
+        db,
     )
     assert db.get_by_id(db_id) == [
         db_id,
@@ -116,7 +120,7 @@ async def test_combat_steal():
         (114.8471, 43.38),
     ]
 
-    db_id = db.process_event(
+    db_id = process_event(
         {
             "eventEmitted": {
                 "id": "0x00000000000000000000000000000000000000000000000000000000000001c8:0x0000:0x0002",
@@ -129,7 +133,8 @@ async def test_combat_steal():
                 "data": ["0x1", "0x53", "0x1", "0x8", "0xc350", "0x0", "0x0", "0x65a1bec0"],
                 "createdAt": "2024-01-02 12:35:45",
             }
-        }
+        },
+        db,
     )
     assert db.get_by_id(db_id) == [
         db_id,
@@ -144,10 +149,10 @@ async def test_combat_steal():
 
 @pytest.mark.asyncio
 async def test_combat_damage_stolen_resources_set():
-    db = DatabaseHandler.instance().init(":memory:")
+    db = EventsDatabase.instance().init(":memory:")
 
     with pytest.raises(RuntimeError):
-        db.process_event(
+        process_event(
             {
                 "eventEmitted": {
                     "id": "0x00000000000000000000000000000000000000000000000000000000000001c8:0x0000:0x0002",
@@ -160,14 +165,15 @@ async def test_combat_damage_stolen_resources_set():
                     "data": ["0x1", "0x53", "0x1", "0x8", "0x2710", "0x0", "0x3e8", "0x65a1bec0"],
                     "createdAt": "2024-01-02 12:35:45",
                 }
-            }
+            },
+            db,
         )
 
 
 @pytest.mark.asyncio
 async def test_get_all():
-    db = DatabaseHandler.instance().init(":memory:")
-    db.process_event(
+    db = EventsDatabase.instance().init(":memory:")
+    process_event(
         {
             "eventEmitted": {
                 "id": "0x00000000000000000000000000000000000000000000000000000000000001c8:0x0000:0x0002",
@@ -180,9 +186,10 @@ async def test_get_all():
                 "data": ["0x1", "0x53", "0x1", "0x8", "0x2710", "0x0", "0x0", "0x65a1bec0"],
                 "createdAt": "2024-01-02 12:35:45",
             }
-        }
+        },
+        db,
     )
-    db.process_event(
+    process_event(
         {
             "eventEmitted": {
                 "id": "0x00000000000000000000000000000000000000000000000000000000000001c8:0x0000:0x0002",
@@ -195,10 +202,11 @@ async def test_get_all():
                 "data": ["0x1", "0x53", "0x1", "0x8", "0xc350", "0x0", "0x0", "0x65a1bec0"],
                 "createdAt": "2024-01-02 12:35:45",
             }
-        }
+        },
+        db,
     )
 
-    db.process_event(
+    process_event(
         {
             "eventEmitted": {
                 "id": "0x00000000000000000000000000000000000000000000000000000000000001c8:0x0000:0x0002",
@@ -211,10 +219,11 @@ async def test_get_all():
                 "data": ["0x1", "0x53", "0x0", "0x0", "0x64", "0x65a1bec0"],
                 "createdAt": "2024-01-02 12:35:45",
             }
-        }
+        },
+        db,
     )
 
-    db.process_event(
+    process_event(
         {
             "eventEmitted": {
                 "id": "0x00000000000000000000000000000000000000000000000000000000000001c8:0x0000:0x0002",
@@ -227,7 +236,8 @@ async def test_get_all():
                 "data": ["0x1", "0x53", "0x0", "0x0", "0x3e8", "0x65a1bec0"],
                 "createdAt": "2024-01-02 12:35:45",
             }
-        }
+        },
+        db,
     )
 
     assert db.get_all() == [
@@ -272,7 +282,7 @@ async def test_get_all():
 
 @pytest.mark.asyncio
 async def test_fetch_relevant_events_decay_time():
-    db = DatabaseHandler.instance().init(":memory:")
+    db = EventsDatabase.instance().init(":memory:")
 
     test_message = {
         "eventEmitted": {
@@ -288,7 +298,7 @@ async def test_fetch_relevant_events_decay_time():
     }
     # store 7 events that are one day appart
     for _i in range(0, 5):
-        db.process_event(test_message)
+        process_event(test_message, db)
         ts = int(test_message["eventEmitted"]["data"][8], base=16)
         ts -= 86400
         test_message["eventEmitted"]["data"][8] = hex(ts)
@@ -319,13 +329,13 @@ async def test_fetch_relevant_events_decay_time():
 
 @pytest.mark.asyncio
 async def test_fetch_relevant_events_decay_distance():
-    db = DatabaseHandler.instance().init(":memory:")
+    db = EventsDatabase.instance().init(":memory:")
 
     realms = Realms.instance()
     realms.geodata = realms.load_geodata("./tests/data/test_geodata.json")
 
     db.realms = realms
-    db.process_event(
+    process_event(
         {
             "eventEmitted": {
                 "id": "0x00000000000000000000000000000000000000000000000000000000000001ad:0x0000:0x0023",
@@ -337,9 +347,10 @@ async def test_fetch_relevant_events_decay_distance():
                 "data": ["0x6", "0x1", "0x1", "0xfd", "0xc350", "0x1", "0x3", "0xc350", "0x659daba0"],
                 "createdAt": "2024-01-08 16:38:25",
             }
-        }
+        },
+        db,
     )
-    db.process_event(
+    process_event(
         {
             "eventEmitted": {
                 "id": "0x00000000000000000000000000000000000000000000000000000000000001ad:0x0000:0x0023",
@@ -351,9 +362,10 @@ async def test_fetch_relevant_events_decay_distance():
                 "data": ["0x6", "0x2", "0x1", "0xfd", "0xc350", "0x1", "0x3", "0xc350", "0x659daba0"],
                 "createdAt": "2024-01-08 16:38:25",
             }
-        }
+        },
+        db,
     )
-    db.process_event(
+    process_event(
         {
             "eventEmitted": {
                 "id": "0x00000000000000000000000000000000000000000000000000000000000001ad:0x0000:0x0023",
@@ -365,9 +377,10 @@ async def test_fetch_relevant_events_decay_distance():
                 "data": ["0x6", "0x3", "0x1", "0xfd", "0xc350", "0x1", "0x3", "0xc350", "0x659daba0"],
                 "createdAt": "2024-01-08 16:38:25",
             }
-        }
+        },
+        db,
     )
-    db.process_event(
+    process_event(
         {
             "eventEmitted": {
                 "id": "0x00000000000000000000000000000000000000000000000000000000000001ad:0x0000:0x0023",
@@ -379,9 +392,10 @@ async def test_fetch_relevant_events_decay_distance():
                 "data": ["0x6", "0x4", "0x1", "0xfd", "0xc350", "0x1", "0x3", "0xc350", "0x659daba0"],
                 "createdAt": "2024-01-08 16:38:25",
             }
-        }
+        },
+        db,
     )
-    db.process_event(
+    process_event(
         {
             "eventEmitted": {
                 "id": "0x00000000000000000000000000000000000000000000000000000000000001ad:0x0000:0x0023",
@@ -393,7 +407,8 @@ async def test_fetch_relevant_events_decay_distance():
                 "data": ["0x6", "0x5", "0x1", "0xfd", "0xc350", "0x1", "0x3", "0xc350", "0x659daba0"],
                 "createdAt": "2024-01-08 16:38:25",
             }
-        }
+        },
+        db,
     )
     assert db.fetch_most_relevant(realm_position=db.realms.position_by_id(1), current_time=0x659DABA0) == [
         (1, 10.0),
