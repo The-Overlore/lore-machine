@@ -60,11 +60,7 @@ WORLD_SYSTEM_TEMPLATE = """
         * defending its relic from foreign realms
         * waging war with other realms to rob them of their ressources and relics
 
-     The current state of the realm are as follows:
-     - Hapiness: {realm_state_happiness}
-     - Defenses: {realm_state_defense}
-     - Food: {realm_state_food_availability}
-     - Relic: {realm_state_relic_presence}
+
 
      You will also have to account for the events that took place in the past or during the day.
      There will be four types of events: Trade completed, War began, War won, War lost.
@@ -78,6 +74,11 @@ WORLD_SYSTEM_TEMPLATE = """
 
      The characters are the following: {characters}
     """
+
+# The current state of the realm are as follows:
+#      - Hapiness: {realm_state_happiness}
+#      - Defenses: {realm_state_defense}
+#      - Food: {realm_state_food_availability}
 
 # WIP
 #   -> During the speech, {name} maintains a demeanor that is {happiness}, {hunger} and {belligerent}. ## Prompt reuses specified states

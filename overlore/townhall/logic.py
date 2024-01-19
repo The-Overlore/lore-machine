@@ -1,7 +1,7 @@
 from typing import Any
 
 from overlore.eternum.types import ResourceAmounts
-from overlore.prompts.prompts import GptInterface
+from overlore.llm.openAI import OpenAIHandler
 from overlore.townhall.mocks import fetch_events, fetch_users, fetch_villagers, load_mock_gpt_response
 from overlore.utils import str_to_json
 
@@ -13,9 +13,8 @@ A_DAMAGES = 10 / 1000
 
 
 async def gen_prompt(users: list[Any], events: list[Any], villagers: list[Any]) -> str:
-    gpt_interface = GptInterface.instance()
-    gpt_response = await gpt_interface.generateTownHallDiscussion(villagers, events)
-    # return gpt_response
+    gpt_interface = OpenAIHandler.instance()
+    gpt_response = await gpt_interface.generate_townhall_discussion(villagers, events)
     print(f"Generated response: {gpt_response}")
     # Logic to generate prompt based on users, events and villagers presumably in a overlore/prompt directory
     prompt = f"NPCs that all want to overthrow their lord: {users}"

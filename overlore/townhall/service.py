@@ -10,14 +10,13 @@ from websockets import WebSocketServerProtocol, serve
 
 from overlore.graphql.constants import Subscriptions
 from overlore.graphql.event import process_event, torii_event_sub
-from overlore.prompts.prompts import GptInterface
+from overlore.llm.openAI import OpenAIHandler
 from overlore.sqlite.events_db import EventsDatabase
 from overlore.townhall.logic import gen_townhall
 from overlore.utils import parse_cli_args
 
 load_dotenv()
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
-OPENAI_EMBEDDINGS_API_KEY = ""
 
 SERVICE_WS_PORT = 8766
 # TODO: have a way to differentiate dev/prod config
@@ -35,23 +34,22 @@ async def service(websocket: WebSocketServerProtocol, extra_argument: dict[str, 
     async for message in websocket:
         if message is None:
             continue
+
         response = await gen_townhall(str(message), extra_argument["mock"])
         await websocket.send(json.dumps(response))
 
 
 async def start() -> None:
     global OPENAI_API_KEY
-    global OPENAI_EMBEDDINGS_API_KEY
-    if OPENAI_API_KEY is None or OPENAI_EMBEDDINGS_API_KEY is None:
-        OPENAI_API_KEY = ""
-        OPENAI_EMBEDDINGS_API_KEY = ""
+    if OPENAI_API_KEY is None:
+        OPENAI_API_KEY = "OpenAI API Key"
     if TORII_WS is None:
         raise RuntimeError("Failure to provide WS url")
 
     events_db = EventsDatabase.instance().init()
 
     signal.signal(signal.SIGINT, handle_sigint)
-    GptInterface.instance().init(OPENAI_API_KEY, OPENAI_EMBEDDINGS_API_KEY)
+    OpenAIHandler.instance().init(OPENAI_API_KEY)
 
     bound_handler = functools.partial(service, extra_argument={"mock": args.mock})
     overlore_pulse = serve(bound_handler, args.address, SERVICE_WS_PORT)
