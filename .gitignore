@@ -1,6 +1,8 @@
 docs/source
+
 events.db
 events.db-journal
+vector.db
 
 # From https://raw.githubusercontent.com/github/gitignore/main/Python.gitignore
 

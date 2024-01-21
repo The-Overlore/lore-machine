@@ -55,6 +55,8 @@ class Database:
         functions: list[CustomFunction],
         preload: PreloadFunction,
     ) -> None:
+        db_first_launch = not os.path.exists(path)
+
         self.db: Connection = sqlean.connect(path, check_same_thread=False)
         threadsafety = self.db.execute(
             """
@@ -70,7 +72,6 @@ class Database:
         self._load_extensions(extensions)
         self.db.enable_load_extension(False)
 
-        db_first_launch = not os.path.exists(path)
         if db_first_launch:
             self._use_first_boot_queries(first_boot_queries)
         self.create_db_functions(functions)

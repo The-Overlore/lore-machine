@@ -1,17 +1,42 @@
 import asyncio
 import functools
+import time
 from threading import Thread
 
 import pytest
 import websockets
 
+from overlore.graphql.event import process_event
+from overlore.llm.open_ai import OpenAIHandler
+from overlore.sqlite.events_db import EventsDatabase
+from overlore.sqlite.vector_db import VectorDatabase
 from overlore.townhall.service import service
 
 
 # Function to run the server in a separate thread
 def run_server():
+    # Initialize our dbs
+    _vector_db = VectorDatabase.instance().init(":memory:")
+    _events_db = EventsDatabase.instance().init(":memory:")
+    OpenAIHandler.instance().init("")
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
+
+    process_event(
+        {
+            "eventEmitted": {
+                "id": "0x00000000000000000000000000000000000000000000000000000000000001ad:0x0000:0x0023",
+                "keys": [
+                    "0x20e86edfa14c93309aa6559742e993d42d48507f3bf654a12d77a54f10f8945",
+                    "0x88",
+                    "0x63cbe849cf6325e727a8d6f82f25fad7dc7eb9433767f5c1b8c59189e36c9b6",
+                ],
+                "data": ["0x6", "0x5", "0x1", "0xfd", "0xc350", "0x1", "0x3", "0xc350", "0x659daba0"],
+                "createdAt": "2024-01-08 16:38:25",
+            }
+        },
+        _events_db,
+    )
 
     bound_handler = functools.partial(service, extra_argument={"mock": True})
     start_server = websockets.serve(bound_handler, "localhost", 8766)  # Specify a fixed port
@@ -31,8 +56,9 @@ def server():
 
 @pytest.mark.asyncio
 async def test_mock_response(server):
+    time.sleep(1)
     async with websockets.connect("ws://localhost:8766") as websocket:
-        test_message = '{"user": 0, "day": 0}'
+        test_message = '{"realm_id": 1}'
         await websocket.send(test_message)
         actual = await websocket.recv()
         expected = """\"Paul: Friends, we must not lose sight of what keeps us afloat. Straejelas depends on both wheat and minerals.

@@ -47,7 +47,9 @@ class EventsDatabase(Database):
         """
             CREATE TABLE IF NOT EXISTS events (
                 type INTEGER NOT NULL,
-                importance INTEGER NOT NULL,
+                active_realm_entity_id INTEGER NOT NULL,
+                passive_realm_entity_id INTEGER NOT NULL,
+                importance FLOAT NOT NULL,
                 ts INTEGER NOT NULL,
                 metadata TEXT
             );
@@ -87,6 +89,10 @@ class EventsDatabase(Database):
     def insert_event(self, obj: ParsedEvent) -> int:
         event_type = obj["type"]
         del obj["type"]
+        active_realm_entity_id = obj["active_realm_entity_id"]
+        del obj["active_realm_entity_id"]
+        passive_realm_entity_id = obj["passive_realm_entity_id"]
+        del obj["passive_realm_entity_id"]
         active_pos = cast(RealmPosition, obj["active_pos"])
         del obj["active_pos"]
         passive_pos = cast(RealmPosition, obj["passive_pos"])
@@ -97,11 +103,13 @@ class EventsDatabase(Database):
         del obj["importance"]
         additional_data = json.dumps(obj)
         query = (
-            "INSERT INTO events (type, importance, ts, metadata, active_pos, passive_pos) VALUES (?, ?,"
-            " ?, ?, MakePoint(?,?),MakePoint(?, ?));"
+            "INSERT INTO events (type, active_realm_entity_id, passive_realm_entity_id, importance, ts, metadata,"
+            " active_pos, passive_pos) VALUES (?, ?, ?, ?, ?, ?, MakePoint(?,?),MakePoint(?, ?));"
         )
         values: tuple[Any, ...] = (
             event_type,
+            active_realm_entity_id,
+            passive_realm_entity_id,
             importance,
             ts,
             additional_data,
@@ -113,35 +121,62 @@ class EventsDatabase(Database):
         added_id: int = self._insert(query, values)
         return added_id
 
-    def get_by_id(self, event_id: int) -> StoredEvent:
+    def get_by_ids(self, event_ids: list[int]) -> list[StoredEvent]:
+        placeholders = ", ".join(["?" for _ in event_ids])
         records = self.execute_query(
-            "SELECT rowid, type, importance, ts, metadata, X(active_pos), Y(active_pos), X(passive_pos), Y(passive_pos)"
-            " FROM events WHERE rowid=?",
-            (event_id,),
+            "SELECT rowid, type, active_realm_entity_id, passive_realm_entity_id, importance, ts, metadata,"
+            " X(active_pos), Y(active_pos), X(passive_pos), Y(passive_pos) FROM events WHERE rowid IN"
+            f" ({placeholders})",
+            (*event_ids,),
         )
-        record = list(records[0])
-        return [*record[:5], (record[5], record[6]), (record[7], record[8])]
+        events: list[StoredEvent] = [[*tup[:7], (tup[7], tup[8]), (tup[9], tup[10])] for tup in records]
+        return events
 
     def get_all(self) -> list[StoredEvent]:
-        query = """SELECT rowid, type, importance, ts, metadata, X(active_pos), Y(active_pos), X(passive_pos), Y(passive_pos) from events ORDER BY rowid ASC"""
+        query = """SELECT rowid, type, active_realm_entity_id, passive_realm_entity_id, importance, ts, metadata, X(active_pos), Y(active_pos), X(passive_pos), Y(passive_pos) from events ORDER BY rowid ASC"""
         records = self.execute_query(query, ())
-        AllEvents: list[StoredEvent] = [[*tup[:5], (tup[5], tup[6]), (tup[7], tup[8])] for tup in records]
+        AllEvents: list[StoredEvent] = [[*tup[:7], (tup[7], tup[8]), (tup[9], tup[10])] for tup in records]
         return AllEvents
 
-    def fetch_most_relevant(self, realm_position: list[int], current_time: int) -> Any:
+    def fetch_most_relevant(self, realm_position: RealmPosition, current_time: int) -> list[StoredEvent]:
+        """Attributes an importance score depending on the distance in kilometers, the recency
+        and general importance score of an event, then gets the 5 events that scored the highest"""
         query = """SELECT
-                        rowid,
-                        average(
-                            decayFunction(?, 10,
-                                MIN(
-                                    Distance(MakePoint(?,?), active_pos),
-                                    Distance(MakePoint(?,?), passive_pos)
-                                )
-                            ),
-                            decayFunction(?, 10, ? - ts),
-                            importance
-                        )
-                    as RET from events ORDER BY RET DESC LIMIT 5"""
+                    rowid,
+                    type,
+                    active_realm_entity_id,
+                    passive_realm_entity_id,
+                    importance,
+                    ts,
+                    metadata,
+                    X(active_pos),
+                    Y(active_pos),
+                    X(passive_pos),
+                    Y(passive_pos)
+                    FROM (
+                        SELECT
+                            rowid,
+                            type,
+                            active_realm_entity_id,
+                            passive_realm_entity_id,
+                            importance,
+                            ts,
+                            metadata,
+                            active_pos,
+                            passive_pos,
+                            average(
+                                decayFunction(?, 10,
+                                    MIN(
+                                        Distance(MakePoint(?,?), active_pos),
+                                        Distance(MakePoint(?,?), passive_pos)
+                                    )
+                                ),
+                                decayFunction(?, 10, ? - ts),
+                                importance
+                            ) as score
+                        FROM events
+                    )
+                    ORDER BY score DESC LIMIT 5"""
         params = (
             A_DISTANCE,
             realm_position[0],
@@ -151,4 +186,6 @@ class EventsDatabase(Database):
             A_TIME,
             current_time,
         )
-        return self.execute_query(query=query, params=params)
+        records = self.execute_query(query=query, params=params)
+        events: list[StoredEvent] = [[*tup[:7], (tup[7], tup[8]), (tup[9], tup[10])] for tup in records]
+        return events

@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 from datetime import datetime
 from sqlite3 import Connection
-from typing import Any
 
 import sqlite_vss
 
@@ -57,14 +56,14 @@ class VectorDatabase(Database):
 
         return len(records), len(records_vss)
 
-    async def insert_townhall_discussion(
-        self, discussion: str, realm_id: int, event_ids: str, embedding: list[float]
+    def insert_townhall_discussion(
+        self, discussion: str, realm_id: int, event_ids: list[int], embedding: list[float]
     ) -> None:
         discussion = discussion.strip()
         ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         rowid = self._insert(
-            "INSERT INTO townhall (discussion, realm_id, events_ids, ts) VALUES (?, ?, json_array(?), ?);",
-            (discussion, realm_id, event_ids, ts),
+            "INSERT INTO townhall (discussion, realm_id, events_ids, ts) VALUES (?, ?, ?, ?);",
+            (discussion, realm_id, json.dumps(event_ids), ts),
         )
         self._insert("INSERT INTO vss_townhall(rowid, embedding) VALUES (?, ?)", (rowid, json.dumps(embedding)))
 
@@ -88,7 +87,13 @@ class VectorDatabase(Database):
         values = (json.dumps(query_embedding),)
         return self.execute_query(query, values)
 
-    def get_townhalls_from_events(self, event_id: list[int]) -> list[Any]:
+    def get_townhalls_from_events(self, event_ids: list[int]) -> tuple[list[str], list[int]]:
+        event_ids.extend([0 for i in range(0, 5 - len(event_ids))])
+        """
+        Returns tuple of:
+            - List of townhalls discussions. One event_id of the list given in parameter must have been involved in the generation of the discussion.
+            - Events_ids in the list given in parameter which haven't generated any discussions before
+        """
         query = """
             WITH GivenEventIDs(event_id) AS (VALUES (?), (?), (?), (?), (?)),
             RecentDiscussions AS (
@@ -131,17 +136,21 @@ class VectorDatabase(Database):
                 event_id NOT IN (SELECT event_id FROM RecentDiscussions WHERE rn = 1)
         """
         values = (
-            event_id[0],
-            event_id[1],
-            event_id[2],
-            event_id[3],
-            event_id[4],
-            event_id[0],
-            event_id[1],
-            event_id[2],
-            event_id[3],
-            event_id[4],
+            event_ids[0],
+            event_ids[1],
+            event_ids[2],
+            event_ids[3],
+            event_ids[4],
+            event_ids[0],
+            event_ids[1],
+            event_ids[2],
+            event_ids[3],
+            event_ids[4],
         )
-        res = self.execute_query(query, values)
 
-        return res
+        # list of tuples: either (event_id, discussion) or (event_id, None) if the event_id hasn't generated and discussion before
+        res = self.execute_query(query, values)
+        townhall_discussions: list[str] = [item[1] for item in res if item[1] is not None]
+        event_ids_previously_unused: list[int] = [item[0] for item in res if item[1] is None]
+
+        return (townhall_discussions, event_ids_previously_unused)

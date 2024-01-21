@@ -1,5 +1,6 @@
-from typing import Any
+from typing import Any, cast
 
+from overlore.eternum.types import Villager
 from overlore.utils import open_json_file
 
 
@@ -12,8 +13,8 @@ async def load_mock_gpt_response(mock_index: int) -> str:
         return ""
 
 
-def load_mock_villagers() -> Any:
-    return open_json_file("./data/villagers.json")
+def load_mock_villagers() -> list[Villager]:
+    return cast(list[Villager], open_json_file("./data/villagers.json"))
 
 
 def load_mock_events() -> Any:
@@ -26,7 +27,7 @@ def load_mock_events() -> Any:
     return processed_events
 
 
-def fetch_villagers() -> Any:
+def fetch_villagers() -> list[Villager]:
     return load_mock_villagers()
 
 
