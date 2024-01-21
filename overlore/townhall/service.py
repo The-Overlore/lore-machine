@@ -7,11 +7,14 @@ from types import FrameType
 
 from dotenv import load_dotenv
 from websockets import WebSocketServerProtocol, serve
+from websockets.exceptions import ConnectionClosedError
 
 from overlore.graphql.constants import Subscriptions
 from overlore.graphql.event import process_event, torii_event_sub
+from overlore.llm.open_ai import OpenAIHandler
 from overlore.sqlite.events_db import EventsDatabase
-from overlore.townhall.logic import gen_townhall
+from overlore.sqlite.vector_db import VectorDatabase
+from overlore.townhall.logic import handle_townhall_request
 from overlore.utils import parse_cli_args
 
 load_dotenv()
@@ -33,8 +36,7 @@ async def service(websocket: WebSocketServerProtocol, extra_argument: dict[str, 
     async for message in websocket:
         if message is None:
             continue
-
-        response = await gen_townhall(str(message), extra_argument["mock"])
+        response = await handle_townhall_request(str(message), extra_argument["mock"])
         await websocket.send(json.dumps(response))
 
 
@@ -46,6 +48,8 @@ async def start() -> None:
         raise RuntimeError("Failure to provide WS url")
 
     events_db = EventsDatabase.instance().init()
+    VectorDatabase.instance().init()
+    OpenAIHandler.instance().init(OPENAI_API_KEY)
 
     signal.signal(signal.SIGINT, handle_sigint)
 
@@ -53,13 +57,15 @@ async def start() -> None:
     overlore_pulse = serve(bound_handler, args.address, SERVICE_WS_PORT)
 
     print(f"great job, starting this service on port {SERVICE_WS_PORT}. everything is perfect from now on.")
-    # arbitrarily choose just the first realm to sub to events on
-    process_event_bound_handler = functools.partial(process_event, extra_argument=events_db)
-    await asyncio.gather(
-        overlore_pulse,
-        torii_event_sub(TORII_WS, process_event_bound_handler, Subscriptions.COMBAT_OUTCOME_EVENT_EMITTED),
-        torii_event_sub(TORII_WS, process_event_bound_handler, Subscriptions.ORDER_ACCEPTED_EVENT_EMITTED),
-    )
+    process_event_bound_handler = functools.partial(process_event, events_db=events_db)
+    try:
+        await asyncio.gather(
+            overlore_pulse,
+            torii_event_sub(TORII_WS, process_event_bound_handler, Subscriptions.COMBAT_OUTCOME_EVENT_EMITTED),
+            torii_event_sub(TORII_WS, process_event_bound_handler, Subscriptions.ORDER_ACCEPTED_EVENT_EMITTED),
+        )
+    except ConnectionClosedError:
+        print("Connection close on Torii, need to reconnect here")
 
 
 # hardcode for now, when more mature we need some plumbing to read this off a config

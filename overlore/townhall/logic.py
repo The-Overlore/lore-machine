@@ -1,9 +1,9 @@
-from typing import Any
-
-from overlore.eternum.types import ResourceAmounts
-from overlore.llm.openAI import OpenAIHandler
-from overlore.townhall.mocks import fetch_events, fetch_users, fetch_villagers, load_mock_gpt_response
-from overlore.utils import str_to_json
+from overlore.eternum.types import ResourceAmounts, Villager
+from overlore.llm.open_ai import OpenAIHandler
+from overlore.sqlite.events_db import EventsDatabase
+from overlore.sqlite.vector_db import VectorDatabase
+from overlore.townhall.mocks import fetch_villagers, load_mock_gpt_response
+from overlore.utils import get_katana_timestamp, str_to_json
 
 # A is calculated by setting a max amount of resources, any value equal to or higher than MAX will get attributed a score of 10.
 # The linear equation is then a * MAX + 0 = 10. We can derive a easily from there
@@ -12,24 +12,43 @@ A_RESOURCES = 10 / 100
 A_DAMAGES = 10 / 1000
 
 
-async def gen_prompt(users: list[Any], events: list[Any], villagers: list[Any]) -> str:
+async def handle_townhall_request(message: str, mock: bool) -> str:
+    events_db = EventsDatabase.instance()
+    vector_db = VectorDatabase.instance()
     gpt_interface = OpenAIHandler.instance()
-    gpt_response = await gpt_interface.generate_townhall_discussion(villagers, events)
-    print(f"Generated response: {gpt_response}")
-    # Logic to generate prompt based on users, events and villagers presumably in a overlore/prompt directory
-    prompt = f"NPCs that all want to overthrow their lord: {users}"
-    return prompt
 
-
-async def gen_townhall(message: str, mock: bool) -> str:
     data = str_to_json(message)
-    if data == {}:
-        return "invalid msg"
-    users = fetch_users(data.get("user"))
-    events = fetch_events(data.get("day"))
-    villagers = fetch_villagers()
-    prompt = await load_mock_gpt_response(data.get("day")) if mock else await gen_prompt(users, events, villagers)
-    return prompt
+
+    realm_id = int(data.get("realm_id"))
+
+    villagers: list[Villager] = fetch_villagers()
+
+    # get the most relevant events for the realm
+    relevant_events = events_db.fetch_most_relevant(
+        events_db.realms.position_by_id(realm_id), await get_katana_timestamp()
+    )
+    relevant_events_ids: list[int] = [int(str(event[0])) for event in relevant_events]
+
+    # get the townhalls that the events already generated + the events_ids which haven't generated any events yet
+    (townhalls, event_ids_prev_unused) = vector_db.get_townhalls_from_events(relevant_events_ids)
+
+    events_prev_unused = [event for event in relevant_events if event[0] in event_ids_prev_unused]
+
+    generated_townhall = (
+        await load_mock_gpt_response(0)
+        if mock is True
+        else await gpt_interface.generate_townhall_discussion(realm_id, townhalls, villagers, events_prev_unused)
+    )
+
+    if mock is False:
+        # embed new discussion
+        embedding = await gpt_interface.request_embedding(generated_townhall)
+
+        # insert our new discussion and its vector in our db
+        vector_db.insert_townhall_discussion(
+            discussion=generated_townhall, realm_id=realm_id, event_ids=relevant_events_ids, embedding=embedding
+        )
+    return generated_townhall
 
 
 def get_importance_from_resources(resources: ResourceAmounts) -> float:

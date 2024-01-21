@@ -11,7 +11,7 @@ def str_to_json(message: str) -> Any:
         return json.loads(message)
     except Exception as error:
         print(f"invalid string: {error}")
-        return {}
+        raise
 
 
 def open_json_file(path: str) -> Any:
@@ -32,11 +32,11 @@ def parse_cli_args() -> Namespace:
     return parser.parse_args()
 
 
-def get_enum_name_by_value(enum: Any, val: Any) -> Any:
+def get_enum_name_by_value(enum: Any, val: Any) -> str:
     for enum_entry in enum:
         if enum_entry.value == val:
-            return enum_entry.name
-    return None  # Return None or raise an error if the value is not found
+            return str(enum_entry.name)
+    raise RuntimeError(f"No value for val {val} in enum")
 
 
 async def get_katana_timestamp() -> Any:
@@ -52,5 +52,6 @@ async def query_katana_node(data: dict[str, Any]) -> Any:
 
     # Make the POST request
     response = requests.post(url, headers=headers, data=json.dumps(data), timeout=1000)
+    # throws
     json_response = str_to_json(response.text)
     return json_response
