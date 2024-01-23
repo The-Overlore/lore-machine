@@ -10,7 +10,7 @@ from websockets import WebSocketServerProtocol, serve
 from websockets.exceptions import ConnectionClosedError
 
 from overlore.graphql.constants import Subscriptions
-from overlore.graphql.event import process_event, torii_event_sub
+from overlore.graphql.event import process_event, torii_boot_sync, torii_event_sub
 from overlore.llm.open_ai import OpenAIHandler
 from overlore.sqlite.events_db import EventsDatabase
 from overlore.sqlite.vector_db import VectorDatabase
@@ -46,23 +46,28 @@ async def start() -> None:
         OPENAI_API_KEY = "OpenAI API Key"
     if TORII_WS is None:
         raise RuntimeError("Failure to provide WS url")
-
-    events_db = EventsDatabase.instance().init()
-    VectorDatabase.instance().init()
-    OpenAIHandler.instance().init(OPENAI_API_KEY)
+    if TORII_GRAPHQL is None:
+        raise RuntimeError("Failure to provide WS url")
 
     signal.signal(signal.SIGINT, handle_sigint)
 
-    bound_handler = functools.partial(service, extra_argument={"mock": args.mock})
-    overlore_pulse = serve(bound_handler, args.address, SERVICE_WS_PORT)
+    EventsDatabase.instance().init()
+
+    # Sync events database on boot
+    await torii_boot_sync(TORII_GRAPHQL)
+
+    VectorDatabase.instance().init()
+    OpenAIHandler.instance().init(OPENAI_API_KEY)
+
+    service_bound_handler = functools.partial(service, extra_argument={"mock": args.mock})
+    overlore_pulse = serve(service_bound_handler, args.address, SERVICE_WS_PORT)
 
     print(f"great job, starting this service on port {SERVICE_WS_PORT}. everything is perfect from now on.")
-    process_event_bound_handler = functools.partial(process_event, events_db=events_db)
     try:
         await asyncio.gather(
             overlore_pulse,
-            torii_event_sub(TORII_WS, process_event_bound_handler, Subscriptions.COMBAT_OUTCOME_EVENT_EMITTED),
-            torii_event_sub(TORII_WS, process_event_bound_handler, Subscriptions.ORDER_ACCEPTED_EVENT_EMITTED),
+            torii_event_sub(TORII_WS, process_event, Subscriptions.COMBAT_OUTCOME_EVENT_EMITTED),
+            torii_event_sub(TORII_WS, process_event, Subscriptions.ORDER_ACCEPTED_EVENT_EMITTED),
         )
     except ConnectionClosedError:
         print("Connection close on Torii, need to reconnect here")

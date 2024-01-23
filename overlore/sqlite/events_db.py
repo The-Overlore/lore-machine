@@ -47,6 +47,7 @@ class EventsDatabase(Database):
         """
             CREATE TABLE IF NOT EXISTS events (
                 type INTEGER NOT NULL,
+                torii_event_id TEXT,
                 active_realm_entity_id INTEGER NOT NULL,
                 passive_realm_entity_id INTEGER NOT NULL,
                 importance FLOAT NOT NULL,
@@ -86,27 +87,37 @@ class EventsDatabase(Database):
         self.realms = Realms.instance().init()
         return self
 
-    def insert_event(self, obj: ParsedEvent) -> int:
-        event_type = obj["type"]
-        del obj["type"]
-        active_realm_entity_id = obj["active_realm_entity_id"]
-        del obj["active_realm_entity_id"]
-        passive_realm_entity_id = obj["passive_realm_entity_id"]
-        del obj["passive_realm_entity_id"]
-        active_pos = cast(RealmPosition, obj["active_pos"])
-        del obj["active_pos"]
-        passive_pos = cast(RealmPosition, obj["passive_pos"])
-        del obj["passive_pos"]
-        ts = obj["ts"]
-        del obj["ts"]
-        importance = obj["importance"]
-        del obj["importance"]
-        additional_data = json.dumps(obj)
+    def insert_event(self, event: ParsedEvent, only_if_not_present: bool) -> int:
+        torii_event_id = event["torii_event_id"]
+        del event["torii_event_id"]
+        event_type = event["type"]
+        del event["type"]
+        active_realm_entity_id = event["active_realm_entity_id"]
+        del event["active_realm_entity_id"]
+        passive_realm_entity_id = event["passive_realm_entity_id"]
+        del event["passive_realm_entity_id"]
+        active_pos = cast(RealmPosition, event["active_pos"])
+        del event["active_pos"]
+        passive_pos = cast(RealmPosition, event["passive_pos"])
+        del event["passive_pos"]
+        ts = event["ts"]
+        del event["ts"]
+        importance = event["importance"]
+        del event["importance"]
+        additional_data = json.dumps(event)
         query = (
-            "INSERT INTO events (type, active_realm_entity_id, passive_realm_entity_id, importance, ts, metadata,"
-            " active_pos, passive_pos) VALUES (?, ?, ?, ?, ?, ?, MakePoint(?,?),MakePoint(?, ?));"
+            "INSERT INTO events (torii_event_id, type, active_realm_entity_id, passive_realm_entity_id,"
+            " importance, ts,"
+            " metadata, active_pos, passive_pos) SELECT ?, ?, ?, ?, ?, ?, ?, MakePoint(?,?),MakePoint(?, ?)"
+            " WHERE NOT EXISTS (SELECT 1 FROM events WHERE torii_event_id=?);"
+            if only_if_not_present
+            else (
+                "INSERT INTO events (torii_event_id, type, active_realm_entity_id, passive_realm_entity_id, importance,"
+                " ts, metadata, active_pos, passive_pos) VALUES (?, ?, ?, ?, ?, ?, ?, MakePoint(?,?),MakePoint(?, ?));"
+            )
         )
         values: tuple[Any, ...] = (
+            torii_event_id,
             event_type,
             active_realm_entity_id,
             passive_realm_entity_id,
@@ -118,6 +129,8 @@ class EventsDatabase(Database):
             passive_pos[0],
             passive_pos[1],
         )
+        if only_if_not_present:
+            values += (torii_event_id,)
         added_id: int = self._insert(query, values)
         return added_id
 

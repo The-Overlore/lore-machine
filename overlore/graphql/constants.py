@@ -8,6 +8,22 @@ class EventType(Enum):
 
 
 class Queries(Enum):
+    EVENTS = """
+    query events {{
+        events(keys:["{event_hash}"]) {{
+            edges {{
+                node {{
+                    id
+                    keys
+                    data
+                    createdAt
+                    transactionHash
+                }}
+            }}
+        }}
+    }}
+    """
+
     PENDING_TRADES = """
     statusModels(where: {valueEQ: "0"}) {
             edges{
@@ -58,6 +74,8 @@ class Queries(Enum):
             }
         }
         """
+    ORDER_ACCEPTED_EVENT_QUERY = EVENTS.format(event_hash=EventType.ORDER_ACCEPTED_EVENT.value)
+    COMBAT_OUTCOME_EVENT_QUERY = EVENTS.format(event_hash=EventType.COMBAT_OUTCOME.value)
 
 
 class Subscriptions(Enum):
