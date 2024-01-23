@@ -6,7 +6,17 @@ from openai import OpenAI
 
 from overlore.eternum.constants import Realms, ResourceIds, Winner
 from overlore.eternum.types import ResourceAmounts, Villager
-from overlore.llm.constants import AGENT_TEMPLATE, BELLIGERENT, HAPPINESS, HUNGER, ROLE, SEX, WORLD_SYSTEM_TEMPLATE
+from overlore.llm.constants import (
+    AGENT_TEMPLATE,
+    BELLIGERENT,
+    EVENTS_EXTENSION,
+    HAPPINESS,
+    HUNGER,
+    PREVIOUS_TOWNHALL_EXTENSION,
+    ROLE,
+    SEX,
+    WORLD_SYSTEM_TEMPLATE,
+)
 from overlore.sqlite.constants import EventType
 from overlore.sqlite.types import StoredEvent
 from overlore.utils import get_enum_name_by_value, str_to_json
@@ -104,7 +114,7 @@ class OpenAIHandler:
         return "\n".join(self._npc_to_nl(npc) for npc in villagers)
 
     def _events_to_nl(self, events: list[StoredEvent]) -> str:
-        return "".join(self._event_to_nl(event) for event in events)
+        return "\n".join(self._event_to_nl(event) for event in events)
 
     def _event_to_nl(self, event: StoredEvent) -> str:
         #  event
@@ -140,12 +150,24 @@ class OpenAIHandler:
         self, realm_id: int, townhall_summaries: list[str], npc_list: list[Villager], events: list[StoredEvent]
     ) -> str:
         realms = Realms.instance()
+
         realm_name = realms.name_by_id(realm_id)
-        events_string = self._events_to_nl(events)
+
         npcs = self.npcs_to_nl(npc_list)
+
         systemPrompt = WORLD_SYSTEM_TEMPLATE.format(
-            realm_name=realm_name, events_string=events_string, npcs=npcs, previous_townhalls=townhall_summaries
+            realm_name=realm_name, npcs=npcs, previous_townhalls=townhall_summaries
         )
+
+        events_string = self._events_to_nl(events)
+        if len(events_string) != 0:
+            systemPrompt += EVENTS_EXTENSION.format(events_string=events_string)
+
+        townhalls_string = "\n".join(list(townhall_summaries))
+        if len(townhalls_string) != 0:
+            systemPrompt += PREVIOUS_TOWNHALL_EXTENSION.format(townhall_summaries=townhalls_string)
+
         userPrompt = ""
 
+        print(f"System prompt is: {systemPrompt}")
         return await self.request_prompt(systemPrompt, userPrompt)
