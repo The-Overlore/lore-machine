@@ -40,7 +40,10 @@ To enable the code coverage reports, see [here](https://fpgmaas.github.io/cookie
 
 From the root of the project, simply run `poetry run lore-machine`
 
-Add the `--mock` flag to use mock GTP responses
+Flags:
+
+- `--mock`: to use mock GTP responses.
+- `--address <address>`: address where the websocket connection will be served to (default: `locahost`).
 
 ## Releasing a new version
 
