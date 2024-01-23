@@ -19,6 +19,15 @@ from overlore.townhall.logic import handle_townhall_request
 logger = logging.getLogger("overlore")
 
 
+async def prompt_loop() -> None:
+    while True:
+        txt = input("hit enter to generate townhall with realm_id 73 or enter realm_id\n")
+        realm_id = 73 if len(txt) == 0 else int(txt)
+        msg = f'{{"realm_id": {realm_id}}}'
+        response = await handle_townhall_request(msg, False)
+        print(response)
+
+
 def handle_sigint(_signum: int, _b: FrameType | None) -> None:
     exit(0)
 
