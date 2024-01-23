@@ -44,7 +44,7 @@ AGENT_TEMPLATE = """{name}, a {sex} {role}. He/she is {happiness}, {hunger} and 
 WORLD_SYSTEM_TEMPLATE = """
 Use the greimas actantial model to put the characters in a role in a soap opera like plot.
 Only output the dialog between the characters. Format the conversation like so: <name>:<phrase>.
-You will end the conversation with: "!end of discussion!" and just after output a 2-3 sentences summary of the conversation.
+You will end the conversation with: "!end of discussion!" and just after output a summary of the conversation, be specific about what happened and don't be vagues.
 The characters will be given to you as input. You cannot create new characters on your own.
 All important decisions are taken exclusively by the Lord of the realm.
 As such although the characters can suggest future actions to be taken in an indirect manner, they cannot make the decision themselves.

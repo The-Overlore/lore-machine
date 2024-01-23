@@ -6,7 +6,7 @@ from openai import OpenAI
 
 from overlore.eternum.constants import Realms, ResourceIds, Winner
 from overlore.eternum.types import ResourceAmounts, Villager
-from overlore.llm.constants import AGENT_TEMPLATE, WORLD_SYSTEM_TEMPLATE
+from overlore.llm.constants import AGENT_TEMPLATE, BELLIGERENT, HAPPINESS, HUNGER, ROLE, SEX, WORLD_SYSTEM_TEMPLATE
 from overlore.sqlite.constants import EventType
 from overlore.sqlite.types import StoredEvent
 from overlore.utils import get_enum_name_by_value, str_to_json
@@ -42,11 +42,11 @@ class OpenAIHandler:
         belligerent = mood["belligerent"]
         return AGENT_TEMPLATE.format(
             name=npc["name"],
-            sex=sex,
-            role=role,
-            happiness=happiness,
-            hunger=hunger,
-            belligerent=belligerent,
+            sex=SEX[sex],
+            role=ROLE[role],
+            happiness=HAPPINESS[happiness],
+            hunger=HUNGER[hunger],
+            belligerent=BELLIGERENT[belligerent],
         )
 
     def _resources_to_nl(self, resources: ResourceAmounts) -> str:
@@ -80,8 +80,8 @@ class OpenAIHandler:
         #   for COMBAT_OUTCOME: {attacking_entity_ids: [id, ...], stolen_resources:  [{type: x, amount: y}, ...], winner: ATTACKER/TARGER, damage: x}
         nl = ""
         realms = Realms.instance()
-        active_realm_entity_id = cast(int, str(event[2]))
-        passive_realm_entity_id = cast(int, str(event[3]))
+        active_realm_entity_id = int(str(event[2]))
+        passive_realm_entity_id = int(str(event[3]))
         active_realm_name = realms.name_by_id(active_realm_entity_id)
         passive_realm_name = realms.name_by_id(passive_realm_entity_id)
 
@@ -101,7 +101,7 @@ class OpenAIHandler:
         return nl
 
     def npcs_to_nl(self, villagers: list[Villager]) -> str:
-        return "".join(self._npc_to_nl(npc) for npc in villagers)
+        return "\n".join(self._npc_to_nl(npc) for npc in villagers)
 
     def _events_to_nl(self, events: list[StoredEvent]) -> str:
         return "".join(self._event_to_nl(event) for event in events)
@@ -137,14 +137,14 @@ class OpenAIHandler:
         return response.data[0].embedding
 
     async def generate_townhall_discussion(
-        self, realm_id: int, townhall_discussions: list[str], npc_list: list[Villager], events: list[StoredEvent]
+        self, realm_id: int, townhall_summaries: list[str], npc_list: list[Villager], events: list[StoredEvent]
     ) -> str:
         realms = Realms.instance()
         realm_name = realms.name_by_id(realm_id)
         events_string = self._events_to_nl(events)
         npcs = self.npcs_to_nl(npc_list)
         systemPrompt = WORLD_SYSTEM_TEMPLATE.format(
-            realm_name=realm_name, events_string=events_string, npcs=npcs, previous_townhalls=townhall_discussions
+            realm_name=realm_name, events_string=events_string, npcs=npcs, previous_townhalls=townhall_summaries
         )
         userPrompt = ""
 

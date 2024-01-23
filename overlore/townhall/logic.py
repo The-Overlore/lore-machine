@@ -12,6 +12,11 @@ A_RESOURCES = 10 / 100
 A_DAMAGES = 10 / 1000
 
 
+def get_townhall_summary(townhall: str) -> tuple[str, str]:
+    res = townhall.split("!end of discussion!")
+    return (res[0], res[1])
+
+
 async def handle_townhall_request(message: str, mock: bool) -> str:
     events_db = EventsDatabase.instance()
     vector_db = VectorDatabase.instance()
@@ -23,22 +28,24 @@ async def handle_townhall_request(message: str, mock: bool) -> str:
 
     villagers: list[Villager] = fetch_villagers()
 
+    ts = 10000000 if mock else await get_katana_timestamp()
     # get the most relevant events for the realm
-    relevant_events = events_db.fetch_most_relevant(
-        events_db.realms.position_by_id(realm_id), await get_katana_timestamp()
-    )
+    relevant_events = events_db.fetch_most_relevant(events_db.realms.position_by_id(realm_id), ts)
+
     relevant_events_ids: list[int] = [int(str(event[0])) for event in relevant_events]
 
-    # get the townhalls that the events already generated + the events_ids which haven't generated any events yet
-    (townhalls, event_ids_prev_unused) = vector_db.get_townhalls_from_events(relevant_events_ids)
+    # get the townhalls summaries that the events already generated + the events_ids which haven't generated any events yet
+    (summaries, event_ids_prev_unused) = vector_db.get_townhalls_from_events(relevant_events_ids)
 
     events_prev_unused = [event for event in relevant_events if event[0] in event_ids_prev_unused]
 
     generated_townhall = (
         await load_mock_gpt_response(0)
         if mock is True
-        else await gpt_interface.generate_townhall_discussion(realm_id, townhalls, villagers, events_prev_unused)
+        else await gpt_interface.generate_townhall_discussion(realm_id, summaries, villagers, events_prev_unused)
     )
+
+    (townhall, summary) = get_townhall_summary(generated_townhall)
 
     if mock is False:
         # embed new discussion
@@ -46,9 +53,9 @@ async def handle_townhall_request(message: str, mock: bool) -> str:
 
         # insert our new discussion and its vector in our db
         vector_db.insert_townhall_discussion(
-            discussion=generated_townhall, realm_id=realm_id, event_ids=relevant_events_ids, embedding=embedding
+            discussion=townhall, summary=summary, realm_id=realm_id, event_ids=relevant_events_ids, embedding=embedding
         )
-    return generated_townhall
+    return townhall
 
 
 def get_importance_from_resources(resources: ResourceAmounts) -> float:

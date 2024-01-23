@@ -20,7 +20,7 @@ async def test_insert():
 
     for row in mock_data:
         db.insert_townhall_discussion(
-            row["discussion"], row["realmID"], json.dumps(row["events_ids"]), row["embedding"]
+            row["discussion"], row["summary"], row["realmID"], json.dumps(row["events_ids"]), row["embedding"]
         )
 
     rows, vss_rows = db.get_entries_count()
@@ -37,7 +37,7 @@ async def test_query_nearest_neighbour():
 
     for row in mock_data:
         db.insert_townhall_discussion(
-            row["discussion"], row["realmID"], json.dumps(row["events_ids"]), row["embedding"]
+            row["discussion"], row["summary"], row["realmID"], json.dumps(row["events_ids"]), row["embedding"]
         )
 
     rows, vss_rows = db.get_entries_count()
@@ -60,7 +60,7 @@ async def test_query_cosine_similarity():
 
     for row in mock_data:
         db.insert_townhall_discussion(
-            row["discussion"], row["realmID"], json.dumps(row["events_ids"]), row["embedding"]
+            row["discussion"], row["summary"], row["realmID"], json.dumps(row["events_ids"]), row["embedding"]
         )
 
     with open("tests/data/embeddings.json") as file:
@@ -78,28 +78,14 @@ async def test_get_townhalls_from_events():
         mock_data = (json.load(file))[2]
 
     for row in mock_data:
-        db.insert_townhall_discussion(row["discussion"], row["realmID"], row["events_ids"], row["embedding"])
+        db.insert_townhall_discussion(
+            row["discussion"], row["summary"], row["realmID"], row["events_ids"], row["embedding"]
+        )
 
     event_ids = [5, 3, 2, 1, 8]
     res = db.get_townhalls_from_events(event_ids)
     expected = (
-        [
-            "Nancy: The fields whisper tales of our victory, but what worth is gold if our stomachs echo with"
-            " emptiness?\n    James: That's just it, isn't it? We've struck the earth till our hands bled, only to"
-            " trade our fish for a pitiful sum of gold. Fools' math!\n    Lisa: Let peace fill your hearts, friends. We"
-            " grieve for the fallen, yet our defenses still stand. There is hope in our unity.\n    Daniel: Hope? Speak"
-            " not to me of hope when swords clash outside our doors. We must fortify, prepare! Besides, the mines won't"
-            " shield us nor fill our plates.\n    Paul: Our plows lay idle and our nets gather dust. What good is coin"
-            " when the wheat does not sway and the fish leap away from our grasp?\n    James: Rage swells within! What"
-            " good is a war won when our own people lie dead? Tell me that, friends! Tell me!\n    Nancy: Listen to the"
-            " wind, for it carries both the songs of triumph and the cries of the hungry. Victory is a fickle"
-            " mistress.\n    Lisa: Peace, James. Let not anger cloud our judgment. The earth has riches yet to yield,"
-            " and the seas will provide. We must toil together.\n    Daniel: Toil, you say! It's time to wield the"
-            " pickaxe as a spear if need be. Our brethren were not lost to toil, but to bloodshed.\n    Paul: Aye, it's"
-            " the toil that's forgotten once the blood dries. Perhaps the lesson here lies not in the clashing of"
-            " swords but in the joining of hands.\n    Nancy: With a bounty of gold and an ache in our bellies, we"
-            " stand at a crossroads. Shall we eat or shall we arm? That is the question, and the crops won't wait."
-        ],
+        ["the villagers are mad and grumpy"],
         [],
     )
     assert res == expected
