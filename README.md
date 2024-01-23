@@ -42,6 +42,12 @@ From the root of the project, simply run `poetry run lore-machine`
 
 Add the `--mock` flag to use mock GTP responses
 
+## Running The Overlore System
+
+The Overlore System runs as a plugin to Eternums. The current source of truth of our system design can be found in the [docker compose file](https://github.com/The-Overlore/eternum/blob/main/docker-compose.yml#L3) in our Eternums fork.
+
+We are currently exploring possibly using `litefs` to sync the worlddb maintained by the torii process to our lore machine process. In practice, it means that a `world_db` param can be passed on startup in the loremachine that will be synced from torii, the responsibiliy of which is owned by `litefs.`
+
 ## Releasing a new version
 
 ---

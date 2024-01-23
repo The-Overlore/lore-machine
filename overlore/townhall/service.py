@@ -46,14 +46,12 @@ async def start() -> None:
         raise RuntimeError("Failure to provide WS url")
 
     events_db = EventsDatabase.instance().init()
-
     signal.signal(signal.SIGINT, handle_sigint)
 
     bound_handler = functools.partial(service, extra_argument={"mock": args.mock})
     overlore_pulse = serve(bound_handler, args.address, SERVICE_WS_PORT)
 
     print(f"great job, starting this service on port {SERVICE_WS_PORT}. everything is perfect from now on.")
-    # arbitrarily choose just the first realm to sub to events on
     process_event_bound_handler = functools.partial(process_event, extra_argument=events_db)
     await asyncio.gather(
         overlore_pulse,
