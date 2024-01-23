@@ -34,8 +34,7 @@ def run_server():
                 "data": ["0x6", "0x5", "0x1", "0xfd", "0xc350", "0x1", "0x3", "0xc350", "0x659daba0"],
                 "createdAt": "2024-01-08 16:38:25",
             }
-        },
-        _events_db,
+        }
     )
 
     bound_handler = functools.partial(service, extra_argument={"mock": True})
