@@ -169,5 +169,4 @@ class OpenAIHandler:
 
         userPrompt = ""
 
-        print(f"System prompt is: {systemPrompt}")
         return await self.request_prompt(systemPrompt, userPrompt)

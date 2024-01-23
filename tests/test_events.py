@@ -258,7 +258,6 @@ async def test_get_all():
         },
         db,
     )
-    print(db.get_all())
     assert db.get_all() == [
         [
             1,
@@ -472,7 +471,6 @@ async def test_fetch_relevant_events_decay_distance():
         },
         db,
     )
-    print(db.fetch_most_relevant(realm_position=db.realms.position_by_id(1), current_time=0x659DABA0))
     assert db.fetch_most_relevant(realm_position=db.realms.position_by_id(1), current_time=0x659DABA0) == [
         [
             1,
