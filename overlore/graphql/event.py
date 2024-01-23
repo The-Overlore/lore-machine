@@ -27,9 +27,13 @@ def store_synced_events(events: list[SyncEvents]) -> None:
 
 
 def get_synced_events(torii_service_endpoint: str, query: str) -> list[SyncEvents]:
-    response = requests.post(torii_service_endpoint, json={"query": query}, timeout=5)
-    json_response = response.json()
-    data = json_response["data"]
+    data = None
+    try:
+        response = requests.post(torii_service_endpoint, json={"query": query}, timeout=5)
+        json_response = response.json()
+        data = json_response["data"]
+    except KeyError as e:
+        print(e)
     if data is None:
         raise RuntimeError(f"Couldn't sync with Torii at boot {json_response['errors']}")
     edges = data["events"]["edges"]
