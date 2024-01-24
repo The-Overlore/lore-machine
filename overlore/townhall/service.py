@@ -19,12 +19,12 @@ from overlore.townhall.logic import handle_townhall_request
 logger = logging.getLogger("overlore")
 
 
-async def prompt_loop() -> None:
+async def prompt_loop(config: Config) -> None:
     while True:
         txt = input("hit enter to generate townhall with realm_id 73 or enter realm_id\n")
         realm_id = 73 if len(txt) == 0 else int(txt)
         msg = f'{{"realm_id": {realm_id}}}'
-        response = await handle_townhall_request(msg, False)
+        response = await handle_townhall_request(msg, config)
         print(response)
 
 
@@ -53,6 +53,9 @@ async def start() -> None:
 
     VectorDatabase.instance().init()
     OpenAIHandler.instance().init(config.OPENAI_API_KEY)
+
+    if config.prompt_loop:
+        await prompt_loop(config)
 
     service_bound_handler = functools.partial(service, config=config)
     overlore_pulse = serve(service_bound_handler, config.address, config.port)

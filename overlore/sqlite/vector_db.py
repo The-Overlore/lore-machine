@@ -62,7 +62,7 @@ class VectorDatabase(Database):
 
     def insert_townhall_discussion(
         self, discussion: str, summary: str, realm_id: int, event_ids: list[int], embedding: list[float]
-    ) -> None:
+    ) -> int:
         discussion = discussion.strip()
         ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         rowid = self._insert(
@@ -70,6 +70,7 @@ class VectorDatabase(Database):
             (discussion, summary, realm_id, json.dumps(event_ids), ts),
         )
         self._insert("INSERT INTO vss_townhall(rowid, embedding) VALUES (?, ?)", (rowid, json.dumps(embedding)))
+        return rowid
 
     def query_nearest_neighbour(self, query_embedding: str, realm_id: int, limit: int = 1) -> list[StoredVector]:
         # Use vss_search for SQLite version < 3.41 else vss_search_params db function

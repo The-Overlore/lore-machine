@@ -19,7 +19,7 @@ def get_townhall_summary(townhall: str) -> tuple[str, str]:
     return (res[0], res[1])
 
 
-async def handle_townhall_request(message: str, config: Config) -> str:
+async def handle_townhall_request(message: str, config: Config) -> tuple[int, str]:
     events_db = EventsDatabase.instance()
     vector_db = VectorDatabase.instance()
     gpt_interface = OpenAIHandler.instance()
@@ -51,15 +51,17 @@ async def handle_townhall_request(message: str, config: Config) -> str:
 
     (townhall, summary) = get_townhall_summary(generated_townhall)
 
+    row_id = 0
+
     if config.mock is False:
         # embed new discussion
         embedding = await gpt_interface.request_embedding(generated_townhall)
 
         # insert our new discussion and its vector in our db
-        vector_db.insert_townhall_discussion(
+        row_id = vector_db.insert_townhall_discussion(
             discussion=townhall, summary=summary, realm_id=realm_id, event_ids=relevant_events_ids, embedding=embedding
         )
-    return townhall
+    return (row_id, townhall)
 
 
 def get_importance_from_resources(resources: ResourceAmounts) -> float:
