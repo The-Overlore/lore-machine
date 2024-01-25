@@ -1,3 +1,4 @@
+from overlore.eternum.constants import Realms
 from overlore.eternum.types import ResourceAmounts, Villager
 from overlore.llm.open_ai import OpenAIHandler
 from overlore.sqlite.events_db import EventsDatabase
@@ -42,7 +43,9 @@ async def handle_townhall_request(message: str, mock: bool) -> str:
     generated_townhall = (
         await load_mock_gpt_response(0)
         if mock is True
-        else await gpt_interface.generate_townhall_discussion(realm_id, summaries, villagers, events_prev_unused)
+        else await gpt_interface.generate_townhall_discussion(
+            Realms.instance(), realm_id, summaries, villagers, events_prev_unused
+        )
     )
 
     (townhall, summary) = get_townhall_summary(generated_townhall)

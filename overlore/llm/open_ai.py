@@ -147,7 +147,12 @@ class OpenAIHandler:
         return response.data[0].embedding
 
     async def generate_townhall_discussion(
-        self, realm_id: int, townhall_summaries: list[str], npc_list: list[Villager], events: list[StoredEvent]
+        self,
+        realms: Realms,
+        realm_id: int,
+        townhall_summaries: list[str],
+        npc_list: list[Villager],
+        events: list[StoredEvent],
     ) -> str:
         realms = Realms.instance()
 
