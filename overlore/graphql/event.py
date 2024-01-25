@@ -176,6 +176,7 @@ def process_event(
         raise RuntimeError("eventEmitted no present in event")
 
     parsed_event = parse_event(event=event_emitted)
+    parsed_event_copy = parsed_event
     added_id: int = events_db.insert_event(event=parsed_event, only_if_not_present=False)
     logger.info(f"Stored event received at rowid {added_id}: {parsed_event}")
     return added_id
