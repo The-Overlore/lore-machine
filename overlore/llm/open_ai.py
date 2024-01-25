@@ -160,9 +160,7 @@ class OpenAIHandler:
 
         npcs = self.npcs_to_nl(npc_list)
 
-        systemPrompt = WORLD_SYSTEM_TEMPLATE.format(
-            realm_name=realm_name, npcs=npcs, previous_townhalls=townhall_summaries
-        )
+        systemPrompt = WORLD_SYSTEM_TEMPLATE.format(realm_name=realm_name, npcs=npcs)
 
         events_string = self._events_to_nl(events)
         if len(events_string) != 0:
@@ -170,7 +168,7 @@ class OpenAIHandler:
 
         townhalls_string = "\n".join(list(townhall_summaries))
         if len(townhalls_string) != 0:
-            systemPrompt += PREVIOUS_TOWNHALL_EXTENSION.format(townhall_summaries=townhalls_string)
+            systemPrompt += PREVIOUS_TOWNHALL_EXTENSION.format(previous_townhalls=townhalls_string)
 
         userPrompt = ""
 
