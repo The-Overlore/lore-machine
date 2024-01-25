@@ -23,15 +23,18 @@ async def test_trade_event():
         },
         db,
     )
-
-    assert db.get_by_id(db_id) == [
-        db_id,
-        0,
-        1.0,
-        1705106173,
-        '{"resources_maker": [{"type": 8, "amount": 5}], "resources_taker": [{"type": 1, "amount": 5}]}',
-        (-53.6529, 47.48),
-        (114.8471, 43.38),
+    assert db.get_by_ids([db_id,]) == [
+        [
+            db_id,
+            0,
+            73,
+            75,
+            1.0,
+            1705106173,
+            '{"resources_maker": [{"type": 8, "amount": 5}], "resources_taker": [{"type": 1, "amount": 5}]}',
+            (-53.6529, 47.48),
+            (114.8471, 43.38),
+        ]
     ]
 
 
@@ -54,14 +57,18 @@ async def test_combat_damage():
         },
         db,
     )
-    assert db.get_by_id(db_id) == [
-        db_id,
-        1,
-        1.0,
-        1705098944,
-        '{"attacking_entity_ids": [], "stolen_resources": [], "winner": 0, "damage": 100}',
-        (-53.6529, 47.48),
-        (114.8471, 43.38),
+    assert db.get_by_ids([db_id,]) == [
+        [
+            db_id,
+            1,
+            75,
+            73,
+            1.0,
+            1705098944,
+            '{"attacking_entity_ids": [], "stolen_resources": [], "winner": 0, "damage": 100}',
+            (-53.6529, 47.48),
+            (114.8471, 43.38),
+        ]
     ]
     db_id = process_event(
         {
@@ -79,14 +86,18 @@ async def test_combat_damage():
         },
         db,
     )
-    assert db.get_by_id(db_id) == [
-        db_id,
-        1,
-        10.0,
-        1705098944,
-        '{"attacking_entity_ids": [], "stolen_resources": [], "winner": 0, "damage": 1000}',
-        (-53.6529, 47.48),
-        (114.8471, 43.38),
+    assert db.get_by_ids([db_id,]) == [
+        [
+            db_id,
+            1,
+            75,
+            73,
+            10.0,
+            1705098944,
+            '{"attacking_entity_ids": [], "stolen_resources": [], "winner": 0, "damage": 1000}',
+            (-53.6529, 47.48),
+            (114.8471, 43.38),
+        ]
     ]
 
 
@@ -110,14 +121,18 @@ async def test_combat_steal():
         },
         db,
     )
-    assert db.get_by_id(db_id) == [
-        db_id,
-        1,
-        1.0,
-        1705098944,
-        '{"attacking_entity_ids": [], "stolen_resources": [{"type": 8, "amount": 10}], "winner": 0, "damage": 0}',
-        (-53.6529, 47.48),
-        (114.8471, 43.38),
+    assert db.get_by_ids([db_id,]) == [
+        [
+            db_id,
+            1,
+            75,
+            73,
+            1.0,
+            1705098944,
+            '{"attacking_entity_ids": [], "stolen_resources": [{"type": 8, "amount": 10}], "winner": 0, "damage": 0}',
+            (-53.6529, 47.48),
+            (114.8471, 43.38),
+        ]
     ]
 
     db_id = process_event(
@@ -136,14 +151,18 @@ async def test_combat_steal():
         },
         db,
     )
-    assert db.get_by_id(db_id) == [
-        db_id,
-        1,
-        5.0,
-        1705098944,
-        '{"attacking_entity_ids": [], "stolen_resources": [{"type": 8, "amount": 50}], "winner": 0, "damage": 0}',
-        (-53.6529, 47.48),
-        (114.8471, 43.38),
+    assert db.get_by_ids([db_id,]) == [
+        [
+            db_id,
+            1,
+            75,
+            73,
+            5.0,
+            1705098944,
+            '{"attacking_entity_ids": [], "stolen_resources": [{"type": 8, "amount": 50}], "winner": 0, "damage": 0}',
+            (-53.6529, 47.48),
+            (114.8471, 43.38),
+        ]
     ]
 
 
@@ -239,11 +258,12 @@ async def test_get_all():
         },
         db,
     )
-
     assert db.get_all() == [
         [
             1,
             1,
+            75,
+            73,
             1.0,
             1705098944,
             '{"attacking_entity_ids": [], "stolen_resources": [{"type": 8, "amount": 10}], "winner": 0, "damage": 0}',
@@ -253,6 +273,8 @@ async def test_get_all():
         [
             2,
             1,
+            75,
+            73,
             5.0,
             1705098944,
             '{"attacking_entity_ids": [], "stolen_resources": [{"type": 8, "amount": 50}], "winner": 0, "damage": 0}',
@@ -262,6 +284,8 @@ async def test_get_all():
         [
             3,
             1,
+            75,
+            73,
             1.0,
             1705098944,
             '{"attacking_entity_ids": [], "stolen_resources": [], "winner": 0, "damage": 100}',
@@ -271,6 +295,8 @@ async def test_get_all():
         [
             4,
             1,
+            75,
+            73,
             10.0,
             1705098944,
             '{"attacking_entity_ids": [], "stolen_resources": [], "winner": 0, "damage": 1000}',
@@ -304,26 +330,61 @@ async def test_fetch_relevant_events_decay_time():
         test_message["eventEmitted"]["data"][8] = hex(ts)
 
     assert db.fetch_most_relevant(realm_position=db.realms.position_by_id(75), current_time=1704831904) == [
-        (
+        [
             1,
+            0,
+            73,
+            75,
             10.0,
-        ),
-        (
+            1704831904,
+            '{"resources_maker": [{"type": 253, "amount": 50}], "resources_taker": [{"type": 3, "amount": 50}]}',
+            (-53.6529, 47.48),
+            (114.8471, 43.38),
+        ],
+        [
             2,
-            9.523809523809524,
-        ),
-        (
+            0,
+            73,
+            75,
+            10.0,
+            1704745504,
+            '{"resources_maker": [{"type": 253, "amount": 50}], "resources_taker": [{"type": 3, "amount": 50}]}',
+            (-53.6529, 47.48),
+            (114.8471, 43.38),
+        ],
+        [
             3,
-            9.047619047619047,
-        ),
-        (
+            0,
+            73,
+            75,
+            10.0,
+            1704659104,
+            '{"resources_maker": [{"type": 253, "amount": 50}], "resources_taker": [{"type": 3, "amount": 50}]}',
+            (-53.6529, 47.48),
+            (114.8471, 43.38),
+        ],
+        [
             4,
-            8.571428571428571,
-        ),
-        (
+            0,
+            73,
+            75,
+            10.0,
+            1704572704,
+            '{"resources_maker": [{"type": 253, "amount": 50}], "resources_taker": [{"type": 3, "amount": 50}]}',
+            (-53.6529, 47.48),
+            (114.8471, 43.38),
+        ],
+        [
             5,
-            8.095238095238095,
-        ),
+            0,
+            73,
+            75,
+            10.0,
+            1704486304,
+            '{"resources_maker": [{"type": 253, "amount": 50}], "resources_taker": [{"type": 3, "amount": 50}]}',
+            (-53.6529, 47.48),
+            (114.8471, 43.38),
+        ],
     ]
 
 
@@ -411,9 +472,59 @@ async def test_fetch_relevant_events_decay_distance():
         db,
     )
     assert db.fetch_most_relevant(realm_position=db.realms.position_by_id(1), current_time=0x659DABA0) == [
-        (1, 10.0),
-        (2, 9.333333333333334),
-        (3, 8.666666666666666),
-        (4, 8.0),
-        (5, 7.333333333333333),
+        [
+            1,
+            0,
+            1,
+            6,
+            10.0,
+            1704831904,
+            '{"resources_maker": [{"type": 253, "amount": 50}], "resources_taker": [{"type": 3, "amount": 50}]}',
+            (9999.0, 9999.0),
+            (0.0, 0.0),
+        ],
+        [
+            2,
+            0,
+            2,
+            6,
+            10.0,
+            1704831904,
+            '{"resources_maker": [{"type": 253, "amount": 50}], "resources_taker": [{"type": 3, "amount": 50}]}',
+            (9999.0, 9999.0),
+            (0.0, 2000.0),
+        ],
+        [
+            3,
+            0,
+            3,
+            6,
+            10.0,
+            1704831904,
+            '{"resources_maker": [{"type": 253, "amount": 50}], "resources_taker": [{"type": 3, "amount": 50}]}',
+            (9999.0, 9999.0),
+            (0.0, 4000.0),
+        ],
+        [
+            4,
+            0,
+            4,
+            6,
+            10.0,
+            1704831904,
+            '{"resources_maker": [{"type": 253, "amount": 50}], "resources_taker": [{"type": 3, "amount": 50}]}',
+            (9999.0, 9999.0),
+            (0.0, 6000.0),
+        ],
+        [
+            5,
+            0,
+            5,
+            6,
+            10.0,
+            1704831904,
+            '{"resources_maker": [{"type": 253, "amount": 50}], "resources_taker": [{"type": 3, "amount": 50}]}',
+            (9999.0, 9999.0),
+            (0.0, 8000.0),
+        ],
     ]

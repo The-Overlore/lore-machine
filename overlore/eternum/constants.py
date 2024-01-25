@@ -65,6 +65,11 @@ class Realms:
         self.geodata = self.load_geodata(path)
         return self
 
+    def name_by_id(self, i: int) -> str:
+        if i <= 0 or i > 8000 or self.geodata[i - 1].get("xy") is None:
+            raise RuntimeError("Error with input or geodata")
+        return str(self.geodata[i - 1]["name"])
+
     def position_by_id(self, i: int) -> RealmPosition:
         if i <= 0 or i > 8000 or self.geodata[i - 1].get("xy") is None:
             raise RuntimeError("Error with input or geodata")

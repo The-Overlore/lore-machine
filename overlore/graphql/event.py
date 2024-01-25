@@ -52,7 +52,7 @@ def parse_attacking_entity_ids(data: list[str]) -> tuple[list[str], AttackingEnt
 
 
 def parse_combat_outcome_event(realms: Realms, keys: EventKeys, data: EventData) -> ParsedEvent:
-    attacker_realm_id = int(keys[1], base=16)
+    attacker_realm_entity_id = int(keys[1], base=16)
     target_realm_entity_id = int(keys[2], base=16)
 
     (data, attacking_entity_ids) = parse_attacking_entity_ids(data)
@@ -65,7 +65,9 @@ def parse_combat_outcome_event(realms: Realms, keys: EventKeys, data: EventData)
     importance = get_combat_outcome_importance(stolen_resources=stolen_resources, damage=damage)
     parsed_event: ParsedEvent = {
         "type": SqLiteEventType.COMBAT_OUTCOME.value,
-        "active_pos": realms.position_by_id(attacker_realm_id),
+        "active_realm_entity_id": attacker_realm_entity_id,
+        "passive_realm_entity_id": target_realm_entity_id,
+        "active_pos": realms.position_by_id(attacker_realm_entity_id),
         "passive_pos": realms.position_by_id(target_realm_entity_id),
         "attacking_entity_ids": attacking_entity_ids,
         "stolen_resources": stolen_resources,
@@ -79,8 +81,8 @@ def parse_combat_outcome_event(realms: Realms, keys: EventKeys, data: EventData)
 
 def parse_trade_event(realms: Realms, keys: EventKeys, data: EventData) -> ParsedEvent:
     _trade_id = int(keys[1], base=16)
-    maker_id = int(data[0], base=16)
-    taker_id = int(data[1], base=16)
+    maker_realm_entity_id = int(data[0], base=16)
+    taker_realm_entity_id = int(data[1], base=16)
 
     data = data[2:]
 
@@ -92,8 +94,10 @@ def parse_trade_event(realms: Realms, keys: EventKeys, data: EventData) -> Parse
 
     parsed_event: ParsedEvent = {
         "type": SqLiteEventType.ORDER_ACCEPTED.value,
-        "active_pos": realms.position_by_id(maker_id),
-        "passive_pos": realms.position_by_id(taker_id),
+        "active_realm_entity_id": taker_realm_entity_id,
+        "passive_realm_entity_id": maker_realm_entity_id,
+        "active_pos": realms.position_by_id(maker_realm_entity_id),
+        "passive_pos": realms.position_by_id(taker_realm_entity_id),
         "resources_maker": resources_maker,
         "resources_taker": resources_taker,
         "importance": importance,

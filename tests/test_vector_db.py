@@ -19,8 +19,8 @@ async def test_insert():
         mock_data = (json.load(file))[2]
 
     for row in mock_data:
-        await db.insert_townhall_discussion(
-            row["discussion"], row["realmID"], json.dumps(row["events_ids"]), row["embedding"]
+        db.insert_townhall_discussion(
+            row["discussion"], row["summary"], row["realmID"], json.dumps(row["events_ids"]), row["embedding"]
         )
 
     rows, vss_rows = db.get_entries_count()
@@ -36,8 +36,8 @@ async def test_query_nearest_neighbour():
         mock_data = (json.load(file))[2]
 
     for row in mock_data:
-        await db.insert_townhall_discussion(
-            row["discussion"], row["realmID"], json.dumps(row["events_ids"]), row["embedding"]
+        db.insert_townhall_discussion(
+            row["discussion"], row["summary"], row["realmID"], json.dumps(row["events_ids"]), row["embedding"]
         )
 
     rows, vss_rows = db.get_entries_count()
@@ -59,8 +59,8 @@ async def test_query_cosine_similarity():
         mock_data = (json.load(file))[2]
 
     for row in mock_data:
-        await db.insert_townhall_discussion(
-            row["discussion"], row["realmID"], json.dumps(row["events_ids"]), row["embedding"]
+        db.insert_townhall_discussion(
+            row["discussion"], row["summary"], row["realmID"], json.dumps(row["events_ids"]), row["embedding"]
         )
 
     with open("tests/data/embeddings.json") as file:
@@ -78,11 +78,14 @@ async def test_get_townhalls_from_events():
         mock_data = (json.load(file))[2]
 
     for row in mock_data:
-        await db.insert_townhall_discussion(
-            row["discussion"], row["realmID"], json.dumps(row["events_ids"]), row["embedding"]
+        db.insert_townhall_discussion(
+            row["discussion"], row["summary"], row["realmID"], row["events_ids"], row["embedding"]
         )
 
-    event_ids = [1, 2, 8, 14, 15]
+    event_ids = [5, 3, 2, 1, 8]
     res = db.get_townhalls_from_events(event_ids)
-
-    assert res[0][0] == 1
+    expected = (
+        ["the villagers are mad and grumpy"],
+        [],
+    )
+    assert res == expected
