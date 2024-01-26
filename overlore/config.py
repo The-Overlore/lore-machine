@@ -60,4 +60,4 @@ class Config:
         if self.TORII_WS is None:
             raise RuntimeError("Failure to provide WS url")
         if self.TORII_GRAPHQL is None:
-            raise RuntimeError("Failure to provide WS url")
+            raise RuntimeError("Failure to provide graphql url")
