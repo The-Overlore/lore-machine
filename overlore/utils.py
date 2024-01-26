@@ -1,9 +1,19 @@
 import argparse
 import json
+import os
 from argparse import Namespace
 from typing import Any
 
 import requests
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# TODO: have a way to differentiate dev/prod config
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+TORII_WS = os.environ.get("DEV_TORII_WS")
+TORII_GRAPHQL = os.environ.get("DEV_TORII_GRAPHQL")
+KATANA_URL = os.environ.get("KATANA_URL")
 
 
 def str_to_json(message: str) -> Any:
@@ -48,11 +58,10 @@ async def get_katana_timestamp() -> Any:
 
 async def query_katana_node(data: dict[str, Any]) -> Any:
     # Define the URL and the header
-    url = "http://localhost:5050"
     headers = {"Content-Type": "application/json"}
 
     # Make the POST request
-    response = requests.post(url, headers=headers, data=json.dumps(data), timeout=1000)
+    response = requests.post(str(KATANA_URL), headers=headers, data=json.dumps(data), timeout=1000)
     # throws
     json_response = str_to_json(response.text)
     return json_response

@@ -1,11 +1,9 @@
 import asyncio
 import functools
 import json
-import os
 import signal
 from types import FrameType
 
-from dotenv import load_dotenv
 from websockets import WebSocketServerProtocol, serve
 from websockets.exceptions import ConnectionClosedError
 
@@ -15,16 +13,9 @@ from overlore.llm.open_ai import OpenAIHandler
 from overlore.sqlite.events_db import EventsDatabase
 from overlore.sqlite.vector_db import VectorDatabase
 from overlore.townhall.logic import handle_townhall_request
-from overlore.utils import parse_cli_args
-
-load_dotenv()
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+from overlore.utils import OPENAI_API_KEY, TORII_GRAPHQL, TORII_WS, parse_cli_args
 
 SERVICE_WS_PORT = 8766
-# TODO: have a way to differentiate dev/prod config
-TORII_WS = os.environ.get("DEV_TORII_WS")
-TORII_GRAPHQL = os.environ.get("DEV_TORII_GRAPHQL")
-
 args = parse_cli_args()
 
 
@@ -36,14 +27,14 @@ async def service(websocket: WebSocketServerProtocol, extra_argument: dict[str, 
     async for message in websocket:
         if message is None:
             continue
+        print("generating townhall")
         response = await handle_townhall_request(str(message), extra_argument["mock"])
         await websocket.send(json.dumps(response))
 
 
 async def start() -> None:
-    global OPENAI_API_KEY
-    if OPENAI_API_KEY is None:
-        OPENAI_API_KEY = "OpenAI API Key"
+    open_ai_api_key = ""
+    open_ai_api_key = "OpenAI API Key" if OPENAI_API_KEY is None else OPENAI_API_KEY
     if TORII_WS is None:
         raise RuntimeError("Failure to provide WS url")
     if TORII_GRAPHQL is None:
@@ -57,7 +48,7 @@ async def start() -> None:
     await torii_boot_sync(TORII_GRAPHQL)
 
     VectorDatabase.instance().init()
-    OpenAIHandler.instance().init(OPENAI_API_KEY)
+    OpenAIHandler.instance().init(open_ai_api_key)
 
     service_bound_handler = functools.partial(service, extra_argument={"mock": args.mock})
     overlore_pulse = serve(service_bound_handler, args.address, SERVICE_WS_PORT)
