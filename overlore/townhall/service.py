@@ -48,14 +48,14 @@ async def start() -> None:
 
     EventsDatabase.instance().init()
 
-    # Sync events database on boot
-    await torii_boot_sync(config.TORII_GRAPHQL)
-
     VectorDatabase.instance().init()
     OpenAIHandler.instance().init(config.OPENAI_API_KEY)
 
     if config.prompt_loop:
         await prompt_loop(config)
+
+    # Sync events database on boot
+    await torii_boot_sync(config.TORII_GRAPHQL)
 
     service_bound_handler = functools.partial(service, config=config)
     overlore_pulse = serve(service_bound_handler, config.address, config.port)
