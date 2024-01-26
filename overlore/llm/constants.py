@@ -62,7 +62,7 @@ For each event, look at the following criterias and make these events more or le
    - Trade happened: how much of ressource was given compared to what was received.
    - Pillage: how many resources were stolen (> 100 is very important).
    - War waged: check if your Realm lost or won and how many damages were dealt. Translate the damages into realm life wounds if the damages are significant. (> 100 damages)
-The events are the following: {events_string}. (if there's nothing after the colon, ignore the previous sentence.)
+The events are the following: {events_string}.
 """
 
 AGENT_CREATION_TEMPLATE = """

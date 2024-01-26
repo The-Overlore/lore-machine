@@ -1,18 +1,52 @@
 from typing import Callable, cast
 
+import requests
 from gql import Client, gql  # pip install --pre gql[websockets]
 from gql.transport.websockets import WebsocketsTransport
 
 from overlore.eternum.constants import Realms
 from overlore.eternum.types import AttackingEntityIds, ResourceAmounts
 from overlore.graphql.constants import EventType as EventKeyHash
-from overlore.graphql.constants import Subscriptions
+from overlore.graphql.constants import Queries, Subscriptions
 from overlore.sqlite.constants import EventType as SqLiteEventType
 from overlore.sqlite.events_db import EventsDatabase
 from overlore.townhall.logic import get_combat_outcome_importance, get_trade_importance
-from overlore.types import EventData, EventKeys, ParsedEvent, ToriiEvent
+from overlore.types import EventData, EventKeys, ParsedEvent, RawToriiEvent, SubEvents, SyncEvents
 
 OnEventCallbackType = Callable[[dict], int]
+
+
+def store_synced_events(events: list[SyncEvents]) -> None:
+    events_db = EventsDatabase.instance()
+    for event in events:
+        event_emitted = event.get("node")
+        if not event_emitted:
+            raise RuntimeError("node no present in event")
+        parsed_event = parse_event(event=event_emitted)
+        events_db.insert_event(event=parsed_event, only_if_not_present=True)
+
+
+def get_synced_events(torii_service_endpoint: str, query: str) -> list[SyncEvents]:
+    data = None
+    try:
+        response = requests.post(torii_service_endpoint, json={"query": query}, timeout=5)
+        json_response = response.json()
+        data = json_response["data"]
+    except KeyError as e:
+        print(e)
+    if data is None:
+        raise RuntimeError(f"Couldn't sync with Torii at boot {json_response['errors']}")
+    edges = data["events"]["edges"]
+    return cast(list[SyncEvents], edges)
+
+
+async def torii_boot_sync(torii_service_endpoint: str) -> None:
+    store_synced_events(
+        get_synced_events(torii_service_endpoint=torii_service_endpoint, query=Queries.ORDER_ACCEPTED_EVENT_QUERY.value)
+    )
+    store_synced_events(
+        get_synced_events(torii_service_endpoint=torii_service_endpoint, query=Queries.COMBAT_OUTCOME_EVENT_QUERY.value)
+    )
 
 
 async def torii_event_sub(
@@ -51,7 +85,9 @@ def parse_attacking_entity_ids(data: list[str]) -> tuple[list[str], AttackingEnt
     return (data[1 + length :], attacking_entity_ids)
 
 
-def parse_combat_outcome_event(realms: Realms, keys: EventKeys, data: EventData) -> ParsedEvent:
+def parse_combat_outcome_event(torii_event_id: str, keys: EventKeys, data: EventData) -> ParsedEvent:
+    realms = Realms.instance()
+
     attacker_realm_entity_id = int(keys[1], base=16)
     target_realm_entity_id = int(keys[2], base=16)
 
@@ -64,6 +100,7 @@ def parse_combat_outcome_event(realms: Realms, keys: EventKeys, data: EventData)
 
     importance = get_combat_outcome_importance(stolen_resources=stolen_resources, damage=damage)
     parsed_event: ParsedEvent = {
+        "torii_event_id": torii_event_id,
         "type": SqLiteEventType.COMBAT_OUTCOME.value,
         "active_realm_entity_id": attacker_realm_entity_id,
         "passive_realm_entity_id": target_realm_entity_id,
@@ -79,7 +116,9 @@ def parse_combat_outcome_event(realms: Realms, keys: EventKeys, data: EventData)
     return parsed_event
 
 
-def parse_trade_event(realms: Realms, keys: EventKeys, data: EventData) -> ParsedEvent:
+def parse_trade_event(torii_event_id: str, keys: EventKeys, data: EventData) -> ParsedEvent:
+    realms = Realms.instance()
+
     _trade_id = int(keys[1], base=16)
     maker_realm_entity_id = int(data[0], base=16)
     taker_realm_entity_id = int(data[1], base=16)
@@ -93,6 +132,7 @@ def parse_trade_event(realms: Realms, keys: EventKeys, data: EventData) -> Parse
     importance = get_trade_importance(resources_maker + resources_taker)
 
     parsed_event: ParsedEvent = {
+        "torii_event_id": torii_event_id,
         "type": SqLiteEventType.ORDER_ACCEPTED.value,
         "active_realm_entity_id": taker_realm_entity_id,
         "passive_realm_entity_id": maker_realm_entity_id,
@@ -106,22 +146,33 @@ def parse_trade_event(realms: Realms, keys: EventKeys, data: EventData) -> Parse
     return parsed_event
 
 
+def parse_event(event: RawToriiEvent) -> ParsedEvent:
+    keys = cast(EventKeys, event.get("keys"))
+    if not keys:
+        raise RuntimeError("Event had no keys")
+    data = cast(EventData, event.get("data"))
+    if not data:
+        raise RuntimeError("Event had no data")
+    torii_event_id = cast(str, event.get("id"))
+    if not torii_event_id:
+        raise RuntimeError("Event had no torii_event_id")
+    if get_event_type(keys=keys) == EventKeyHash.COMBAT_OUTCOME.value:
+        parsed_event = parse_combat_outcome_event(torii_event_id=torii_event_id, keys=keys, data=data)
+    else:
+        parsed_event = parse_trade_event(torii_event_id=torii_event_id, keys=keys, data=data)
+
+    return parsed_event
+
+
 def process_event(
-    event: ToriiEvent,
-    events_db: EventsDatabase,
+    event: SubEvents,
 ) -> int:
+    events_db = EventsDatabase.instance()
     event_emitted = event.get("eventEmitted")
     if not event_emitted:
         raise RuntimeError("eventEmitted no present in event")
-    keys = cast(EventKeys, event_emitted.get("keys"))
-    if not keys:
-        raise RuntimeError("Event had no keys")
-    data = cast(EventData, event_emitted.get("data"))
-    if not data:
-        raise RuntimeError("Event had no data")
-    if get_event_type(keys=keys) == EventKeyHash.COMBAT_OUTCOME.value:
-        parsed_event = parse_combat_outcome_event(realms=events_db.realms, keys=keys, data=data)
-    else:
-        parsed_event = parse_trade_event(realms=events_db.realms, keys=keys, data=data)
-    added_id: int = events_db.insert_event(parsed_event)
+
+    parsed_event = parse_event(event=event_emitted)
+    added_id: int = events_db.insert_event(event=parsed_event, only_if_not_present=False)
+    print(f"Stored event received at rowid {added_id}: {parsed_event}")
     return added_id

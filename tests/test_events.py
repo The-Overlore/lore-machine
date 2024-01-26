@@ -20,8 +20,7 @@ async def test_trade_event():
                 "data": ["0x4b", "0x49", "0x1", "0x8", "0x1388", "0x1", "0x1", "0x1388", "0x65a1dafd"],
                 "createdAt": "2024-01-02 14:36:14",
             }
-        },
-        db,
+        }
     )
     assert db.get_by_ids([db_id,]) == [
         [
@@ -54,8 +53,7 @@ async def test_combat_damage():
                 "data": ["0x1", "0x53", "0x0", "0x0", "0x64", "0x65a1bec0"],
                 "createdAt": "2024-01-02 12:35:45",
             }
-        },
-        db,
+        }
     )
     assert db.get_by_ids([db_id,]) == [
         [
@@ -83,8 +81,7 @@ async def test_combat_damage():
                 "data": ["0x1", "0x53", "0x0", "0x0", "0x3e8", "0x65a1bec0"],
                 "createdAt": "2024-01-02 12:35:45",
             }
-        },
-        db,
+        }
     )
     assert db.get_by_ids([db_id,]) == [
         [
@@ -118,8 +115,7 @@ async def test_combat_steal():
                 "data": ["0x1", "0x53", "0x1", "0x8", "0x2710", "0x0", "0x0", "0x65a1bec0"],
                 "createdAt": "2024-01-02 12:35:45",
             }
-        },
-        db,
+        }
     )
     assert db.get_by_ids([db_id,]) == [
         [
@@ -148,8 +144,7 @@ async def test_combat_steal():
                 "data": ["0x1", "0x53", "0x1", "0x8", "0xc350", "0x0", "0x0", "0x65a1bec0"],
                 "createdAt": "2024-01-02 12:35:45",
             }
-        },
-        db,
+        }
     )
     assert db.get_by_ids([db_id,]) == [
         [
@@ -168,7 +163,7 @@ async def test_combat_steal():
 
 @pytest.mark.asyncio
 async def test_combat_damage_stolen_resources_set():
-    db = EventsDatabase.instance().init(":memory:")
+    EventsDatabase.instance().init(":memory:")
 
     with pytest.raises(RuntimeError):
         process_event(
@@ -184,8 +179,7 @@ async def test_combat_damage_stolen_resources_set():
                     "data": ["0x1", "0x53", "0x1", "0x8", "0x2710", "0x0", "0x3e8", "0x65a1bec0"],
                     "createdAt": "2024-01-02 12:35:45",
                 }
-            },
-            db,
+            }
         )
 
 
@@ -205,8 +199,7 @@ async def test_get_all():
                 "data": ["0x1", "0x53", "0x1", "0x8", "0x2710", "0x0", "0x0", "0x65a1bec0"],
                 "createdAt": "2024-01-02 12:35:45",
             }
-        },
-        db,
+        }
     )
     process_event(
         {
@@ -221,8 +214,7 @@ async def test_get_all():
                 "data": ["0x1", "0x53", "0x1", "0x8", "0xc350", "0x0", "0x0", "0x65a1bec0"],
                 "createdAt": "2024-01-02 12:35:45",
             }
-        },
-        db,
+        }
     )
 
     process_event(
@@ -238,8 +230,7 @@ async def test_get_all():
                 "data": ["0x1", "0x53", "0x0", "0x0", "0x64", "0x65a1bec0"],
                 "createdAt": "2024-01-02 12:35:45",
             }
-        },
-        db,
+        }
     )
 
     process_event(
@@ -255,8 +246,7 @@ async def test_get_all():
                 "data": ["0x1", "0x53", "0x0", "0x0", "0x3e8", "0x65a1bec0"],
                 "createdAt": "2024-01-02 12:35:45",
             }
-        },
-        db,
+        }
     )
     assert db.get_all() == [
         [
@@ -324,7 +314,7 @@ async def test_fetch_relevant_events_decay_time():
     }
     # store 7 events that are one day appart
     for _i in range(0, 5):
-        process_event(test_message, db)
+        process_event(test_message)
         ts = int(test_message["eventEmitted"]["data"][8], base=16)
         ts -= 86400
         test_message["eventEmitted"]["data"][8] = hex(ts)
@@ -408,8 +398,7 @@ async def test_fetch_relevant_events_decay_distance():
                 "data": ["0x6", "0x1", "0x1", "0xfd", "0xc350", "0x1", "0x3", "0xc350", "0x659daba0"],
                 "createdAt": "2024-01-08 16:38:25",
             }
-        },
-        db,
+        }
     )
     process_event(
         {
@@ -423,8 +412,7 @@ async def test_fetch_relevant_events_decay_distance():
                 "data": ["0x6", "0x2", "0x1", "0xfd", "0xc350", "0x1", "0x3", "0xc350", "0x659daba0"],
                 "createdAt": "2024-01-08 16:38:25",
             }
-        },
-        db,
+        }
     )
     process_event(
         {
@@ -438,8 +426,7 @@ async def test_fetch_relevant_events_decay_distance():
                 "data": ["0x6", "0x3", "0x1", "0xfd", "0xc350", "0x1", "0x3", "0xc350", "0x659daba0"],
                 "createdAt": "2024-01-08 16:38:25",
             }
-        },
-        db,
+        }
     )
     process_event(
         {
@@ -453,8 +440,7 @@ async def test_fetch_relevant_events_decay_distance():
                 "data": ["0x6", "0x4", "0x1", "0xfd", "0xc350", "0x1", "0x3", "0xc350", "0x659daba0"],
                 "createdAt": "2024-01-08 16:38:25",
             }
-        },
-        db,
+        }
     )
     process_event(
         {
@@ -468,8 +454,7 @@ async def test_fetch_relevant_events_decay_distance():
                 "data": ["0x6", "0x5", "0x1", "0xfd", "0xc350", "0x1", "0x3", "0xc350", "0x659daba0"],
                 "createdAt": "2024-01-08 16:38:25",
             }
-        },
-        db,
+        }
     )
     assert db.fetch_most_relevant(realm_position=db.realms.position_by_id(1), current_time=0x659DABA0) == [
         [
