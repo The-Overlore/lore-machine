@@ -6,6 +6,7 @@ from threading import Thread
 import pytest
 import websockets
 
+from overlore.config import Config
 from overlore.graphql.event import process_event
 from overlore.llm.open_ai import OpenAIHandler
 from overlore.sqlite.events_db import EventsDatabase
@@ -19,6 +20,9 @@ def run_server():
     _vector_db = VectorDatabase.instance().init(":memory:")
     _events_db = EventsDatabase.instance().init(":memory:")
     OpenAIHandler.instance().init("")
+    config = Config()
+    config.mock = True
+    config.port = 8766
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
 
@@ -37,8 +41,8 @@ def run_server():
         }
     )
 
-    bound_handler = functools.partial(service, extra_argument={"mock": True})
-    start_server = websockets.serve(bound_handler, "localhost", 8766)  # Specify a fixed port
+    bound_handler = functools.partial(service, config=config)
+    start_server = websockets.serve(bound_handler, "localhost", config.port)  # Specify a fixed port
 
     loop.run_until_complete(start_server)
     loop.run_forever()

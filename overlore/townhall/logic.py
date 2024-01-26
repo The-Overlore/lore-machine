@@ -1,3 +1,4 @@
+from overlore.config import Config
 from overlore.eternum.constants import Realms
 from overlore.eternum.types import ResourceAmounts, Villager
 from overlore.llm.open_ai import OpenAIHandler
@@ -18,7 +19,7 @@ def get_townhall_summary(townhall: str) -> tuple[str, str]:
     return (res[0], res[1])
 
 
-async def handle_townhall_request(message: str, mock: bool) -> str:
+async def handle_townhall_request(message: str, config: Config) -> str:
     events_db = EventsDatabase.instance()
     vector_db = VectorDatabase.instance()
     gpt_interface = OpenAIHandler.instance()
@@ -29,7 +30,7 @@ async def handle_townhall_request(message: str, mock: bool) -> str:
 
     villagers: list[Villager] = fetch_villagers()
 
-    ts = 10000000 if mock else await get_katana_timestamp()
+    ts = 10000000 if config.mock else await get_katana_timestamp(config.KATANA_URL)
     # get the most relevant events for the realm
     relevant_events = events_db.fetch_most_relevant(events_db.realms.position_by_id(realm_id), ts)
 
@@ -42,7 +43,7 @@ async def handle_townhall_request(message: str, mock: bool) -> str:
 
     generated_townhall = (
         await load_mock_gpt_response(0)
-        if mock is True
+        if config.mock is True
         else await gpt_interface.generate_townhall_discussion(
             Realms.instance(), realm_id, summaries, villagers, events_prev_unused
         )
@@ -50,7 +51,7 @@ async def handle_townhall_request(message: str, mock: bool) -> str:
 
     (townhall, summary) = get_townhall_summary(generated_townhall)
 
-    if mock is False:
+    if config.mock is False:
         # embed new discussion
         embedding = await gpt_interface.request_embedding(generated_townhall)
 
