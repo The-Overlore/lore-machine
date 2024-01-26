@@ -37,8 +37,8 @@ async def service(websocket: WebSocketServerProtocol, config: Config) -> None:
         if message is None:
             continue
         logger.debug("generating townhall")
-        response = await handle_townhall_request(str(message), config)
-        await websocket.send(json.dumps(response))
+        (rowid, response) = await handle_townhall_request(str(message), config)
+        await websocket.send(json.dumps({rowid: response}))
 
 
 async def start() -> None:
