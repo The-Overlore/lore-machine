@@ -50,14 +50,20 @@ class Config:
         dotenv_path = ".env.production" if self.prod is True else ".env.development"
         load_dotenv(dotenv_path=dotenv_path)
 
-        self.TORII_WS = str(os.environ.get("TORII_WS"))
-        self.KATANA_URL = str(os.environ.get("KATANA_URL"))
-        self.TORII_GRAPHQL = str(os.environ.get("TORII_GRAPHQL"))
+        tmp_TORII_WS = os.environ.get("TORII_WS")
+        tmp_TORII_GRAPHQL = os.environ.get("TORII_GRAPHQL")
+        tmp_KATANA_URL = os.environ.get("KATANA_URL")
         self.OPENAI_API_KEY = (
             "OpenAI API Key" if os.environ.get("OPENAI_API_KEY") is None else str(os.environ.get("OPENAI_API_KEY"))
         )
 
-        if self.TORII_WS is None:
+        if tmp_TORII_WS is None:
             raise RuntimeError("Failure to provide WS url")
-        if self.TORII_GRAPHQL is None:
+        if tmp_TORII_GRAPHQL is None:
             raise RuntimeError("Failure to provide graphql url")
+        if tmp_KATANA_URL is None:
+            raise RuntimeError("Failure to provide katana url")
+
+        self.TORII_WS = tmp_TORII_WS
+        self.KATANA_URL = tmp_KATANA_URL
+        self.TORII_GRAPHQL = tmp_TORII_GRAPHQL
