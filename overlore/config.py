@@ -18,6 +18,13 @@ class Config:
     TORII_GRAPHQL: str
     KATANA_URL: str
 
+    def __init__(self):
+        self._get_args()
+        self._load_env_variables()
+
+    def _is_valid_url(self, url):
+        return url is not None
+
     def _get_args(self) -> None:
         parser = argparse.ArgumentParser(
             description="The weaving loomer of all possible actual experiential occasions."
@@ -44,7 +51,7 @@ class Config:
         self.prod = args.prod
         self.mock = args.mock
 
-    def load(self) -> None:
+    def _load_env_variables(self) -> None:
         self._get_args()
 
         dotenv_path = ".env.production" if self.prod is True else ".env.development"
@@ -57,12 +64,11 @@ class Config:
             "OpenAI API Key" if os.environ.get("OPENAI_API_KEY") is None else str(os.environ.get("OPENAI_API_KEY"))
         )
 
-        if tmp_torii_ws is None:
-            raise RuntimeError("Failure to provide WS url")
-        if tmp_torii_graphql is None:
-            raise RuntimeError("Failure to provide graphql url")
-        if tmp_katana_url is None:
-            raise RuntimeError("Failure to provide katana url")
+        required_urls = {"TORII_WS": tmp_torii_ws, "TORII_GRAPHQL": tmp_torii_graphql, "KATANA_URL": tmp_katana_url}
+        invalid_urls = [name for name, url in required_urls.items() if not self._is_valid_url(url)]
+
+        if invalid_urls:
+            raise RuntimeError(f"Invalid or missing URL(s) in .env file for: {', '.join(invalid_urls)}")
 
         self.TORII_WS = tmp_torii_ws
         self.TORII_GRAPHQL = tmp_torii_graphql
