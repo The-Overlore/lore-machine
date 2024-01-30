@@ -10,7 +10,7 @@ from websockets.exceptions import ConnectionClosedError
 
 from overlore.config import Config
 from overlore.graphql.constants import Subscriptions
-from overlore.graphql.event import process_event, torii_boot_sync, torii_event_sub
+from overlore.graphql.event import process_event, torii_boot_sync, torii_subscription_connection
 from overlore.llm.open_ai import OpenAIHandler
 from overlore.sqlite.events_db import EventsDatabase
 from overlore.sqlite.vector_db import VectorDatabase
@@ -52,8 +52,11 @@ async def start() -> None:
     try:
         await asyncio.gather(
             overlore_pulse,
-            torii_event_sub(config.TORII_WS, process_event, Subscriptions.COMBAT_OUTCOME_EVENT_EMITTED),
-            torii_event_sub(config.TORII_WS, process_event, Subscriptions.ORDER_ACCEPTED_EVENT_EMITTED),
+            torii_subscription_connection(
+                config.TORII_WS,
+                process_event,
+                [Subscriptions.COMBAT_OUTCOME_EVENT_EMITTED, Subscriptions.ORDER_ACCEPTED_EVENT_EMITTED],
+            ),
         )
     except ConnectionClosedError:
         logger.warning("Connection close on Torii, need to reconnect here")

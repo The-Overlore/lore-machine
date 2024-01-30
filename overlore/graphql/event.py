@@ -1,6 +1,8 @@
+import asyncio
 import logging
 from typing import Callable, cast
 
+import backoff
 import requests
 from gql import Client, gql  # pip install --pre gql[websockets]
 from gql.transport.websockets import WebsocketsTransport
@@ -53,19 +55,26 @@ async def torii_boot_sync(torii_service_endpoint: str) -> None:
 
 
 async def torii_event_sub(
-    torii_service_endpoint: str, on_event_callback: OnEventCallbackType, subscription: Subscriptions
+    session: Client, on_event_callback: OnEventCallbackType, gql_subscription: Subscriptions
+) -> None:
+    logger.debug("subscribing to %s", gql_subscription)
+    async for result in session.subscribe(gql(gql_subscription.value)):
+        try:
+            on_event_callback(result)
+        except RuntimeError:
+            logger.error("Unable to process event %s in %s", result, gql_subscription)
+
+
+@backoff.on_exception(backoff.expo, Exception, max_time=300)
+async def torii_subscription_connection(
+    torii_service_endpoint: str, on_event_callback: OnEventCallbackType, subscriptions: list[Subscriptions]
 ) -> None:
     transport = WebsocketsTransport(url=torii_service_endpoint)
-
     client = Client(transport=transport)
+    logger.debug("attempting to establish subscription client...")
     async with client as session:
-        gql_subscription = gql(subscription.value)
-
-        async for result in session.subscribe(gql_subscription):
-            try:
-                on_event_callback(result)
-            except RuntimeError:
-                logger.error("Unable to process event: %s", result)
+        tasks = [asyncio.create_task(torii_event_sub(session, on_event_callback, sub)) for sub in subscriptions]
+        await asyncio.gather(*tasks)
 
 
 def get_event_type(keys: EventKeys) -> str:
