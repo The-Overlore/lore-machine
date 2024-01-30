@@ -5,6 +5,7 @@ from typing import Callable, cast
 
 import backoff
 import requests
+from backoff._typing import Details
 from gql import Client, gql  # pip install --pre gql[websockets]
 from gql.transport.websockets import WebsocketsTransport
 
@@ -59,19 +60,22 @@ async def torii_event_sub(
     session: Client, on_event_callback: OnEventCallbackType, gql_subscription: Subscriptions
 ) -> None:
     logger.debug("subscribing to %s", gql_subscription)
-    async for result in session.subscribe(gql(gql_subscription.value)):
+    async for result in session.subscribe(gql(gql_subscription.value)):  # type: ignore[attr-defined]
         try:
             on_event_callback(result)
         except RuntimeError:
             logger.error("Unable to process event %s in %s", result, gql_subscription)
 
 
-def backoff_logging(details):
+def backoff_logging(details: Details) -> None:
     # Retrieve exception type, value, and traceback
     exc_type, exc_value, _ = sys.exc_info()
 
     # Format the exception information for logging
-    exc_info = f"{exc_type.__name__}: {exc_value}" if exc_value else "No exception information"
+    if exc_type is not None and exc_value is not None:
+        exc_info = f"{exc_type.__name__}: {exc_value}"
+    else:
+        exc_info = "No exception information"
 
     # Format the exception information for logging
     logger.warning(
