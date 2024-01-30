@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import sys
 from typing import Callable, cast
 
 import backoff
@@ -26,7 +27,7 @@ def store_synced_events(events: list[SyncEvents]) -> None:
     for event in events:
         event_emitted = event.get("node")
         if not event_emitted:
-            raise RuntimeError("node no present in event")
+            raise RuntimeError("node not present in event")
         parsed_event = parse_event(event=event_emitted)
         events_db.insert_event(event=parsed_event, only_if_not_present=True)
 
@@ -65,7 +66,26 @@ async def torii_event_sub(
             logger.error("Unable to process event %s in %s", result, gql_subscription)
 
 
-@backoff.on_exception(backoff.expo, Exception, max_time=300)
+def backoff_logging(details):
+    # Retrieve exception type, value, and traceback
+    exc_type, exc_value, _ = sys.exc_info()
+
+    # Format the exception information for logging
+    exc_info = f"{exc_type.__name__}: {exc_value}" if exc_value else "No exception information"
+
+    # Format the exception information for logging
+    logger.warning(
+        "Backing off %s seconds after %s tries calling function %s with args %s and kwargs %s due to %s",
+        details["wait"],
+        details["tries"],
+        details["target"].__name__,
+        details["args"],
+        details["kwargs"],
+        exc_info,
+    )
+
+
+@backoff.on_exception(backoff.expo, Exception, max_time=300, on_backoff=backoff_logging)
 async def torii_subscription_connection(
     torii_service_endpoint: str, on_event_callback: OnEventCallbackType, subscriptions: list[Subscriptions]
 ) -> None:
