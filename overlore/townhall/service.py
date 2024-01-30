@@ -31,7 +31,6 @@ async def service(websocket: WebSocketServerProtocol, config: Config) -> None:
 
 async def start() -> None:
     config = Config()
-    config.load()
 
     signal.signal(signal.SIGINT, handle_sigint)
 

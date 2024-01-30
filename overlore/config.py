@@ -18,6 +18,10 @@ class Config:
     TORII_GRAPHQL: str
     KATANA_URL: str
 
+    def __init__(self) -> None:
+        self._get_args()
+        self._load_env_variables()
+
     def _get_args(self) -> None:
         parser = argparse.ArgumentParser(
             description="The weaving loomer of all possible actual experiential occasions."
@@ -44,20 +48,22 @@ class Config:
         self.prod = args.prod
         self.mock = args.mock
 
-    def load(self) -> None:
+    def _load_env_variables(self) -> None:
         self._get_args()
 
         dotenv_path = ".env.production" if self.prod is True else ".env.development"
         load_dotenv(dotenv_path=dotenv_path)
 
-        self.TORII_WS = str(os.environ.get("TORII_WS"))
-        self.KATANA_URL = str(os.environ.get("KATANA_URL"))
-        self.TORII_GRAPHQL = str(os.environ.get("TORII_GRAPHQL"))
+        tmp_torii_ws = os.environ.get("TORII_WS")
+        tmp_torii_graphql = os.environ.get("TORII_GRAPHQL")
+        tmp_katana_url = os.environ.get("KATANA_URL")
         self.OPENAI_API_KEY = (
             "OpenAI API Key" if os.environ.get("OPENAI_API_KEY") is None else str(os.environ.get("OPENAI_API_KEY"))
         )
 
-        if self.TORII_WS is None:
-            raise RuntimeError("Failure to provide WS url")
-        if self.TORII_GRAPHQL is None:
-            raise RuntimeError("Failure to provide graphql url")
+        if tmp_torii_ws is None or tmp_torii_graphql is None or tmp_katana_url is None:
+            raise RuntimeError("Required URLs not provided in .env file.")
+
+        self.TORII_WS = str(tmp_torii_ws)
+        self.TORII_GRAPHQL = str(tmp_torii_graphql)
+        self.KATANA_URL = str(tmp_katana_url)
