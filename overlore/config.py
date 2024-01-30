@@ -1,7 +1,32 @@
 import argparse
+import logging
 import os
+from logging import Handler
+from typing import Optional
 
 from dotenv import load_dotenv
+
+
+def setup_logging(log_to_file: Optional[str] = None) -> None:
+    logger = logging.getLogger("overlore")
+    logger.setLevel(logging.DEBUG)  # Set the logging level
+
+    # Create a formatter
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+
+    handler: Handler
+    if log_to_file is not None:
+        # Create a file handler and set the level to debug
+        handler = logging.FileHandler(log_to_file)
+    else:
+        # Create a console handler and set the level to debug
+        handler = logging.StreamHandler()
+
+    handler.setLevel(logging.DEBUG)
+    handler.setFormatter(formatter)
+
+    # Add the handler to the logger
+    logger.addHandler(handler)
 
 
 class Config:
@@ -39,8 +64,9 @@ class Config:
         parser.add_argument("-a", "--address", help="Host address for ws connection", type=str, default="localhost")
         parser.add_argument("-p", "--port", help="Host port for ws connection", type=int, default=8766)
         parser.add_argument("-w", "--world_db", help="location of the world db", type=str, default="/litefs/world.db")
-
+        parser.add_argument("-l", "--logging_file", help="location of the logging file", type=str)
         args = parser.parse_args()
+        setup_logging(args.logging_file)
 
         self.address = args.address
         self.port = args.port

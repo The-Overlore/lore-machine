@@ -1,7 +1,10 @@
+import logging
 from typing import Any, cast
 
 from overlore.eternum.types import Villager
 from overlore.utils import open_json_file
+
+logger = logging.getLogger("overlore")
 
 
 async def load_mock_gpt_response(mock_index: int) -> str:
@@ -9,7 +12,7 @@ async def load_mock_gpt_response(mock_index: int) -> str:
     try:
         return str(gpt_response_file[mock_index].get("message"))
     except Exception as error:
-        print(error)
+        logging.exception(error)
         return ""
 
 
