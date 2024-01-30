@@ -19,6 +19,7 @@ global_shutdown_event = asyncio.Event()
 
 
 def handle_sigint(_signum: int, _frame: FrameType | None) -> None:
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
     print("\nShutting down, wait for a few seconds...")
     global_shutdown_event.set()
 
@@ -47,7 +48,7 @@ async def start() -> None:
     OpenAIHandler.instance().init(config.OPENAI_API_KEY)
 
     service_bound_handler = functools.partial(service, config=config)
-    overlore_pulse = await serve(service_bound_handler, config.address, config.port)
+    overlore_server = await serve(service_bound_handler, config.address, config.port)
     combat_sub_task = asyncio.create_task(
         torii_event_sub(config.TORII_WS, process_event, Subscriptions.COMBAT_OUTCOME_EVENT_EMITTED)
     )
@@ -63,8 +64,8 @@ async def start() -> None:
     finally:
         combat_sub_task.cancel()
         order_sub_task.cancel()
-        overlore_pulse.close()
-        await overlore_pulse.wait_closed()
+        overlore_server.close()
+        await overlore_server.wait_closed()
 
 
 # hardcode for now, when more mature we need some plumbing to read this off a config
