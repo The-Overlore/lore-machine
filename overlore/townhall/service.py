@@ -32,6 +32,7 @@ async def prompt_loop(config: Config) -> None:
 
 
 def handle_sigint(_signum: int, _frame: FrameType | None) -> None:
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
     print("\nShutting down, wait for a few seconds...")
     global_shutdown_event.set()
     # exit(0)
@@ -71,7 +72,7 @@ async def start() -> None:
     # Old
     # overlore_pulse = serve(service_bound_handler, config.address, config.port)
 
-    overlore_pulse = await serve(service_bound_handler, config.address, config.port)
+    overlore_server = await serve(service_bound_handler, config.address, config.port)
     combat_sub_task = asyncio.create_task(
         torii_event_sub(config.TORII_WS, process_event, Subscriptions.COMBAT_OUTCOME_EVENT_EMITTED)
     )
@@ -95,8 +96,8 @@ async def start() -> None:
     finally:
         combat_sub_task.cancel()
         order_sub_task.cancel()
-        overlore_pulse.close()
-        await overlore_pulse.wait_closed()
+        overlore_server.close()
+        await overlore_server.wait_closed()
 
 
 # hardcode for now, when more mature we need some plumbing to read this off a config
