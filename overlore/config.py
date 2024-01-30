@@ -22,9 +22,6 @@ class Config:
         self._get_args()
         self._load_env_variables()
 
-    def _is_valid_url(self, url: str | None) -> bool:
-        return url is not None
-
     def _get_args(self) -> None:
         parser = argparse.ArgumentParser(
             description="The weaving loomer of all possible actual experiential occasions."
@@ -64,16 +61,9 @@ class Config:
             "OpenAI API Key" if os.environ.get("OPENAI_API_KEY") is None else str(os.environ.get("OPENAI_API_KEY"))
         )
 
-        required_urls = {"TORII_WS": tmp_torii_ws, "TORII_GRAPHQL": tmp_torii_graphql, "KATANA_URL": tmp_katana_url}
-        invalid_urls = [name for name, url in required_urls.items() if not self._is_valid_url(url)]
-
-        if invalid_urls:
-            raise RuntimeError(f"Invalid or missing URL(s) in .env file for: {', '.join(invalid_urls)}")
+        if tmp_torii_ws is None or tmp_torii_graphql is None or tmp_katana_url is None:
+            raise RuntimeError("Required URLs not provided in .env file.")
 
         self.TORII_WS = str(tmp_torii_ws)
         self.TORII_GRAPHQL = str(tmp_torii_graphql)
         self.KATANA_URL = str(tmp_katana_url)
-
-        print(self.TORII_GRAPHQL)
-        print(self.TORII_WS)
-        print(self.KATANA_URL)
