@@ -1,14 +1,17 @@
 import json
+import logging
 from typing import Any
 
 import requests
+
+logger = logging.getLogger("overlore")
 
 
 def str_to_json(message: str) -> Any:
     try:
         return json.loads(message)
     except Exception as error:
-        print(f"invalid string: {error}")
+        logger.exception(f"invalid string: {error}")
         raise
 
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from datetime import datetime
 from sqlite3 import Connection
 
@@ -8,6 +9,8 @@ import sqlite_vss
 
 from overlore.sqlite.db import Database
 from overlore.sqlite.types import StoredVector
+
+logger = logging.getLogger("overlore")
 
 
 class VectorDatabase(Database):
@@ -33,7 +36,7 @@ class VectorDatabase(Database):
     @classmethod
     def instance(cls) -> VectorDatabase:
         if cls._instance is None:
-            print("Creating vector db interface")
+            logger.debug("Creating vector db interface")
             cls._instance = cls.__new__(cls)
         return cls._instance
 
@@ -89,12 +92,13 @@ class VectorDatabase(Database):
         return self.execute_query(query, values)
 
     def get_townhalls_from_events(self, event_ids: list[int]) -> tuple[list[str], list[int]]:
-        event_ids.extend([0 for i in range(0, 5 - len(event_ids))])
         """
         Returns tuple of:
             - List of townhalls summary. One event_id of the list given in parameter must have been involved in the generation of the discussion.
             - Events_ids in the list given in parameter which haven't generated any summary before
         """
+        event_ids.extend([0 for i in range(0, 5 - len(event_ids))])
+
         query = """
             WITH GivenEventIDs(event_id) AS (VALUES (?), (?), (?), (?), (?)),
             RecentDiscussions AS (

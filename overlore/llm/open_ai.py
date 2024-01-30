@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 from openai import OpenAI
 
 from overlore.eternum.constants import Realms
@@ -11,6 +13,8 @@ from overlore.llm.constants import (
 )
 from overlore.llm.natural_language_formatter import NaturalLanguageFormatter
 from overlore.sqlite.types import StoredEvent
+
+logger = logging.getLogger("overlore")
 
 
 class OpenAIHandler:
@@ -27,7 +31,7 @@ class OpenAIHandler:
     @classmethod
     def instance(cls) -> OpenAIHandler:
         if cls._instance is None:
-            print("Generating OpenAIHandler interface")
+            logger.debug("Generating OpenAIHandler interface")
             cls._instance = cls.__new__(cls)
         return cls._instance
 

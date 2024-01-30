@@ -1,6 +1,7 @@
 import asyncio
 import functools
 import json
+import logging
 import signal
 from types import FrameType
 
@@ -15,6 +16,8 @@ from overlore.sqlite.events_db import EventsDatabase
 from overlore.sqlite.vector_db import VectorDatabase
 from overlore.townhall.logic import handle_townhall_request
 
+logger = logging.getLogger("overlore")
+
 
 def handle_sigint(_signum: int, _b: FrameType | None) -> None:
     exit(0)
@@ -24,7 +27,7 @@ async def service(websocket: WebSocketServerProtocol, config: Config) -> None:
     async for message in websocket:
         if message is None:
             continue
-        print("generating townhall")
+        logger.debug("generating townhall")
         response = await handle_townhall_request(str(message), config)
         await websocket.send(json.dumps(response))
 
@@ -45,7 +48,7 @@ async def start() -> None:
     service_bound_handler = functools.partial(service, config=config)
     overlore_pulse = serve(service_bound_handler, config.address, config.port)
 
-    print(f"great job, starting this service on port {config.port}. everything is perfect from now on.")
+    logger.info(f"great job, starting this service on port {config.port}. everything is perfect from now on.")
     try:
         await asyncio.gather(
             overlore_pulse,
@@ -53,7 +56,7 @@ async def start() -> None:
             torii_event_sub(config.TORII_WS, process_event, Subscriptions.ORDER_ACCEPTED_EVENT_EMITTED),
         )
     except ConnectionClosedError:
-        print("Connection close on Torii, need to reconnect here")
+        logger.warning("Connection close on Torii, need to reconnect here")
 
 
 # hardcode for now, when more mature we need some plumbing to read this off a config

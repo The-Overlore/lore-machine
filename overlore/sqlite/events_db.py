@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from sqlite3 import Connection
 from typing import Any, cast
 
@@ -9,6 +10,8 @@ from overlore.eternum.types import RealmPosition
 from overlore.sqlite.db import Database
 from overlore.sqlite.types import StoredEvent
 from overlore.types import ParsedEvent
+
+logger = logging.getLogger("overlore")
 
 MAX_TIME_DAYS = 7
 MAX_TIME_S = MAX_TIME_DAYS * 24.0 * 60.0 * 60.0
@@ -64,7 +67,7 @@ class EventsDatabase(Database):
     @classmethod
     def instance(cls) -> EventsDatabase:
         if cls._instance is None:
-            print("Creating events db interface")
+            logger.debug("Creating events db interface")
             cls._instance = cls.__new__(cls)
         return cls._instance
 

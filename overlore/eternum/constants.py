@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from enum import Enum
 from typing import TypeAlias, cast
 
@@ -7,6 +8,9 @@ from overlore.eternum.types import RealmPosition
 from overlore.utils import open_json_file
 
 RealmGeodata: TypeAlias = dict[str, list[float] | int | str]
+
+
+logger = logging.getLogger("overlore")
 
 
 class ResourceIds(Enum):
@@ -49,7 +53,7 @@ class Realms:
     @classmethod
     def instance(cls) -> Realms:
         if cls._instance is None:
-            print("Creating Realms constants class")
+            logger.debug("Creating Realms constants class")
             cls._instance = cls.__new__(cls)
         return cls._instance
 

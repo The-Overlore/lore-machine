@@ -1,3 +1,4 @@
+import logging
 from typing import Callable, cast
 
 import requests
@@ -12,6 +13,8 @@ from overlore.sqlite.constants import EventType as SqLiteEventType
 from overlore.sqlite.events_db import EventsDatabase
 from overlore.townhall.logic import get_combat_outcome_importance, get_trade_importance
 from overlore.types import EventData, EventKeys, ParsedEvent, RawToriiEvent, SubEvents, SyncEvents
+
+logger = logging.getLogger("overlore")
 
 OnEventCallbackType = Callable[[dict], int]
 
@@ -33,7 +36,7 @@ def get_synced_events(torii_service_endpoint: str, query: str) -> list[SyncEvent
         json_response = response.json()
         data = json_response["data"]
     except KeyError as e:
-        print(e)
+        logger.error("KeyError accessing %s in JSON response: %s", e, json_response)
     if data is None:
         raise RuntimeError(f"Couldn't sync with Torii at boot {json_response['errors']}")
     edges = data["events"]["edges"]
@@ -62,7 +65,7 @@ async def torii_event_sub(
             try:
                 on_event_callback(result)
             except RuntimeError:
-                print("Unable to process event")
+                logger.error("Unable to process event: %s", result)
 
 
 def get_event_type(keys: EventKeys) -> str:
@@ -174,5 +177,5 @@ def process_event(
 
     parsed_event = parse_event(event=event_emitted)
     added_id: int = events_db.insert_event(event=parsed_event, only_if_not_present=False)
-    print(f"Stored event received at rowid {added_id}: {parsed_event}")
+    logger.info(f"Stored event received at rowid {added_id}: {parsed_event}")
     return added_id
