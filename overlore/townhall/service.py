@@ -10,12 +10,13 @@ from websockets.exceptions import ConnectionClosedError
 
 from overlore.config import Config
 from overlore.graphql.constants import Subscriptions
-from overlore.graphql.event import process_event, torii_boot_sync, torii_subscription_connection
+from overlore.graphql.event import process_event, torii_boot_sync, torii_subscription_connection, torii_event_sub
 from overlore.llm.open_ai import OpenAIHandler
 from overlore.sqlite.events_db import EventsDatabase
 from overlore.sqlite.vector_db import VectorDatabase
 from overlore.townhall.logic import handle_townhall_request
 
+global_shutdown_event = asyncio.Event()
 logger = logging.getLogger("overlore")
 
 
@@ -30,20 +31,23 @@ async def prompt_loop(config: Config) -> None:
         logger.debug(f"______GPT answer______\n{townhall}\n________________________\n\n\n\n\n\n\n\n")
 
 
-def handle_sigint(_signum: int, _b: FrameType | None) -> None:
-    exit(0)
+def handle_sigint(_signum: int, _frame: FrameType | None) -> None:
+    print("\nShutting down, wait for a few seconds...")
+    global_shutdown_event.set()
+    # exit(0)
 
 
 async def service(websocket: WebSocketServerProtocol, config: Config) -> None:
-    async for message in websocket:
-        if message is None:
-            continue
-        logger.debug("generating townhall")
-        # convert message to string instead of bytes
-        message_str = str(message)
-        (rowid, response, _, _) = await handle_townhall_request(message_str, config)
-        logger.debug(response)
-        await websocket.send(json.dumps({rowid: response}))
+    while not global_shutdown_event.is_set():
+        async for message in websocket:
+            if message is None:
+                continue
+            logger.debug("generating townhall")
+            # convert message to string instead of bytes
+            message_str = str(message)
+            (rowid, response, _, _) = await handle_townhall_request(message_str, config)
+            logger.debug(response)
+            await websocket.send(json.dumps({rowid: response}))
 
 
 async def start() -> None:
@@ -63,20 +67,36 @@ async def start() -> None:
     await torii_boot_sync(config.TORII_GRAPHQL)
 
     service_bound_handler = functools.partial(service, config=config)
-    overlore_pulse = serve(service_bound_handler, config.address, config.port)
+
+    # Old
+    # overlore_pulse = serve(service_bound_handler, config.address, config.port)
+
+    overlore_pulse = await serve(service_bound_handler, config.address, config.port)
+    combat_sub_task = asyncio.create_task(
+        torii_event_sub(config.TORII_WS, process_event, Subscriptions.COMBAT_OUTCOME_EVENT_EMITTED)
+    )
+    order_sub_task = asyncio.create_task(
+        torii_event_sub(config.TORII_WS, process_event, Subscriptions.ORDER_ACCEPTED_EVENT_EMITTED)
+    )
 
     logger.info(f"great job, starting this service on port {config.port}. everything is perfect from now on.")
     try:
-        await asyncio.gather(
-            overlore_pulse,
-            torii_subscription_connection(
-                config.TORII_WS,
-                process_event,
-                [Subscriptions.COMBAT_OUTCOME_EVENT_EMITTED, Subscriptions.ORDER_ACCEPTED_EVENT_EMITTED],
-            ),
-        )
+        await global_shutdown_event.wait()
+        # await asyncio.gather(
+        #     overlore_pulse,
+        #     torii_subscription_connection(
+        #         config.TORII_WS,
+        #         process_event,
+        #         [Subscriptions.COMBAT_OUTCOME_EVENT_EMITTED, Subscriptions.ORDER_ACCEPTED_EVENT_EMITTED],
+        #     ),
+        # )
     except ConnectionClosedError:
         logger.warning("Connection close on Torii, need to reconnect here")
+    finally:
+        combat_sub_task.cancel()
+        order_sub_task.cancel()
+        overlore_pulse.close()
+        await overlore_pulse.wait_closed()
 
 
 # hardcode for now, when more mature we need some plumbing to read this off a config
