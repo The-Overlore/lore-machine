@@ -18,20 +18,23 @@ from overlore.townhall.logic import handle_townhall_request
 global_shutdown_event = asyncio.Event()
 
 
-def handle_sigint(_signum: int, _frame: FrameType | None) -> None:
-    signal.signal(signal.SIGINT, signal.SIG_IGN)
-    print("\nShutting down, wait for a few seconds...")
+async def shutdown() -> None:
     global_shutdown_event.set()
 
 
+def handle_sigint(_signum: int, _frame: FrameType | None) -> None:
+    print("\nShutting down Overlore ...")
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+    asyncio.run_coroutine_threadsafe(shutdown(), loop=asyncio.get_running_loop())
+
+
 async def service(websocket: WebSocketServerProtocol, config: Config) -> None:
-    while not global_shutdown_event.is_set():
-        async for message in websocket:
-            if message is None:
-                continue
-            print("generating townhall")
-            response = await handle_townhall_request(str(message), config)
-            await websocket.send(json.dumps(response))
+    async for message in websocket:
+        if message is None:
+            continue
+        print("generating townhall")
+        response = await handle_townhall_request(str(message), config)
+        await websocket.send(json.dumps(response))
 
 
 async def start() -> None:
