@@ -31,10 +31,18 @@ async def prompt_loop(config: Config) -> None:
         logger.debug(f"______GPT answer______\n{townhall}\n________________________\n\n\n\n\n\n\n\n")
 
 
-def handle_sigint(_signum: int, _frame: FrameType | None) -> None:
-    signal.signal(signal.SIGINT, signal.SIG_IGN)
-    print("\nShutting down, wait for a few seconds...")
+async def shutdown() -> None:
     global_shutdown_event.set()
+
+
+async def shutdown() -> None:
+    global_shutdown_event.set()
+
+
+def handle_sigint(_signum: int, _frame: FrameType | None) -> None:
+    print("\nShutting down Overlore ...")
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+    asyncio.run_coroutine_threadsafe(shutdown(), loop=asyncio.get_running_loop())
     # exit(0)
 
 
