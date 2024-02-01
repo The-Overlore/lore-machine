@@ -192,7 +192,7 @@ class EventsDatabase(Database):
                             ) as score
                         FROM events
                     )
-                    ORDER BY score DESC LIMIT 5"""
+                    ORDER BY score DESC LIMIT 1"""
         params = (
             A_DISTANCE,
             realm_position[0],

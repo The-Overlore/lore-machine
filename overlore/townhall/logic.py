@@ -7,6 +7,8 @@ from overlore.sqlite.vector_db import VectorDatabase
 from overlore.townhall.mocks import fetch_villagers, load_mock_gpt_response
 from overlore.utils import get_katana_timestamp, str_to_json
 
+ARBITRARY_TS = 10000000
+
 # A is calculated by setting a max amount of resources, any value equal to or higher than MAX will get attributed a score of 10.
 # The linear equation is then a * MAX + 0 = 10. We can derive a easily from there
 A_RESOURCES = 10 / 100
@@ -19,7 +21,7 @@ def get_townhall_summary(townhall: str) -> tuple[str, str]:
     return (res[0], res[1])
 
 
-async def handle_townhall_request(message: str, config: Config) -> tuple[int, str]:
+async def handle_townhall_request(message: str, config: Config) -> tuple[int, str, str, str]:
     events_db = EventsDatabase.instance()
     vector_db = VectorDatabase.instance()
     gpt_interface = OpenAIHandler.instance()
@@ -30,7 +32,7 @@ async def handle_townhall_request(message: str, config: Config) -> tuple[int, st
 
     villagers: list[Villager] = fetch_villagers()
 
-    ts = 10000000 if config.mock else await get_katana_timestamp(config.KATANA_URL)
+    ts = ARBITRARY_TS if config.mock or config.prompt_loop else await get_katana_timestamp(config.KATANA_URL)
     # get the most relevant events for the realm
     relevant_events = events_db.fetch_most_relevant(events_db.realms.position_by_id(realm_id), ts)
 
@@ -41,7 +43,7 @@ async def handle_townhall_request(message: str, config: Config) -> tuple[int, st
 
     events_prev_unused = [event for event in relevant_events if event[0] in event_ids_prev_unused]
 
-    generated_townhall = (
+    (generated_townhall, systemPrompt, userPrompt) = (
         await load_mock_gpt_response(0)
         if config.mock is True
         else await gpt_interface.generate_townhall_discussion(
@@ -61,7 +63,8 @@ async def handle_townhall_request(message: str, config: Config) -> tuple[int, st
         row_id = vector_db.insert_townhall_discussion(
             discussion=townhall, summary=summary, realm_id=realm_id, event_ids=relevant_events_ids, embedding=embedding
         )
-    return (row_id, townhall)
+
+    return (row_id, townhall, systemPrompt, userPrompt)
 
 
 def get_importance_from_resources(resources: ResourceAmounts) -> float:

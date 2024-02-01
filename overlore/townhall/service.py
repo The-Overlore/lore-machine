@@ -24,8 +24,10 @@ async def prompt_loop(config: Config) -> None:
         txt = input("hit enter to generate townhall with realm_id 73 or enter realm_id\n")
         realm_id = 73 if len(txt) == 0 else int(txt)
         msg = f'{{"realm_id": {realm_id}}}'
-        response = await handle_townhall_request(msg, config)
-        print(response)
+        (rowid, townhall, systemPrompt, userPrompt) = await handle_townhall_request(msg, config)
+        print(f"______System prompt______\n{systemPrompt}\n________________________")
+        print(f"______User prompt______\n{userPrompt}\n________________________")
+        print(f"______Prompt______\n{townhall}\n________________________\n\n\n\n\n\n\n\n")
 
 
 def handle_sigint(_signum: int, _b: FrameType | None) -> None:
@@ -37,7 +39,8 @@ async def service(websocket: WebSocketServerProtocol, config: Config) -> None:
         if message is None:
             continue
         logger.debug("generating townhall")
-        (rowid, response) = await handle_townhall_request(str(message), config)
+        (rowid, response, _, _) = await handle_townhall_request(str(message), config)
+        logger.debug(response)
         await websocket.send(json.dumps({rowid: response}))
 
 
