@@ -13,6 +13,26 @@ RealmGeodata: TypeAlias = dict[str, list[float] | int | str]
 logger = logging.getLogger("overlore")
 
 
+ORDERS = [
+    "power",
+    "anger",
+    "brilliance",
+    "detection",
+    "enlightenment",
+    "fox",
+    "fury",
+    "giants",
+    "perfection",
+    "reflection",
+    "skill",
+    "titans",
+    "twins",
+    "vitriol",
+    "rage",
+    "protection",
+]
+
+
 class ResourceIds(Enum):
     Wood = 1
     Stone = 2
@@ -68,6 +88,9 @@ class Realms:
     def init(self, path: str = "./data/realms_geodata.json") -> Realms:
         self.geodata = self.load_geodata(path)
         return self
+
+    def order_by_order_id(self, i: int) -> str:
+        return ORDERS[i - 1]
 
     def name_by_id(self, i: int) -> str:
         if i <= 0 or i > 8000 or self.geodata[i - 1].get("xy") is None:

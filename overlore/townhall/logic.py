@@ -25,10 +25,15 @@ async def handle_townhall_request(message: str, config: Config) -> tuple[int, st
     events_db = EventsDatabase.instance()
     vector_db = VectorDatabase.instance()
     gpt_interface = OpenAIHandler.instance()
+    realms = Realms.instance()
 
     data = str_to_json(message)
 
     realm_id = int(data.get("realm_id"))
+    realm_name = realms.name_by_id(realm_id)
+
+    realm_order_id = int(data.get("order"))
+    realm_order = realms.order_by_order_id(realm_order_id)
 
     villagers: list[Villager] = fetch_villagers()
 
@@ -41,13 +46,13 @@ async def handle_townhall_request(message: str, config: Config) -> tuple[int, st
     # get the townhalls summaries that the events already generated + the events_ids which haven't generated any events yet
     (summaries, event_ids_prev_unused) = vector_db.get_townhalls_from_events(relevant_events_ids)
 
-    events_prev_unused = [event for event in relevant_events if event[0] in event_ids_prev_unused]
+    [event for event in relevant_events if event[0] in event_ids_prev_unused]
 
     (generated_townhall, systemPrompt, userPrompt) = (
         await load_mock_gpt_response(0)
         if config.mock is True
         else await gpt_interface.generate_townhall_discussion(
-            Realms.instance(), realm_id, summaries, villagers, events_prev_unused
+            realm_name, realm_order, summaries, villagers, relevant_events
         )
     )
 
@@ -58,7 +63,6 @@ async def handle_townhall_request(message: str, config: Config) -> tuple[int, st
     if config.mock is False:
         # embed new discussion
         embedding = await gpt_interface.request_embedding(generated_townhall)
-
         # insert our new discussion and its vector in our db
         row_id = vector_db.insert_townhall_discussion(
             discussion=townhall, summary=summary, realm_id=realm_id, event_ids=relevant_events_ids, embedding=embedding
@@ -92,8 +96,6 @@ def get_combat_outcome_importance(stolen_resources: ResourceAmounts, damage: int
         return get_importance_from_resources(resources=stolen_resources)
     elif damage > 0 and len(stolen_resources) > 0:
         raise RuntimeError("Unexpected combat outcome: both damage and stolen resources are set")
-    elif damage == 0 and len(stolen_resources) == 0:
-        raise RuntimeError("Unexpected combat outcome: no damage and no stolen resources")
     else:
         # will never happen but mypy needs this to feel secure, and mypy is ourpy
         return 0.0

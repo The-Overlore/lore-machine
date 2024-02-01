@@ -4,12 +4,12 @@ import logging
 
 from openai import OpenAI
 
-from overlore.eternum.constants import Realms
 from overlore.eternum.types import Villager
 from overlore.llm.constants import (
-    EVENTS,
+    EVENT,
     NPCS,
     PREVIOUS_TOWNHALL,
+    REALM,
     SYSTEM_STRING_EMPTY_PREV_TOWNHALL,
     SYSTEM_STRING_HAS_PREV_TOWNHALL,
 )
@@ -63,16 +63,12 @@ class OpenAIHandler:
 
     async def generate_townhall_discussion(
         self,
-        realms: Realms,
-        realm_id: int,
+        realm_name: str,
+        realm_order: str,
         townhall_summaries: list[str],
         npc_list: list[Villager],
         events: list[StoredEvent],
     ) -> tuple[str, str, str]:
-        realms = Realms.instance()
-
-        realm_name = realms.name_by_id(realm_id)
-
         townhall_summaries_string = "\n".join(townhall_summaries)
         systemPrompt = (
             SYSTEM_STRING_HAS_PREV_TOWNHALL
@@ -83,8 +79,9 @@ class OpenAIHandler:
         npcs = self.nl_formatter.npcs_to_nl(npc_list)
         event_string = self.nl_formatter.events_to_nl(events)
 
-        userPrompt = NPCS.format(npcs=npcs)
-        userPrompt += EVENTS.format(realm_name=realm_name, event_string=event_string)
+        userPrompt = REALM.format(realm_name=realm_name, realm_order=realm_order)
+        userPrompt += NPCS.format(npcs=npcs)
+        userPrompt += EVENT.format(realm_name=realm_name, event_string=event_string)
         userPrompt += (
             PREVIOUS_TOWNHALL.format(previous_townhall=townhall_summaries_string)
             if len(townhall_summaries_string) != 0

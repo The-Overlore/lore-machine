@@ -61,7 +61,7 @@ def server():
 async def test_mock_response(server):
     time.sleep(1)
     async with websockets.connect("ws://localhost:8766") as websocket:
-        test_message = '{"realm_id": 1}'
+        test_message = '{"realm_id": 1, "order": 1}'
         await websocket.send(test_message)
         actual = await websocket.recv()
         expected = """{"0":\"Paul: Friends, we must not lose sight of what keeps us afloat. Straejelas depends on both wheat and minerals.

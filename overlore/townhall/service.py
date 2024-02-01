@@ -23,11 +23,11 @@ async def prompt_loop(config: Config) -> None:
     while True:
         txt = input("hit enter to generate townhall with realm_id 73 or enter realm_id\n")
         realm_id = 73 if len(txt) == 0 else int(txt)
-        msg = f'{{"realm_id": {realm_id}}}'
+        msg = f'{{"realm_id": {realm_id}, "order": 1}}'
         (rowid, townhall, systemPrompt, userPrompt) = await handle_townhall_request(msg, config)
-        print(f"______System prompt______\n{systemPrompt}\n________________________")
-        print(f"______User prompt______\n{userPrompt}\n________________________")
-        print(f"______Prompt______\n{townhall}\n________________________\n\n\n\n\n\n\n\n")
+        logger.debug(f"______System prompt______\n{systemPrompt}\n________________________")
+        logger.debug(f"______User prompt______\n{userPrompt}\n________________________")
+        logger.debug(f"______GPT answer______\n{townhall}\n________________________\n\n\n\n\n\n\n\n")
 
 
 def handle_sigint(_signum: int, _b: FrameType | None) -> None:
@@ -39,7 +39,9 @@ async def service(websocket: WebSocketServerProtocol, config: Config) -> None:
         if message is None:
             continue
         logger.debug("generating townhall")
-        (rowid, response, _, _) = await handle_townhall_request(str(message), config)
+        # convert message to string instead of bytes
+        message_str = str(message)
+        (rowid, response, _, _) = await handle_townhall_request(message_str, config)
         logger.debug(response)
         await websocket.send(json.dumps({rowid: response}))
 

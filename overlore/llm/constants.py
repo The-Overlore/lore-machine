@@ -40,33 +40,28 @@ BELLIGERENT = [
 
 AGENT_TEMPLATE = """{name}, a {sex} {role}."""
 
-SUMMARY_EXAMPLE = """\"\"\"Summary: John doubted the artifact's significance, while Mary believed it could heal the village's sick.\"\"\""""
+SUMMARY_EXAMPLE = """Here's the previous conversation that was had in my realm about the event: \"\"\"Summary: "John doubted the artifact's significance, while Mary believed it could heal the village's sick.\"\"\""""
 PREVIOUS_SUMMARY_MENTION = (
-    """Use the previous conversation's summary (\"\"\"Summary: <summary>\"\"\") to keep the story coherent. """
+    """Use the previous conversation's summary (\"\"\"Summary: <summary>\"\"\") to continue the story. """
 )
 
-SYSTEM_STRING_TEMPLATE = """Imagine you're the game master for a strategy game, tasked with crafting dialogues for non-player characters (NPCs). Based on a brief character description provided in the format \"\"\"NPCs: <descriptions>\"\"\" and a key event described as \"\"\"event: <event>\"\"\", create engaging dialogues that reflect the NPCs' reactions and perspectives on the event. Ensure each NPC speaks no more than twice and maintain consistency with their character traits. {previous_summary_mention}Introduce a twist (such as a love interest, the death of a character, a natural disaster, drama, a magical beast appears) or highlight the event's impact to add depth. Format each dialogue line as "<name>: <phrase>". Conclude with "!end of discussion!". Afterwards, summarize the dialogue, outlining each NPC's contributions and reactions to the event. If unable to generate a conversation, reply with \"\"\"!failure:<reason why>!\"\"\" (<example>\"\"\"!failure:reason of failure!\"\"\"</example>)
+SYSTEM_STRING_TEMPLATE = """Imagine you're the game master for a strategy game, tasked with crafting dialogues for non-player characters (NPCs). Based on a brief character description provided in the format \"\"\"NPCs: <descriptions>\"\"\" and a key event described as \"\"\"event: <event>\"\"\", create engaging dialogues that reflect the NPCs' reactions and perspectives on the event. Ensure each NPC speaks no more than twice and maintain consistency with their character traits. {previous_summary_mention}Introduce a plot twist (such as a love interest, the death of a character, a natural disaster, drama, a magical beast appears) to add depth. Format each dialogue line as "<name>: <phrase>". Conclude with "!end of discussion!". Afterwards, summarize the dialogue, outlining each NPC's contributions and reactions to the event. If unable to generate a conversation, reply with \"\"\"!failure:<enter reason of failure>!\"\"\".
 
 Example:
-<example>
-\"\"\"NPCs:
-John, a female farmer.\"\"\"
-\"\"\"event: Pillage of realm Tus Luksus by realm Snüngsüng. Stolen resources are 100 Stone.\"\"\".
-{summary_example}
 
+NPCs: "John, the skeptical blacksmith; Mary, the optimistic healer"
+Event: Here is the most interesting event for my realm \"\"\"A mysterious artifact was found in the woods\"\"\"
+{summary_example}
 Dialogue Start:
 John: "I still think it's just an old relic."
 Mary: "But imagine the possibilities, John! It could change everything."
 
 !end of discussion!
 Summary:
-The conversation revolved around the mysterious artifact. John remained skeptical, questioning its value, while Mary was hopeful about its potential healing powers.
-</example>
-"""
+The conversation revolved around the mysterious artifact. John remained skeptical, questioning its value, while Mary was hopeful about its potential healing powers."""
 
 SYSTEM_STRING_HAS_PREV_TOWNHALL = SYSTEM_STRING_TEMPLATE.format(
-    previous_summary_mention=PREVIOUS_SUMMARY_MENTION,
-    summary_example=SUMMARY_EXAMPLE,
+    previous_summary_mention=PREVIOUS_SUMMARY_MENTION, summary_example=SUMMARY_EXAMPLE
 )
 
 SYSTEM_STRING_EMPTY_PREV_TOWNHALL = SYSTEM_STRING_TEMPLATE.format(previous_summary_mention="", summary_example="")
@@ -76,8 +71,10 @@ NPCS:
 \"\"\"{npcs}\"\"\".
 """
 
-EVENTS = """
-Here is the most interesting event for my realm ({realm_name}): \"\"\"event: {event_string}\"\"\".
+REALM = """My realm is in the order of {realm_order}."""
+
+EVENT = """Here is the most interesting event for my realm ({realm_name}):
+\"\"\"event: {event_string}\"\"\".
 """
 
 PREVIOUS_TOWNHALL = (

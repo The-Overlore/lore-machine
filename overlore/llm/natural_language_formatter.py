@@ -39,10 +39,10 @@ class NaturalLanguageFormatter:
         else:
             nl += f"War waged: by {active_realm_name} against {passive_realm_name}. "
             winner = metadata["winner"]
-            winner = active_realm_name if winner == Winner.Attacker.value else passive_realm_name
-            loser = passive_realm_name if winner == Winner.Attacker.value else active_realm_name
-            nl += f"Winner is {winner}. Loser is {loser}. "
-            nl += f"Damages taken by loser: {metadata['damage']}. "
+            winner_name = active_realm_name if (winner == Winner.Attacker.value) else passive_realm_name
+            loser_name = passive_realm_name if (winner == Winner.Attacker.value) else active_realm_name
+            nl += f"Winner is {winner_name}. Loser is {loser_name}. "
+            nl += f"Damages taken by {loser_name}: {metadata['damage']}. "
         return nl
 
     def _order_accepted_to_nl(self, event: StoredEvent) -> str:

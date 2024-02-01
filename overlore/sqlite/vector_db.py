@@ -131,7 +131,7 @@ class VectorDatabase(Database):
             FROM
                 DupDiscussions
             WHERE
-                dup_rn = 1
+                dup_rn = 1 AND event_id <> 0
             UNION ALL
             SELECT
                 event_id,
