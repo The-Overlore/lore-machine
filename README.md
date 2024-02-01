@@ -42,8 +42,14 @@ From the root of the project, simply run `poetry run lore-machine`
 
 Flags:
 
-- `--mock`: to use mock GTP responses.
-- `--address <address>`: address where the websocket connection will be served to (default: `locahost`).
+- `-h`, `--help` show this help message and exit
+- `--mock` Use mock data for GPT response instead of querying the API. (saves API calls)
+- `--prompt` Run lore-machine in a prompt testing loop.
+- `--prod` Run lore-machine in production mode.
+- `-a ADDRESS`, `--address` ADDRESS Host address for ws connection
+- `-p PORT`, `--port PORT` Host port for ws connection
+- `-w WORLD_DB`, `--world_db` WORLD_DB location of the world db
+- `-l LOGGING_FILE`, `--logging_file LOGGING_FILE` location of the logging file
 
 ## Running The Overlore System
 
