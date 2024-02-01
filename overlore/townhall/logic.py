@@ -32,7 +32,7 @@ async def handle_townhall_request(message: str, config: Config) -> tuple[int, st
 
     villagers: list[Villager] = fetch_villagers()
 
-    ts = ARBITRARY_TS if config.mock or config.prompt_loop else await get_katana_timestamp(config.KATANA_URL)
+    ts = ARBITRARY_TS if config.mock or config.prompt else await get_katana_timestamp(config.KATANA_URL)
     # get the most relevant events for the realm
     relevant_events = events_db.fetch_most_relevant(events_db.realms.position_by_id(realm_id), ts)
 

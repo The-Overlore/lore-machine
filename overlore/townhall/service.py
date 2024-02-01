@@ -54,7 +54,7 @@ async def start() -> None:
     VectorDatabase.instance().init()
     OpenAIHandler.instance().init(config.OPENAI_API_KEY)
 
-    if config.prompt_loop:
+    if config.prompt:
         await prompt_loop(config)
 
     # Sync events database on boot
