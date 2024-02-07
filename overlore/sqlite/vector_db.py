@@ -112,7 +112,7 @@ class VectorDatabase(Database):
                 FROM
                     townhall T, json_each(T.events_ids)
                 WHERE
-                    json_each.value IN ((?), (?), (?), (?), (?))
+                    json_each.value IN ((?), (?), (?), (?), (?)) AND json_each.value <> 0
             ),
             DupDiscussions AS (
                 SELECT
@@ -131,7 +131,7 @@ class VectorDatabase(Database):
             FROM
                 DupDiscussions
             WHERE
-                dup_rn = 1 AND event_id <> 0
+                dup_rn = 1
             UNION ALL
             SELECT
                 event_id,
