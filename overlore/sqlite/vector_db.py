@@ -73,10 +73,10 @@ class VectorDatabase(Database):
         return rowid
 
     def query_nearest_neighbour(self, query_embedding: str, realm_id: int, limit: int = 1) -> list[StoredVector]:
-        if self.get_entries_count() == (0, 0):
-            raise RuntimeError("Empty vector db")
         if limit <= 0:
             raise ValueError("Limit must be higher than 0")
+        if self.get_entries_count() == (0, 0):
+            return []
 
         # Use vss_search for SQLite version < 3.41 else vss_search_params db function
         query = """
@@ -116,7 +116,7 @@ class VectorDatabase(Database):
         if len(event_ids) == 0:
             return ([], [])
 
-        event_id_placeholders = (", ".join(["(?)"] * len(event_ids))).rstrip(",")
+        event_id_placeholders = ", ".join(["(?)"] * len(event_ids))
         query = f"""
             WITH
                 GivenEventIds(event_id) AS (VALUES {event_id_placeholders}),
