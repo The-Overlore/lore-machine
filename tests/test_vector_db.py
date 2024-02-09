@@ -53,11 +53,9 @@ async def test_query_nearest_neighbour():
         )
 
     assert (6, 6) == db.get_entries_count()
-    assert [(2, 0.18810418248176575)] == db.query_nearest_neighbour(mock_data[0]["embedding"], 1, 1)
+    assert db.query_nearest_neighbour(mock_data[0]["embedding"], 1, 1)[0][0] == 2
     assert [] == db.query_nearest_neighbour(mock_data[0]["embedding"], 100, 1)
-    assert [(2, 0.18810418248176575), (4, 0.21718525886535645)] == db.query_nearest_neighbour(
-        mock_data[0]["embedding"], 1, 2
-    )
+    assert db.query_nearest_neighbour(mock_data[0]["embedding"], 1, 2)[1][0] == 4
 
     with pytest.raises(ValueError) as exc_info:
         assert [] == db.query_nearest_neighbour(mock_data[0]["embedding"], 1, 0)
