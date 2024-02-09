@@ -14,6 +14,10 @@ def setup_logging(log_to_file: Optional[str] = None) -> None:
     # Create a formatter
     formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
+    # Check if handlers already exist for this logger
+    if logger.hasHandlers():
+        logger.handlers.clear()  # Clear existing handlers
+
     handler: Handler
     if log_to_file is not None:
         # Create a file handler and set the level to debug
