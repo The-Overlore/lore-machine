@@ -52,10 +52,10 @@ class VectorDatabase(Database):
         return self
 
     def get_entries_count(self) -> tuple[int, int]:
-        query = "SELECT * FROM townhall"
+        query = "SELECT rowid FROM townhall"
         records = self.execute_query(query, ())
 
-        vss_query = "SELECT * FROM vss_townhall"
+        vss_query = "SELECT rowid FROM vss_townhall"
         records_vss = self.execute_query(vss_query, ())
 
         return len(records), len(records_vss)
@@ -73,23 +73,37 @@ class VectorDatabase(Database):
         return rowid
 
     def query_nearest_neighbour(self, query_embedding: str, realm_id: int, limit: int = 1) -> list[StoredVector]:
+        if self.get_entries_count() == (0, 0):
+            raise RuntimeError("Empty vector db")
+        if limit <= 0:
+            raise ValueError("Limit must be higher than 0")
+
         # Use vss_search for SQLite version < 3.41 else vss_search_params db function
         query = """
-            select v.rowid, v.distance from vss_townhall v
-            inner join townhall t on v.rowid = t.rowid
-            where t.realm_id = ? and vss_search(embedding, vss_search_params(?, ?))
+            SELECT v.rowid, v.distance FROM vss_townhall v
+            INNER JOIN townhall t ON v.rowid = t.rowid
+            WHERE t.realm_id = ? AND vss_search(embedding, vss_search_params(?, ?))
         """
+
         values = (realm_id, json.dumps(query_embedding), limit + 1)
+
         return self.execute_query(query, values)
 
-    def query_cosine_similarity(self, query_embedding: list[float]) -> list[StoredVector]:
+    def query_cosine_similarity(
+        self, query_embedding: list[float], realm_id: int, limit: int = 1
+    ) -> list[StoredVector]:
+        if limit <= 0:
+            raise ValueError("Limit must be higher than 0")
+
         query = """
-            SELECT rowid, vss_cosine_similarity(?, embedding) as similarity
-            FROM vss_townhall
+            SELECT v.rowid, vss_cosine_similarity(?, embedding) AS similarity
+            FROM vss_townhall v
+            INNER JOIN townhall t ON v.rowid = t.rowid
+            WHERE t.realm_id = ?
             ORDER BY similarity DESC
-            LIMIT 1;
+            LIMIT ?;
         """
-        values = (json.dumps(query_embedding),)
+        values = (json.dumps(query_embedding), realm_id, limit)
         return self.execute_query(query, values)
 
     def get_townhalls_from_events(self, event_ids: list[int]) -> tuple[list[str], list[int]]:
@@ -98,61 +112,39 @@ class VectorDatabase(Database):
             - List of townhalls summary. One event_id of the list given in parameter must have been involved in the generation of the discussion.
             - Events_ids in the list given in parameter which haven't generated any summary before
         """
-        event_ids.extend([0 for i in range(0, 5 - len(event_ids))])
 
-        query = """
-            WITH GivenEventIDs(event_id) AS (VALUES (?), (?), (?), (?), (?)),
-            RecentDiscussions AS (
-                SELECT
-                    json_each.value AS event_id,
-                    T.summary,
-                    T.ts,
-                    T.rowid,
-                    ROW_NUMBER() OVER (PARTITION BY json_each.value ORDER BY T.ts DESC) as rn
-                FROM
-                    townhall T, json_each(T.events_ids)
-                WHERE
-                    json_each.value IN ((?), (?), (?), (?), (?)) AND json_each.value <> 0
-            ),
-            DupDiscussions AS (
-                SELECT
-                    event_id,
-                    summary,
-                    rowid,
-                    ROW_NUMBER() OVER (PARTITION BY rowid ORDER BY ts DESC) as dup_rn
-                FROM
-                    RecentDiscussions
-                WHERE
-                    rn = 1
-            )
-            SELECT
-                event_id,
-                summary
-            FROM
-                DupDiscussions
-            WHERE
-                dup_rn = 1
+        if len(event_ids) == 0:
+            return ([], [])
+
+        event_id_placeholders = (", ".join(["(?)"] * len(event_ids))).rstrip(",")
+        query = f"""
+            WITH
+                GivenEventIds(event_id) AS (VALUES {event_id_placeholders}),
+
+                Townhalls AS (
+                    SELECT json_each.value AS event_id, T.summary, T.ts, T.rowid, ROW_NUMBER() OVER (PARTITION BY json_each.value ORDER BY T.ts DESC) as event_row_number
+                    FROM townhall T, json_each(T.events_ids)
+                    WHERE json_each.value IN ({event_id_placeholders})
+                ),
+
+                DuplicateTownhalls AS (
+                    SELECT event_id, summary, rowid, ROW_NUMBER() OVER (PARTITION BY rowid) as duplicate_townhall_row_number
+                    FROM Townhalls
+                    WHERE event_row_number = 1
+                )
+
+            SELECT event_id, summary
+            FROM DuplicateTownhalls
+            WHERE duplicate_townhall_row_number = 1
+
             UNION ALL
-            SELECT
-                event_id,
-                NULL AS summary
-            FROM
-                GivenEventIDs
-            WHERE
-                event_id NOT IN (SELECT event_id FROM RecentDiscussions WHERE rn = 1)
+
+            SELECT event_id, NULL AS summary
+            FROM GivenEventIds
+            WHERE event_id NOT IN (SELECT event_id FROM Townhalls WHERE event_row_number = 1)
         """
-        values = (
-            event_ids[0],
-            event_ids[1],
-            event_ids[2],
-            event_ids[3],
-            event_ids[4],
-            event_ids[0],
-            event_ids[1],
-            event_ids[2],
-            event_ids[3],
-            event_ids[4],
-        )
+
+        values = tuple(event_ids) * 2
 
         # list of tuples: either (event_id, discussion) or (event_id, None) if the event_id hasn't generated and discussion before
         res = self.execute_query(query, values)
