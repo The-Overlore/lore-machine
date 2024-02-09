@@ -30,8 +30,21 @@ async def prompt_loop(config: Config) -> None:
         logger.debug(f"______GPT answer______\n{townhall}\n________________________\n\n\n\n\n\n\n\n")
 
 
-def handle_sigint(_signum: int, _b: FrameType | None) -> None:
-    exit(0)
+async def cancel_all_tasks() -> None:
+    tasks = [
+        t
+        for t in asyncio.all_tasks()
+        if t.get_name() in ["Subscriptions.ORDER_ACCEPTED_EVENT_EMITTED", "Subscriptions.COMBAT_OUTCOME_EVENT_EMITTED"]
+    ]
+    for task in tasks:
+        logger.info(f"Cancelling task: {task.get_name()}")
+        task.cancel()
+
+
+def handle_sigint(_signum: int, _frame: FrameType | None) -> None:
+    logger.info("Shutting down Overlore ...")
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+    asyncio.run_coroutine_threadsafe(cancel_all_tasks(), loop=asyncio.get_running_loop())
 
 
 async def service(websocket: WebSocketServerProtocol, config: Config) -> None:
@@ -63,20 +76,19 @@ async def start() -> None:
     await torii_boot_sync(config.TORII_GRAPHQL)
 
     service_bound_handler = functools.partial(service, config=config)
-    overlore_pulse = serve(service_bound_handler, config.address, config.port)
-
+    overlore_server = await serve(service_bound_handler, config.address, config.port)
     logger.info(f"great job, starting this service on port {config.port}. everything is perfect from now on.")
     try:
-        await asyncio.gather(
-            overlore_pulse,
-            torii_subscription_connection(
-                config.TORII_WS,
-                process_event,
-                [Subscriptions.COMBAT_OUTCOME_EVENT_EMITTED, Subscriptions.ORDER_ACCEPTED_EVENT_EMITTED],
-            ),
+        await torii_subscription_connection(
+            config.TORII_WS,
+            process_event,
+            [Subscriptions.COMBAT_OUTCOME_EVENT_EMITTED, Subscriptions.ORDER_ACCEPTED_EVENT_EMITTED],
         )
     except ConnectionClosedError:
         logger.warning("Connection close on Torii, need to reconnect here")
+    finally:
+        overlore_server.close()
+        await overlore_server.wait_closed()
 
 
 # hardcode for now, when more mature we need some plumbing to read this off a config
