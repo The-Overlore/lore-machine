@@ -38,32 +38,48 @@ BELLIGERENT = [
     "enraged",
 ]
 
-AGENT_TEMPLATE = """{name}, a {sex} {role}. He/she is {happiness}, {hunger} and {belligerent}."""
+AGENT_TEMPLATE = """{name}, a {sex} {role}."""
 
-# PROMPT TEMPLATES
-WORLD_SYSTEM_TEMPLATE = """
-Use the greimas actantial model to put the characters in a role in a soap opera like plot.
-The only is the dialog between the characters. Format the conversation like so: <name>:<phrase>. You will end the conversation with: "!end of discussion!".
-Output a summary of the conversation, be specific about what happened and don't be vague.
-The characters will be given to you as input. You cannot create new characters on your own.
-All important decisions are taken exclusively by the Lord of the realm.
-As such although the characters can suggest future actions to be taken in an indirect manner, they cannot make the decision themselves.
+SUMMARY_EXAMPLE = """Here's the previous conversation that was had in my realm about the event: \"\"\"Summary: "John doubted the artifact's significance, while Mary believed it could heal the village's sick.\"\"\""""
+PREVIOUS_SUMMARY_MENTION = (
+    """Use the previous conversation's summary (\"\"\"Summary: <summary>\"\"\") to continue the story. """
+)
 
-The settings are as follows:
-- The world is called Eternum
-- The realm in which the characters live is called '{realm_name}'
-The characters are the following: {npcs}
+SYSTEM_STRING_TEMPLATE = """Imagine you're the game master for a strategy game, tasked with crafting dialogues for non-player characters (NPCs). Based on a brief character description provided in the format \"\"\"NPCs: <descriptions>\"\"\" and a key event described as \"\"\"event: <event>\"\"\", create engaging dialogues that reflect the NPCs' reactions and perspectives on the event. Ensure each NPC speaks no more than twice and maintain consistency with their character traits. {previous_summary_mention}Introduce a plot twist (such as a love interest, the death of a character, a natural disaster, drama, a magical beast appears) to add depth. Format each dialogue line as "<name>: <phrase>\n". Do not output anything else in the dialog. Conclude with "!end of discussion!". Afterwards, summarize the dialogue, outlining each NPC's contributions and reactions to the event. If unable to generate a conversation, reply with \"\"\"!failure:<enter reason of failure>!\"\"\".
+
+Example:
+
+NPCs: "John, the skeptical blacksmith; Mary, the optimistic healer"
+Event: Here is the most interesting event for my realm \"\"\"A mysterious artifact was found in the woods\"\"\"
+{summary_example}
+Dialogue Start:
+John: "I still think it's just an old relic."
+Mary: "But imagine the possibilities, John! It could change everything."
+
+!end of discussion!
+Summary:
+The conversation revolved around the mysterious artifact. John remained skeptical, questioning its value, while Mary was hopeful about its potential healing powers."""
+
+SYSTEM_STRING_HAS_PREV_TOWNHALL = SYSTEM_STRING_TEMPLATE.format(
+    previous_summary_mention=PREVIOUS_SUMMARY_MENTION, summary_example=SUMMARY_EXAMPLE
+)
+
+SYSTEM_STRING_EMPTY_PREV_TOWNHALL = SYSTEM_STRING_TEMPLATE.format(previous_summary_mention="", summary_example="")
+
+NPCS = """
+NPCS:
+\"\"\"{npcs}\"\"\".
 """
-PREVIOUS_TOWNHALL_EXTENSION = """Here's what the villagers talked about in the previous days: {previous_townhalls}."""
-EVENTS_EXTENSION = """
-You will have to account for the most important events that took place in the past or during the day.
-There will be four types of events: Trade happened, War waged, Pillage.
-For each event, look at the following criterias and make these events more or less important in the discussions between characters:
-   - Trade happened: how much of ressource was given compared to what was received.
-   - Pillage: how many resources were stolen (> 100 is very important).
-   - War waged: check if your Realm lost or won and how many damages were dealt. Translate the damages into realm life wounds if the damages are significant. (> 100 damages)
-The events are the following: {events_string}.
+
+REALM = """My realm is in the order of {realm_order}."""
+
+EVENT = """Here is the most interesting event for my realm ({realm_name}):
+\"\"\"event: {event_string}\"\"\".
 """
+
+PREVIOUS_TOWNHALL = (
+    """Here's the previous conversation that was had in my realm about the event: \"\"\"{previous_townhall}\"\"\""""
+)
 
 AGENT_CREATION_TEMPLATE = """
     {name}, a {sex} {role}, has just arrived in {realm_name} to settle.

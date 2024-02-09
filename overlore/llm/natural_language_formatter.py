@@ -4,9 +4,6 @@ from overlore.eternum.constants import Realms, ResourceIds, Winner
 from overlore.eternum.types import ResourceAmounts, Villager
 from overlore.llm.constants import (
     AGENT_TEMPLATE,
-    BELLIGERENT,
-    HAPPINESS,
-    HUNGER,
     ROLE,
     SEX,
 )
@@ -42,11 +39,10 @@ class NaturalLanguageFormatter:
         else:
             nl += f"War waged: by {active_realm_name} against {passive_realm_name}. "
             winner = metadata["winner"]
-            winner = active_realm_name if winner == Winner.Attacker.value else passive_realm_name
-            loser = passive_realm_name if winner == Winner.Attacker.value else active_realm_name
-            nl += f"Winner is {winner}. Loser is {loser}. "
-            nl += f"Damages taken by loser: {metadata['damage']}. "
-        nl += "\n"
+            winner_name = active_realm_name if (winner == Winner.Attacker.value) else passive_realm_name
+            loser_name = passive_realm_name if (winner == Winner.Attacker.value) else active_realm_name
+            nl += f"Winner is {winner_name}. Loser is {loser_name}. "
+            nl += f"Damages taken by {loser_name}: {metadata['damage']}. "
         return nl
 
     def _order_accepted_to_nl(self, event: StoredEvent) -> str:
@@ -64,23 +60,15 @@ class NaturalLanguageFormatter:
         nl = f"Trade happened: between {active_realm_name} and {passive_realm_name} realms. "
         nl += f"{active_realm_name} will get {resources_taker}. "
         nl += f"{passive_realm_name} will get {resources_maker}. "
-        nl += "\n"
         return nl
 
     def _npc_to_nl(self, npc: Villager) -> str:
         sex: int = cast(int, npc["sex"])
         role: int = cast(int, npc["role"])
-        mood: dict[str, int] = cast(dict[str, int], npc["mood"])
-        happiness = mood["happiness"]
-        hunger = mood["hunger"]
-        belligerent = mood["belligerent"]
         return AGENT_TEMPLATE.format(
             name=npc["name"],
             sex=SEX[sex],
             role=ROLE[role],
-            happiness=HAPPINESS[happiness],
-            hunger=HUNGER[hunger],
-            belligerent=BELLIGERENT[belligerent],
         )
 
     def _event_to_nl(self, event: StoredEvent) -> str:

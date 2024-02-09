@@ -7,13 +7,13 @@ from overlore.utils import open_json_file
 logger = logging.getLogger("overlore")
 
 
-async def load_mock_gpt_response(mock_index: int) -> str:
+async def load_mock_gpt_response(mock_index: int) -> tuple[str, str, str]:
     gpt_response_file = open_json_file("./data/mock_gpt_response.json")
     try:
-        return str(gpt_response_file[mock_index].get("message"))
+        return (str(gpt_response_file[mock_index].get("message")), "mock system prompt", "mock user prompt")
     except Exception as error:
         logging.exception(error)
-        return ""
+        return ("", "", "")
 
 
 def load_mock_villagers() -> list[Villager]:

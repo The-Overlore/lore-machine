@@ -210,5 +210,4 @@ def process_event(
 
     parsed_event = parse_event(event=event_emitted)
     added_id: int = events_db.insert_event(event=parsed_event, only_if_not_present=False)
-    logger.info(f"Stored event received at rowid {added_id}: {parsed_event}")
     return added_id

@@ -40,6 +40,7 @@ class Config:
     world_db: str
     prod: bool
     mock: bool
+    prompt: bool
 
     # .env variables
     OPENAI_API_KEY: str
@@ -61,6 +62,11 @@ class Config:
             help="Use mock data for GPT response instead of querying the API. (saves API calls)",
         )
         parser.add_argument(
+            "--prompt",
+            action="store_true",
+            help="Run lore-machine in a prompt testing loop.",
+        )
+        parser.add_argument(
             "--prod",
             action="store_true",
             help="Run lore-machine in production mode.",
@@ -77,6 +83,7 @@ class Config:
         self.world_db = args.world_db
         self.prod = args.prod
         self.mock = args.mock
+        self.prompt = args.prompt
 
     def _load_env_variables(self) -> None:
         self._get_args()

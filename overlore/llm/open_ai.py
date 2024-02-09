@@ -4,12 +4,14 @@ import logging
 
 from openai import OpenAI
 
-from overlore.eternum.constants import Realms
 from overlore.eternum.types import Villager
 from overlore.llm.constants import (
-    EVENTS_EXTENSION,
-    PREVIOUS_TOWNHALL_EXTENSION,
-    WORLD_SYSTEM_TEMPLATE,
+    EVENT,
+    NPCS,
+    PREVIOUS_TOWNHALL,
+    REALM,
+    SYSTEM_STRING_EMPTY_PREV_TOWNHALL,
+    SYSTEM_STRING_HAS_PREV_TOWNHALL,
 )
 from overlore.llm.natural_language_formatter import NaturalLanguageFormatter
 from overlore.sqlite.types import StoredEvent
@@ -41,6 +43,7 @@ class OpenAIHandler:
         self.nl_formatter = NaturalLanguageFormatter()
 
     async def request_prompt(self, system: str, user: str) -> str:
+        logger.debug("Requesting completion of prompt...")
         response = self.client.chat.completions.create(
             model="gpt-4-1106-preview",
             messages=[
@@ -60,28 +63,29 @@ class OpenAIHandler:
 
     async def generate_townhall_discussion(
         self,
-        realms: Realms,
-        realm_id: int,
+        realm_name: str,
+        realm_order: str,
         townhall_summaries: list[str],
         npc_list: list[Villager],
         events: list[StoredEvent],
-    ) -> str:
-        realms = Realms.instance()
-
-        realm_name = realms.name_by_id(realm_id)
+    ) -> tuple[str, str, str]:
+        townhall_summaries_string = "\n".join(townhall_summaries)
+        systemPrompt = (
+            SYSTEM_STRING_HAS_PREV_TOWNHALL
+            if len(townhall_summaries_string) != 0
+            else SYSTEM_STRING_EMPTY_PREV_TOWNHALL
+        )
 
         npcs = self.nl_formatter.npcs_to_nl(npc_list)
+        event_string = self.nl_formatter.events_to_nl(events)
 
-        systemPrompt = WORLD_SYSTEM_TEMPLATE.format(realm_name=realm_name, npcs=npcs)
+        userPrompt = REALM.format(realm_name=realm_name, realm_order=realm_order)
+        userPrompt += NPCS.format(npcs=npcs)
+        userPrompt += EVENT.format(realm_name=realm_name, event_string=event_string)
+        userPrompt += (
+            PREVIOUS_TOWNHALL.format(previous_townhall=townhall_summaries_string)
+            if len(townhall_summaries_string) != 0
+            else ""
+        )
 
-        events_string = self.nl_formatter.events_to_nl(events)
-        if len(events_string) != 0:
-            systemPrompt += EVENTS_EXTENSION.format(events_string=events_string)
-
-        townhalls_string = "\n".join(list(townhall_summaries))
-        if len(townhalls_string) != 0:
-            systemPrompt += PREVIOUS_TOWNHALL_EXTENSION.format(previous_townhalls=townhalls_string)
-
-        userPrompt = ""
-
-        return await self.request_prompt(systemPrompt, userPrompt)
+        return (await self.request_prompt(systemPrompt, userPrompt), systemPrompt, userPrompt)

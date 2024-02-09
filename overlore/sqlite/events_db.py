@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+from copy import deepcopy
 from sqlite3 import Connection
 from typing import Any, cast
 
@@ -91,6 +92,8 @@ class EventsDatabase(Database):
         return self
 
     def insert_event(self, event: ParsedEvent, only_if_not_present: bool) -> int:
+        event_copy = deepcopy(event)
+
         torii_event_id = event["torii_event_id"]
         del event["torii_event_id"]
         event_type = event["type"]
@@ -135,6 +138,9 @@ class EventsDatabase(Database):
         if only_if_not_present:
             values += (torii_event_id,)
         added_id: int = self._insert(query, values)
+
+        logger.info(f"Stored event received at rowid {added_id}: {event_copy}")
+
         return added_id
 
     def get_by_ids(self, event_ids: list[int]) -> list[StoredEvent]:
@@ -192,7 +198,7 @@ class EventsDatabase(Database):
                             ) as score
                         FROM events
                     )
-                    ORDER BY score DESC LIMIT 5"""
+                    ORDER BY score DESC LIMIT 1"""
         params = (
             A_DISTANCE,
             realm_position[0],
