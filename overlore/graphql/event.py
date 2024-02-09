@@ -1,7 +1,11 @@
+import asyncio
 import logging
+import sys
 from typing import Callable, cast
 
+import backoff
 import requests
+from backoff._typing import Details
 from gql import Client, gql  # pip install --pre gql[websockets]
 from gql.transport.websockets import WebsocketsTransport
 
@@ -24,7 +28,7 @@ def store_synced_events(events: list[SyncEvents]) -> None:
     for event in events:
         event_emitted = event.get("node")
         if not event_emitted:
-            raise RuntimeError("node no present in event")
+            raise RuntimeError("node not present in event")
         parsed_event = parse_event(event=event_emitted)
         events_db.insert_event(event=parsed_event, only_if_not_present=True)
 
@@ -53,19 +57,48 @@ async def torii_boot_sync(torii_service_endpoint: str) -> None:
 
 
 async def torii_event_sub(
-    torii_service_endpoint: str, on_event_callback: OnEventCallbackType, subscription: Subscriptions
+    session: Client, on_event_callback: OnEventCallbackType, gql_subscription: Subscriptions
+) -> None:
+    logger.debug("subscribing to %s", gql_subscription)
+    async for result in session.subscribe(gql(gql_subscription.value)):  # type: ignore[attr-defined]
+        try:
+            on_event_callback(result)
+        except RuntimeError:
+            logger.error("Unable to process event %s in %s", result, gql_subscription)
+
+
+def backoff_logging(details: Details) -> None:
+    # Retrieve exception type, value, and traceback
+    exc_type, exc_value, _ = sys.exc_info()
+
+    # Format the exception information for logging
+    if exc_type is not None and exc_value is not None:
+        exc_info = f"{exc_type.__name__}: {exc_value}"
+    else:
+        exc_info = "No exception information"
+
+    # Format the exception information for logging
+    logger.warning(
+        "Backing off %s seconds after %s tries calling function %s with args %s and kwargs %s due to %s",
+        details["wait"],
+        details["tries"],
+        details["target"].__name__,
+        details["args"],
+        details["kwargs"],
+        exc_info,
+    )
+
+
+@backoff.on_exception(backoff.expo, Exception, max_time=300, on_backoff=backoff_logging)
+async def torii_subscription_connection(
+    torii_service_endpoint: str, on_event_callback: OnEventCallbackType, subscriptions: list[Subscriptions]
 ) -> None:
     transport = WebsocketsTransport(url=torii_service_endpoint)
-
     client = Client(transport=transport)
+    logger.debug("attempting to establish subscription client...")
     async with client as session:
-        gql_subscription = gql(subscription.value)
-
-        async for result in session.subscribe(gql_subscription):
-            try:
-                on_event_callback(result)
-            except RuntimeError:
-                logger.error("Unable to process event: %s", result)
+        tasks = [asyncio.create_task(torii_event_sub(session, on_event_callback, sub)) for sub in subscriptions]
+        await asyncio.gather(*tasks)
 
 
 def get_event_type(keys: EventKeys) -> str:
