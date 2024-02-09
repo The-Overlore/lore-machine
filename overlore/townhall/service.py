@@ -10,7 +10,7 @@ from websockets.exceptions import ConnectionClosedError
 
 from overlore.config import Config
 from overlore.graphql.constants import Subscriptions
-from overlore.graphql.event import process_event, torii_boot_sync, torii_subscription_connection, torii_event_sub
+from overlore.graphql.event import process_event, torii_boot_sync, torii_subscription_connection
 from overlore.llm.open_ai import OpenAIHandler
 from overlore.sqlite.events_db import EventsDatabase
 from overlore.sqlite.vector_db import VectorDatabase
@@ -31,8 +31,15 @@ async def prompt_loop(config: Config) -> None:
         logger.debug(f"______GPT answer______\n{townhall}\n________________________\n\n\n\n\n\n\n\n")
 
 
-async def shutdown() -> None:
-    global_shutdown_event.set()
+async def cancel_all_tasks() -> None:
+    tasks = [
+        t
+        for t in asyncio.all_tasks()
+        if t.get_name() in ["Subscriptions.ORDER_ACCEPTED_EVENT_EMITTED", "Subscriptions.COMBAT_OUTCOME_EVENT_EMITTED"]
+    ]
+    for task in tasks:
+        logger.info(f"Cancelling task: {task.get_name()}")
+        task.cancel()
 
 
 async def shutdown() -> None:
@@ -40,10 +47,9 @@ async def shutdown() -> None:
 
 
 def handle_sigint(_signum: int, _frame: FrameType | None) -> None:
-    print("\nShutting down Overlore ...")
+    logger.info("Shutting down Overlore ...")
     signal.signal(signal.SIGINT, signal.SIG_IGN)
-    asyncio.run_coroutine_threadsafe(shutdown(), loop=asyncio.get_running_loop())
-    # exit(0)
+    asyncio.run_coroutine_threadsafe(cancel_all_tasks(), loop=asyncio.get_running_loop())
 
 
 async def service(websocket: WebSocketServerProtocol, config: Config) -> None:
@@ -76,34 +82,17 @@ async def start() -> None:
     await torii_boot_sync(config.TORII_GRAPHQL)
 
     service_bound_handler = functools.partial(service, config=config)
-
-    # Old
-    # overlore_pulse = serve(service_bound_handler, config.address, config.port)
-
     overlore_server = await serve(service_bound_handler, config.address, config.port)
-    combat_sub_task = asyncio.create_task(
-        torii_event_sub(config.TORII_WS, process_event, Subscriptions.COMBAT_OUTCOME_EVENT_EMITTED)
-    )
-    order_sub_task = asyncio.create_task(
-        torii_event_sub(config.TORII_WS, process_event, Subscriptions.ORDER_ACCEPTED_EVENT_EMITTED)
-    )
-
     logger.info(f"great job, starting this service on port {config.port}. everything is perfect from now on.")
     try:
-        await global_shutdown_event.wait()
-        # await asyncio.gather(
-        #     overlore_pulse,
-        #     torii_subscription_connection(
-        #         config.TORII_WS,
-        #         process_event,
-        #         [Subscriptions.COMBAT_OUTCOME_EVENT_EMITTED, Subscriptions.ORDER_ACCEPTED_EVENT_EMITTED],
-        #     ),
-        # )
+        await torii_subscription_connection(
+            config.TORII_WS,
+            process_event,
+            [Subscriptions.COMBAT_OUTCOME_EVENT_EMITTED, Subscriptions.ORDER_ACCEPTED_EVENT_EMITTED],
+        )
     except ConnectionClosedError:
         logger.warning("Connection close on Torii, need to reconnect here")
     finally:
-        combat_sub_task.cancel()
-        order_sub_task.cancel()
         overlore_server.close()
         await overlore_server.wait_closed()
 
