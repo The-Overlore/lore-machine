@@ -7,7 +7,7 @@ import pytest
 import websockets
 
 from overlore.config import Config
-from overlore.graphql.event import process_event
+from overlore.graphql.subscriptions import parse_and_store_event
 from overlore.llm.open_ai import OpenAIHandler
 from overlore.sqlite.events_db import EventsDatabase
 from overlore.sqlite.vector_db import VectorDatabase
@@ -26,7 +26,7 @@ def run_server():
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
 
-    process_event(
+    parse_and_store_event(
         {
             "eventEmitted": {
                 "id": "0x00000000000000000000000000000000000000000000000000000000000001ad:0x0000:0x0023",
@@ -64,7 +64,7 @@ async def test_mock_response(server):
         test_message = '{"realm_id": 1, "order": 1}'
         await websocket.send(test_message)
         actual = await websocket.recv()
-        expected = """{"0":\"Paul: Friends, we must not lose sight of what keeps us afloat. Straejelas depends on both wheat and minerals.
+        expected = """{"id":0, "townhall":\"Paul: Friends, we must not lose sight of what keeps us afloat. Straejelas depends on both wheat and minerals.
         James: But Paul, look at the gold we can get for just a grain of our wheat!
         Lisa: Yes, we should be investing more in our mining initiatives.
         Paul: While I agree that deal is superficially advantageous, we traded a mountain of wheat for practically nothing earlier today. We need a balanced approach.

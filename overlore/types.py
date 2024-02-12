@@ -4,11 +4,11 @@ from overlore.eternum.types import AttackingEntityIds, RealmPosition, ResourceAm
 
 EventKeys: TypeAlias = list[str]
 
-EventData: TypeAlias = list[str]
+EventData: TypeAlias = EventKeys
 
-RawToriiEvent: TypeAlias = dict[str, str | EventKeys | EventData]
+ToriiEvent: TypeAlias = dict[str, str | EventKeys | EventData]
 
-SubEvents: TypeAlias = dict[str, dict[str, str | EventKeys | EventData]]
+ToriiEmittedEvent: TypeAlias = dict[str, dict[str, str | EventKeys | EventData]]
 
 SyncEvents: TypeAlias = dict[str, dict[str, str | EventKeys | EventData]]
 

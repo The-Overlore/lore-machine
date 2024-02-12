@@ -9,8 +9,13 @@ from websockets import WebSocketServerProtocol, serve
 from websockets.exceptions import ConnectionClosedError
 
 from overlore.config import Config
+from overlore.graphql.boot_sync import torii_boot_sync
 from overlore.graphql.constants import Subscriptions
-from overlore.graphql.event import process_event, torii_boot_sync, torii_subscription_connection
+from overlore.graphql.subscriptions import (
+    assign_name_character_trait_to_npc,
+    parse_and_store_event,
+    torii_subscription_connection,
+)
 from overlore.llm.open_ai import OpenAIHandler
 from overlore.sqlite.events_db import EventsDatabase
 from overlore.sqlite.vector_db import VectorDatabase
@@ -18,7 +23,11 @@ from overlore.townhall.logic import handle_townhall_request
 
 logger = logging.getLogger("overlore")
 
-EVENT_SUBS = [Subscriptions.COMBAT_OUTCOME_EVENT_EMITTED, Subscriptions.ORDER_ACCEPTED_EVENT_EMITTED]
+EVENT_SUBS_AND_CALLBACKS = [
+    (Subscriptions.COMBAT_OUTCOME, parse_and_store_event),
+    (Subscriptions.ORDER_ACCEPTED, parse_and_store_event),
+    (Subscriptions.NPC_SPAWNED, assign_name_character_trait_to_npc),
+]
 
 
 async def prompt_loop(config: Config) -> None:
@@ -33,7 +42,7 @@ async def prompt_loop(config: Config) -> None:
 
 
 async def cancel_all_tasks() -> None:
-    subscriptions_names = [sub.name for sub in EVENT_SUBS]
+    subscriptions_names = [sub.name for (sub, _) in EVENT_SUBS_AND_CALLBACKS]
     tasks = [task for task in asyncio.all_tasks() if task.get_name() in subscriptions_names]
     for task in tasks:
         logger.info(f"Cancelling task: {task.get_name()}")
@@ -55,7 +64,7 @@ async def service(websocket: WebSocketServerProtocol, config: Config) -> None:
         message_str = str(message)
         (rowid, response, _, _) = await handle_townhall_request(message_str, config)
         logger.debug(response)
-        await websocket.send(json.dumps({rowid: response}))
+        await websocket.send(json.dumps({"id": rowid, "townhall": response}))
 
 
 async def start() -> None:
@@ -78,11 +87,7 @@ async def start() -> None:
     overlore_server = await serve(service_bound_handler, config.address, config.port)
     logger.info(f"great job, starting this service on port {config.port}. everything is perfect from now on.")
     try:
-        await torii_subscription_connection(
-            config.TORII_WS,
-            process_event,
-            EVENT_SUBS,
-        )
+        await torii_subscription_connection(config.TORII_WS, EVENT_SUBS_AND_CALLBACKS)
     except ConnectionClosedError:
         logger.warning("Connection close on Torii, need to reconnect here")
     finally:

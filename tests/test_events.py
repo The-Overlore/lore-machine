@@ -1,14 +1,14 @@
 import pytest
 
 from overlore.eternum.constants import Realms
-from overlore.graphql.event import process_event
+from overlore.graphql.subscriptions import parse_and_store_event
 from overlore.sqlite.events_db import EventsDatabase
 
 
 @pytest.mark.asyncio
 async def test_trade_event():
     db = EventsDatabase.instance().init(":memory:")
-    db_id = process_event(
+    db_id = parse_and_store_event(
         {
             "eventEmitted": {
                 "id": "0x00000000000000000000000000000000000000000000000000000000000001cf:0x0000:0x0023",
@@ -40,7 +40,7 @@ async def test_trade_event():
 @pytest.mark.asyncio
 async def test_combat_damage():
     db = EventsDatabase.instance().init(":memory:")
-    db_id = process_event(
+    db_id = parse_and_store_event(
         {
             "eventEmitted": {
                 "id": "0x00000000000000000000000000000000000000000000000000000000000001c8:0x0000:0x0002",
@@ -68,7 +68,7 @@ async def test_combat_damage():
             (114.8471, 43.38),
         ]
     ]
-    db_id = process_event(
+    db_id = parse_and_store_event(
         {
             "eventEmitted": {
                 "id": "0x00000000000000000000000000000000000000000000000000000000000001c8:0x0000:0x0002",
@@ -102,7 +102,7 @@ async def test_combat_damage():
 async def test_combat_steal():
     db = EventsDatabase.instance().init(":memory:")
 
-    db_id = process_event(
+    db_id = parse_and_store_event(
         {
             "eventEmitted": {
                 "id": "0x00000000000000000000000000000000000000000000000000000000000001c8:0x0000:0x0002",
@@ -131,7 +131,7 @@ async def test_combat_steal():
         ]
     ]
 
-    db_id = process_event(
+    db_id = parse_and_store_event(
         {
             "eventEmitted": {
                 "id": "0x00000000000000000000000000000000000000000000000000000000000001c8:0x0000:0x0002",
@@ -166,7 +166,7 @@ async def test_combat_damage_stolen_resources_set():
     EventsDatabase.instance().init(":memory:")
 
     with pytest.raises(RuntimeError):
-        process_event(
+        parse_and_store_event(
             {
                 "eventEmitted": {
                     "id": "0x00000000000000000000000000000000000000000000000000000000000001c8:0x0000:0x0002",
@@ -186,7 +186,7 @@ async def test_combat_damage_stolen_resources_set():
 @pytest.mark.asyncio
 async def test_get_all():
     db = EventsDatabase.instance().init(":memory:")
-    process_event(
+    parse_and_store_event(
         {
             "eventEmitted": {
                 "id": "0x00000000000000000000000000000000000000000000000000000000000001c8:0x0000:0x0002",
@@ -201,7 +201,7 @@ async def test_get_all():
             }
         }
     )
-    process_event(
+    parse_and_store_event(
         {
             "eventEmitted": {
                 "id": "0x00000000000000000000000000000000000000000000000000000000000001c8:0x0000:0x0002",
@@ -217,7 +217,7 @@ async def test_get_all():
         }
     )
 
-    process_event(
+    parse_and_store_event(
         {
             "eventEmitted": {
                 "id": "0x00000000000000000000000000000000000000000000000000000000000001c8:0x0000:0x0002",
@@ -233,7 +233,7 @@ async def test_get_all():
         }
     )
 
-    process_event(
+    parse_and_store_event(
         {
             "eventEmitted": {
                 "id": "0x00000000000000000000000000000000000000000000000000000000000001c8:0x0000:0x0002",
@@ -314,7 +314,7 @@ async def test_fetch_relevant_events_decay_time():
     }
     # store 7 events that are one day appart
     for _i in range(0, 5):
-        process_event(test_message)
+        parse_and_store_event(test_message)
         ts = int(test_message["eventEmitted"]["data"][8], base=16)
         ts -= 86400
         test_message["eventEmitted"]["data"][8] = hex(ts)
@@ -342,7 +342,7 @@ async def test_fetch_relevant_events_decay_distance():
     realms.geodata = realms.load_geodata("./tests/data/test_geodata.json")
 
     db.realms = realms
-    process_event(
+    parse_and_store_event(
         {
             "eventEmitted": {
                 "id": "0x00000000000000000000000000000000000000000000000000000000000001ad:0x0000:0x0023",
@@ -356,7 +356,7 @@ async def test_fetch_relevant_events_decay_distance():
             }
         }
     )
-    process_event(
+    parse_and_store_event(
         {
             "eventEmitted": {
                 "id": "0x00000000000000000000000000000000000000000000000000000000000001ad:0x0000:0x0023",
@@ -370,7 +370,7 @@ async def test_fetch_relevant_events_decay_distance():
             }
         }
     )
-    process_event(
+    parse_and_store_event(
         {
             "eventEmitted": {
                 "id": "0x00000000000000000000000000000000000000000000000000000000000001ad:0x0000:0x0023",
@@ -384,7 +384,7 @@ async def test_fetch_relevant_events_decay_distance():
             }
         }
     )
-    process_event(
+    parse_and_store_event(
         {
             "eventEmitted": {
                 "id": "0x00000000000000000000000000000000000000000000000000000000000001ad:0x0000:0x0023",
@@ -398,7 +398,7 @@ async def test_fetch_relevant_events_decay_distance():
             }
         }
     )
-    process_event(
+    parse_and_store_event(
         {
             "eventEmitted": {
                 "id": "0x00000000000000000000000000000000000000000000000000000000000001ad:0x0000:0x0023",
