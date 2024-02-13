@@ -425,3 +425,14 @@ async def test_fetch_relevant_events_decay_distance():
             (0.0, 0.0),
         ]
     ]
+
+
+@pytest.mark.asyncio
+async def test_fetch_relevant_events_empty_db():
+    db = EventsDatabase.instance().init(":memory:")
+
+    realms = Realms.instance()
+    realms.geodata = realms.load_geodata("./tests/data/test_geodata.json")
+
+    db.realms = realms
+    assert [] == db.fetch_most_relevant(realm_position=db.realms.position_by_id(1), current_time=0x659DABA0)
