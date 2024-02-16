@@ -1,4 +1,5 @@
 import logging
+import time
 from typing import Any, cast
 
 from overlore.eternum.types import Villager
@@ -8,6 +9,7 @@ logger = logging.getLogger("overlore")
 
 
 async def load_mock_gpt_response(mock_index: int) -> tuple[str, str, str]:
+    time.sleep(2)
     gpt_response_file = open_json_file("./data/mock_gpt_response.json")
     try:
         return (str(gpt_response_file[mock_index].get("message")), "mock system prompt", "mock user prompt")
