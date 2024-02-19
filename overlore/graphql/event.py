@@ -98,7 +98,7 @@ async def torii_subscription_connection(
     logger.debug("attempting to establish subscription client...")
     async with client as session:
         tasks = [
-            asyncio.create_task(torii_event_sub(session, on_event_callback, sub), name=str(sub))
+            asyncio.create_task(torii_event_sub(session, on_event_callback, sub), name=sub.name)
             for sub in subscriptions
         ]
         await asyncio.gather(*tasks)
