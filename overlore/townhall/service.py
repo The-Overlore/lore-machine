@@ -18,6 +18,8 @@ from overlore.townhall.logic import handle_townhall_request
 
 logger = logging.getLogger("overlore")
 
+EVENT_SUBS = [Subscriptions.COMBAT_OUTCOME_EVENT_EMITTED, Subscriptions.ORDER_ACCEPTED_EVENT_EMITTED]
+
 
 async def prompt_loop(config: Config) -> None:
     while True:
@@ -31,11 +33,7 @@ async def prompt_loop(config: Config) -> None:
 
 
 async def cancel_all_tasks() -> None:
-    tasks = [
-        t
-        for t in asyncio.all_tasks()
-        if t.get_name() in ["Subscriptions.ORDER_ACCEPTED_EVENT_EMITTED", "Subscriptions.COMBAT_OUTCOME_EVENT_EMITTED"]
-    ]
+    tasks = [task for task in asyncio.all_tasks() if task.get_name() in [sub.name for sub in EVENT_SUBS]]
     for task in tasks:
         logger.info(f"Cancelling task: {task.get_name()}")
         task.cancel()
@@ -82,7 +80,7 @@ async def start() -> None:
         await torii_subscription_connection(
             config.TORII_WS,
             process_event,
-            [Subscriptions.COMBAT_OUTCOME_EVENT_EMITTED, Subscriptions.ORDER_ACCEPTED_EVENT_EMITTED],
+            EVENT_SUBS,
         )
     except ConnectionClosedError:
         logger.warning("Connection close on Torii, need to reconnect here")
