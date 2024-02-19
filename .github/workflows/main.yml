@@ -24,7 +24,7 @@ jobs:
           python-version: "3.11"
       - uses: Gr1N/setup-poetry@v8
         with:
-          poetry-version: "1.2.2"
+          poetry-version: "1.7.1"
 
       - name: Install mod_spatialite
         run: sudo apt-get update -y && sudo apt-get install -y libsqlite3-mod-spatialite
