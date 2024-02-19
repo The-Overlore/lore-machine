@@ -19,8 +19,12 @@ jobs:
           path: ~/.cache/pre-commit
           key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
 
-      - name: Set up poetry environment
-        uses: ./.github/actions/setup-poetry-env
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+      - uses: Gr1N/setup-poetry@v8
+        with:
+          poetry-version: "1.2.2"
 
       - name: Install mod_spatialite
         run: sudo apt-get update -y && sudo apt-get install -y libsqlite3-mod-spatialite
@@ -40,8 +44,12 @@ jobs:
           path: ~/.cache/pre-commit
           key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
 
-      - name: Set up poetry environment
-        uses: ./.github/actions/setup-poetry-env
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+      - uses: Gr1N/setup-poetry@v8
+        with:
+          poetry-version: "1.2.2"
 
       - name: Run checks
         run: make check
