@@ -33,7 +33,8 @@ async def prompt_loop(config: Config) -> None:
 
 
 async def cancel_all_tasks() -> None:
-    tasks = [task for task in asyncio.all_tasks() if task.get_name() in [sub.name for sub in EVENT_SUBS]]
+    subscriptions_names = [sub.name for sub in EVENT_SUBS]
+    tasks = [task for task in asyncio.all_tasks() if task.get_name() in subscriptions_names]
     for task in tasks:
         logger.info(f"Cancelling task: {task.get_name()}")
         task.cancel()
