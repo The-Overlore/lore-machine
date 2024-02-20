@@ -15,6 +15,7 @@ from overlore.llm.open_ai import OpenAIHandler
 from overlore.sqlite.events_db import EventsDatabase
 from overlore.sqlite.vector_db import VectorDatabase
 from overlore.townhall.logic import handle_townhall_request
+from overlore.utils import is_valid_message
 
 logger = logging.getLogger("overlore")
 
@@ -46,10 +47,46 @@ def handle_sigint(_signum: int, _frame: FrameType | None) -> None:
     asyncio.run_coroutine_threadsafe(cancel_all_tasks(), loop=asyncio.get_running_loop())
 
 
+def parse_and_validate_message(message: str) -> (bool, dict):
+    """
+    Parses the incoming WebSocket message and validates its signature.
+
+    Args:
+        message (str): The incoming WebSocket message in JSON format.
+
+    Returns:
+        bool: True if the message is valid, False otherwise.
+        dict: The parsed payload if the message is valid, empty dict otherwise.
+    """
+    try:
+        # Attempt to parse the incoming JSON message
+        parsed_message = json.loads(message)
+        payload = parsed_message["payload"]
+        signature = parsed_message["signature"]  # Expected to be a list of integers
+        public_key = parsed_message["public_key"]  # Expected to be an integer
+
+        # Validate the message signature
+        is_valid = is_valid_message(payload, signature, public_key)
+
+    # TODO: sanity check starknet-py's error cases for message signature verification
+    except (json.JSONDecodeError, KeyError, TypeError) as error:
+        # If there's an error during message parsing or validation
+        logger.warning(f"Message parsing/validation error: {error}")
+        return False, {}
+    else:
+        # linter demands an else case, even w/ an early return in try block
+        # life is unfair
+        return is_valid, payload if is_valid else {}
+
+
 async def service(websocket: WebSocketServerProtocol, config: Config) -> None:
     async for message in websocket:
         if message is None:
             continue
+
+        # Use the new function to parse and validate the message
+        is_valid, payload = parse_and_validate_message(message)
+
         logger.debug("generating townhall")
         # convert message to string instead of bytes
         message_str = str(message)
