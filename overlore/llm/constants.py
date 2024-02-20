@@ -1,6 +1,7 @@
 # NPC PARAMS
 SEX = ["male", "female"]
 ROLE = ["farmer", "miner", "fisherman", "merchant", "trader", "soldier"]
+TRAIT_TYPE = ["positive", "negative"]
 HUNGER = [
     "starving",
     "famished",
@@ -82,15 +83,26 @@ PREVIOUS_TOWNHALL = (
 )
 
 AGENT_CREATION_TEMPLATE = """
-    {name}, a {sex} {role}, has just arrived in {realm_name} to settle.
-    Upon entering the realm, {name} addresses the lord with the following matters:
+    Generate, for a {sex} {role} npc, a name, surname and a {trait_type} character trait.
+"""
 
-    1. Expresses gratitude for the warm welcome and hospitality extended by the realm.
-    2. Highlights the skills and contributions he/she brings as a {role}.
-    3. Explain his background and where he comes from.
-    4. Discusses the significance of recent events: {events}.
+AGENT_CREATION_EXAMPLE = """
+    Use these examples as reference:
 
-    During the speech, {name} maintains a demeanor that is {happiness}, {hunger} and {belligerent}.
+    \"\"\"
+    Name: Theo
+    Surname: Blackwood
+    Character Trait: Resourceful
 
-    Format the speech like so: <name>:<speech>.
+    Theo Blackwood is known for his ability to find quick and clever ways to overcome difficulties, often in innovative ways that surprise those around him. His resourcefulness makes him a key player in any situation, especially in challenging or unexpected circumstances.
+    \"\"\"
+
+    \"\"\"
+
+    Name: Elena
+    Surname: Marwood
+    Character Trait: Perceptive
+
+    Elena Marwood is highly observant and has an exceptional ability to notice and interpret subtle details and nuances that others might overlook. This makes her an invaluable ally or a formidable adversary, depending on where one stands.
+    \"\"\"
 """
