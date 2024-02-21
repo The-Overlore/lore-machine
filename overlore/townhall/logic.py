@@ -17,7 +17,12 @@ A_DAMAGES = 10 / 1000
 MOCK_GPT_RESPONSE = ("Hello World!!end of discussion! Villagers say hello", "mock system prompt", "mock user prompt")
 
 
+def is_error(townhall: str) -> bool:
+    return townhall.find("!failure!") != -1
+
+
 def get_townhall_summary(townhall: str) -> tuple[str, str]:
+    print(townhall)
     res = townhall.split("!end of discussion!")
     return (res[0], res[1])
 
@@ -28,7 +33,10 @@ async def handle_townhall_request(message: str, config: BootConfig) -> tuple[int
     gpt_interface = OpenAIHandler.instance()
     realms = Realms.instance()
 
-    data = str_to_json(message)
+    try:
+        data = str_to_json(message)
+    except Exception as error:
+        return (0, f"Failure to generate a dialog: {error}", "", "")
 
     realm_id = int(data.get("realm_id"))
     realm_name = realms.name_by_id(realm_id)
@@ -58,6 +66,9 @@ async def handle_townhall_request(message: str, config: BootConfig) -> tuple[int
             realm_name, realm_order, summaries, villagers, relevant_events
         )
     )
+
+    if is_error(generated_townhall):
+        return (0, f"Failure to generate a dialog: {generated_townhall}", "", "")
 
     (townhall, summary) = get_townhall_summary(generated_townhall)
 

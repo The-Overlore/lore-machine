@@ -1,5 +1,4 @@
 import logging
-import time
 from typing import Any, cast
 
 from overlore.eternum.types import Villager
