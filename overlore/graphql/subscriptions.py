@@ -15,7 +15,7 @@ from overlore.types import ToriiEmittedEvent
 
 logger = logging.getLogger("overlore")
 
-OnEventCallbackType = Callable[[dict], int]
+OnEventCallbackType = Callable[[ToriiEmittedEvent], int]
 
 
 def backoff_logging(details: Details) -> None:
@@ -74,5 +74,6 @@ def process_received_event(event: ToriiEmittedEvent) -> int:
     return added_id
 
 
-def assign_name_character_trait_to_npc(event: ToriiEmittedEvent) -> int:
+def assign_name_character_trait_to_npc(_event: ToriiEmittedEvent) -> int:
+    _event
     return 69_420
