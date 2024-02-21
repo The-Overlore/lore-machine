@@ -66,15 +66,13 @@ async def torii_subscription_connection(
         await asyncio.gather(*tasks)
 
 
-def parse_and_store_event(
-    event: ToriiEmittedEvent,
-) -> int:
+def process_received_event(event: ToriiEmittedEvent) -> int:
     events_db = EventsDatabase.instance()
 
     parsed_event = parse_event(event=event["eventEmitted"])
-    added_id: int = events_db.insert_event(event=parsed_event, only_if_not_present=False)
+    added_id: int = events_db.insert_event(event=parsed_event)
     return added_id
 
 
 def assign_name_character_trait_to_npc(event: ToriiEmittedEvent) -> int:
-    return 19
+    return 69_420

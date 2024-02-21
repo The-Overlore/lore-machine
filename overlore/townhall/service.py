@@ -8,12 +8,12 @@ from types import FrameType
 from websockets import WebSocketServerProtocol, serve
 from websockets.exceptions import ConnectionClosedError
 
-from overlore.config import Config
+from overlore.config import BootConfig
 from overlore.graphql.boot_sync import torii_boot_sync
 from overlore.graphql.constants import Subscriptions
 from overlore.graphql.subscriptions import (
     assign_name_character_trait_to_npc,
-    parse_and_store_event,
+    process_received_event,
     torii_subscription_connection,
 )
 from overlore.llm.open_ai import OpenAIHandler
@@ -24,18 +24,18 @@ from overlore.townhall.logic import handle_townhall_request
 logger = logging.getLogger("overlore")
 
 EVENT_SUBS_AND_CALLBACKS = [
-    (Subscriptions.COMBAT_OUTCOME, parse_and_store_event),
-    (Subscriptions.ORDER_ACCEPTED, parse_and_store_event),
+    (Subscriptions.COMBAT_OUTCOME, process_received_event),
+    (Subscriptions.ORDER_ACCEPTED, process_received_event),
     (Subscriptions.NPC_SPAWNED, assign_name_character_trait_to_npc),
 ]
 
 
-async def prompt_loop(config: Config) -> None:
+async def prompt_loop(config: BootConfig) -> None:
     while True:
         txt = input("hit enter to generate townhall with realm_id 73 or enter realm_id\n")
         realm_id = 73 if len(txt) == 0 else int(txt)
         msg = f'{{"realm_id": {realm_id}, "order": 1}}'
-        (rowid, townhall, systemPrompt, userPrompt) = await handle_townhall_request(msg, config)
+        (rowid, townhall, systemPrompt, userPrompt) = await handle_townhall_request(msg, config=config)
         logger.debug(f"______System prompt______\n{systemPrompt}\n________________________")
         logger.debug(f"______User prompt______\n{userPrompt}\n________________________")
         logger.debug(f"______GPT answer______\n{townhall}\n________________________\n\n\n\n\n\n\n\n")
@@ -55,7 +55,7 @@ def handle_sigint(_signum: int, _frame: FrameType | None) -> None:
     asyncio.run_coroutine_threadsafe(cancel_all_tasks(), loop=asyncio.get_running_loop())
 
 
-async def service(websocket: WebSocketServerProtocol, config: Config) -> None:
+async def service(websocket: WebSocketServerProtocol, config: BootConfig) -> None:
     async for message in websocket:
         if message is None:
             continue
@@ -67,32 +67,46 @@ async def service(websocket: WebSocketServerProtocol, config: Config) -> None:
         await websocket.send(json.dumps({"id": rowid, "townhall": response}))
 
 
-async def start() -> None:
-    config = Config()
+def setup() -> BootConfig:
+    config = BootConfig()
 
     signal.signal(signal.SIGINT, handle_sigint)
 
     EventsDatabase.instance().init()
-
     VectorDatabase.instance().init()
-    OpenAIHandler.instance().init(config.OPENAI_API_KEY)
 
-    if config.prompt:
-        await prompt_loop(config)
+    OpenAIHandler.instance().init(config.env["OPENAI_API_KEY"])
+    return config
 
-    # Sync events database on boot
-    await torii_boot_sync(config.TORII_GRAPHQL)
 
+async def launch_services(config: BootConfig) -> None:
     service_bound_handler = functools.partial(service, config=config)
-    overlore_server = await serve(service_bound_handler, config.address, config.port)
-    logger.info(f"great job, starting this service on port {config.port}. everything is perfect from now on.")
+
+    overlore_server = await serve(service_bound_handler, config.env["HOST_ADDRESS"], int(config.env["HOST_PORT"]))
+
+    logger.info(
+        f"great job, starting this service on port {config.env['HOST_PORT']}. everything is perfect from now on."
+    )
+
     try:
-        await torii_subscription_connection(config.TORII_WS, EVENT_SUBS_AND_CALLBACKS)
+        await torii_subscription_connection(config.env["TORII_WS"], EVENT_SUBS_AND_CALLBACKS)
     except ConnectionClosedError:
         logger.warning("Connection close on Torii, need to reconnect here")
     finally:
         overlore_server.close()
         await overlore_server.wait_closed()
+
+
+async def start() -> None:
+    config = setup()
+
+    if config.prompt:
+        await prompt_loop(config)
+
+    # Sync events database on boot
+    await torii_boot_sync(config.env["TORII_GRAPHQL"])
+
+    await launch_services(config)
 
 
 # hardcode for now, when more mature we need some plumbing to read this off a config

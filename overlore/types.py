@@ -6,9 +6,11 @@ EventKeys: TypeAlias = list[str]
 
 EventData: TypeAlias = EventKeys
 
+ToriiRealm: TypeAlias = dict[str, int]
+
 ToriiEvent: TypeAlias = dict[str, str | EventKeys | EventData]
 
-ToriiEmittedEvent: TypeAlias = dict[str, dict[str, str | EventKeys | EventData]]
+ToriiEmittedEvent: TypeAlias = dict[str, ToriiEvent]
 
 SyncEvents: TypeAlias = dict[str, dict[str, str | EventKeys | EventData]]
 

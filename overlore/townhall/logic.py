@@ -1,13 +1,12 @@
-from overlore.config import Config
+from overlore.config import BootConfig
 from overlore.eternum.constants import Realms
 from overlore.eternum.types import ResourceAmounts, Villager
 from overlore.llm.open_ai import OpenAIHandler
 from overlore.sqlite.events_db import EventsDatabase
+from overlore.sqlite.types import StoredEvent
 from overlore.sqlite.vector_db import VectorDatabase
-from overlore.townhall.mocks import fetch_villagers, load_mock_gpt_response
+from overlore.townhall.mocks import fetch_villagers
 from overlore.utils import get_katana_timestamp, str_to_json
-
-ARBITRARY_TS = 10000000
 
 # A is calculated by setting a max amount of resources, any value equal to or higher than MAX will get attributed a score of 10.
 # The linear equation is then a * MAX + 0 = 10. We can derive a easily from there
@@ -15,13 +14,15 @@ A_RESOURCES = 10 / 100
 # Same as above
 A_DAMAGES = 10 / 1000
 
+MOCK_GPT_RESPONSE = ("Hello World!!end of discussion! Villagers say hello", "mock system prompt", "mock user prompt")
+
 
 def get_townhall_summary(townhall: str) -> tuple[str, str]:
     res = townhall.split("!end of discussion!")
     return (res[0], res[1])
 
 
-async def handle_townhall_request(message: str, config: Config) -> tuple[int, str, str, str]:
+async def handle_townhall_request(message: str, config: BootConfig) -> tuple[int, str, str, str]:
     events_db = EventsDatabase.instance()
     vector_db = VectorDatabase.instance()
     gpt_interface = OpenAIHandler.instance()
@@ -37,9 +38,10 @@ async def handle_townhall_request(message: str, config: Config) -> tuple[int, st
 
     villagers: list[Villager] = fetch_villagers()
 
-    ts = ARBITRARY_TS if config.mock or config.prompt else await get_katana_timestamp(config.KATANA_URL)
+    ts = await get_katana_timestamp(config.env["KATANA_URL"])
+
     # get the most relevant events for the realm
-    relevant_events = events_db.fetch_most_relevant(events_db.realms.position_by_id(realm_id), ts)
+    relevant_events: list[StoredEvent] = events_db.fetch_most_relevant(events_db.realms.position_by_id(realm_id), ts)
 
     relevant_events_ids: list[int] = [int(str(event[0])) for event in relevant_events]
 
@@ -48,8 +50,9 @@ async def handle_townhall_request(message: str, config: Config) -> tuple[int, st
 
     [event for event in relevant_events if event[0] in event_ids_prev_unused]
 
+    # TODO: find a way to mock the ChatGPT response with the responses library instead of loading from file. Then we can avoid having to do this check which isn't really elegant (https://github.com/The-Overlore/lore-machine/issues/67)
     (generated_townhall, systemPrompt, userPrompt) = (
-        await load_mock_gpt_response(0)
+        MOCK_GPT_RESPONSE
         if config.mock is True
         else await gpt_interface.generate_townhall_discussion(
             realm_name, realm_order, summaries, villagers, relevant_events

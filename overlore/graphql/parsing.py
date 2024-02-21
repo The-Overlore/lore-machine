@@ -32,7 +32,9 @@ def parse_combat_outcome_event(torii_event_id: str, keys: EventKeys, data: Event
     realms = Realms.instance()
 
     attacker_realm_entity_id = int(keys[1], base=16)
-    target_realm_entity_id = int(keys[2], base=16)
+    attacker_realm_id = int(keys[2], base=16)
+    target_realm_entity_id = int(keys[3], base=16)
+    target_realm_id = int(keys[4], base=16)
 
     (data, attacking_entity_ids) = parse_attacking_entity_ids(data)
     (data, stolen_resources) = parse_resources(data)
@@ -46,9 +48,11 @@ def parse_combat_outcome_event(torii_event_id: str, keys: EventKeys, data: Event
         "torii_event_id": torii_event_id,
         "type": SqLiteEventType.COMBAT_OUTCOME.value,
         "active_realm_entity_id": attacker_realm_entity_id,
+        "active_realm_id": attacker_realm_id,
         "passive_realm_entity_id": target_realm_entity_id,
-        "active_pos": realms.position_by_id(attacker_realm_entity_id),
-        "passive_pos": realms.position_by_id(target_realm_entity_id),
+        "passive_realm_id": target_realm_id,
+        "active_pos": realms.position_by_id(attacker_realm_id),
+        "passive_pos": realms.position_by_id(target_realm_id),
         "attacking_entity_ids": attacking_entity_ids,
         "stolen_resources": stolen_resources,
         "winner": winner,
@@ -64,9 +68,12 @@ def parse_trade_event(torii_event_id: str, keys: EventKeys, data: EventData) -> 
 
     _trade_id = int(keys[1], base=16)
     maker_realm_entity_id = int(data[0], base=16)
-    taker_realm_entity_id = int(data[1], base=16)
+    maker_realm_id = int(data[1], base=16)
+    taker_realm_entity_id = int(data[2], base=16)
+    taker_realm_id = int(data[3], base=16)
 
-    data = data[2:]
+    resources_index_start = 4
+    data = data[resources_index_start:]
 
     (data, resources_maker) = parse_resources(data)
     (data, resources_taker) = parse_resources(data)
@@ -78,9 +85,11 @@ def parse_trade_event(torii_event_id: str, keys: EventKeys, data: EventData) -> 
         "torii_event_id": torii_event_id,
         "type": SqLiteEventType.ORDER_ACCEPTED.value,
         "active_realm_entity_id": taker_realm_entity_id,
+        "active_realm_id": taker_realm_id,
         "passive_realm_entity_id": maker_realm_entity_id,
-        "active_pos": realms.position_by_id(maker_realm_entity_id),
-        "passive_pos": realms.position_by_id(taker_realm_entity_id),
+        "passive_realm_id": maker_realm_id,
+        "active_pos": realms.position_by_id(taker_realm_id),
+        "passive_pos": realms.position_by_id(maker_realm_id),
         "resources_maker": resources_maker,
         "resources_taker": resources_taker,
         "importance": importance,

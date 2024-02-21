@@ -8,16 +8,6 @@ from overlore.utils import open_json_file
 logger = logging.getLogger("overlore")
 
 
-async def load_mock_gpt_response(mock_index: int) -> tuple[str, str, str]:
-    time.sleep(2)
-    gpt_response_file = open_json_file("./data/mock_gpt_response.json")
-    try:
-        return (str(gpt_response_file[mock_index].get("message")), "mock system prompt", "mock user prompt")
-    except Exception as error:
-        logging.exception(error)
-        return ("", "", "")
-
-
 def load_mock_villagers() -> list[Villager]:
     return cast(list[Villager], open_json_file("./data/villagers.json"))
 
@@ -34,16 +24,3 @@ def load_mock_events() -> Any:
 
 def fetch_villagers() -> list[Villager]:
     return load_mock_villagers()
-
-
-# as in FAKE
-def fetch_users(index: int) -> Any:
-    # Mock user data
-    users = ["User1", "User2", "User3"]
-    return users[index]
-
-
-# as in FAKE news
-def fetch_events(index: int) -> Any:
-    # Mock event data
-    return load_mock_events()[index]

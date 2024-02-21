@@ -22,8 +22,6 @@ logger = logging.getLogger("overlore")
 class OpenAIHandler:
     _instance: OpenAIHandler | None = None
     API_KEY: str | None = None
-    TEXT_GEN_URL: str = "https://api.openai.com/v1/chat/completions"
-    EMBEDDINGS_URL: str = "https://api.openai.com/v1/embeddings"
     client: OpenAI
     nl_formatter: NaturalLanguageFormatter
 
