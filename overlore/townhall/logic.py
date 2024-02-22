@@ -44,7 +44,7 @@ async def handle_townhall_request(message: str, config: BootConfig) -> tuple[int
     realm_id = int(data.get("realm_id"))
     realm_name = realms.name_by_id(realm_id)
 
-    realm_order_id = int(data.get("order"))
+    realm_order_id = int(data.get("orderId"))
     realm_order = realms.order_by_order_id(realm_order_id)
 
     villagers: list[Villager] = fetch_villagers()
