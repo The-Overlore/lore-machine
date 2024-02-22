@@ -83,7 +83,14 @@ PREVIOUS_TOWNHALL = (
 )
 
 AGENT_CREATION_TEMPLATE = """
-    Generate, for a {sex} {role} npc, a name, surname and a {trait_type} character trait.
+    Generate for an npc:
+     - name
+     - surname
+     - {trait_type} character trait
+     - sex
+     - role
+     List of sex: {sex}
+     List of roles: {roles}
 """
 
 AGENT_CREATION_EXAMPLE = """
@@ -93,6 +100,8 @@ AGENT_CREATION_EXAMPLE = """
     Name: Theo
     Surname: Blackwood
     Character Trait: Resourceful
+    Sex: Male
+    Role: Farmer
 
     Theo Blackwood is known for his ability to find quick and clever ways to overcome difficulties, often in innovative ways that surprise those around him. His resourcefulness makes him a key player in any situation, especially in challenging or unexpected circumstances.
     \"\"\"
@@ -102,6 +111,8 @@ AGENT_CREATION_EXAMPLE = """
     Name: Elena
     Surname: Marwood
     Character Trait: Perceptive
+    Sex: Female
+    Role: Soldier
 
     Elena Marwood is highly observant and has an exceptional ability to notice and interpret subtle details and nuances that others might overlook. This makes her an invaluable ally or a formidable adversary, depending on where one stands.
     \"\"\"

@@ -13,6 +13,8 @@ from overlore.llm.constants import (
     NPCS,
     PREVIOUS_TOWNHALL,
     REALM,
+    ROLE,
+    SEX,
     SYSTEM_STRING_EMPTY_PREV_TOWNHALL,
     SYSTEM_STRING_HAS_PREV_TOWNHALL,
     TRAIT_TYPE,
@@ -94,11 +96,18 @@ class OpenAIHandler:
 
         return (await self.request_prompt(systemPrompt, userPrompt, "gpt-4-1106-preview"), systemPrompt, userPrompt)
 
-    async def generate_name_and_character_trait(self, sex: str, role: str) -> str:
+    async def generate_name_and_character_trait(self) -> str:
         "trait_type == either 'positive' or 'negative'. Otherwise, GPT calls only give out positive traits"
         trait_type = TRAIT_TYPE[random.randrange(2)]
 
-        systemPrompt = AGENT_CREATION_EXAMPLE
-        userPrompt = AGENT_CREATION_TEMPLATE.format(sex=sex, role=role, trait_type=trait_type)
+        formatted_sex_list = ", ".join(SEX)
+        formatted_role_list = ", ".join(ROLE)
 
+        systemPrompt = AGENT_CREATION_EXAMPLE
+        userPrompt = AGENT_CREATION_TEMPLATE.format(
+            trait_type=trait_type, sex=formatted_sex_list, roles=formatted_role_list
+        )
+
+        print(userPrompt)
+        # return ("")
         return await self.request_prompt(systemPrompt, userPrompt, "gpt-3.5-turbo-0125")
