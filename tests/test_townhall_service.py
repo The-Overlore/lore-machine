@@ -91,5 +91,7 @@ async def test_mock_response(setup):
         async with websockets.connect("ws://localhost:8766") as websocket:
             await websocket.send('{"realm_id": 1, "order": 1}')
             actual = await websocket.recv()
-            expected = """{"id": 0, "townhall": \"Hello World!\"}"""
-            assert actual == expected
+            actual_msg = json.loads(actual).get("townhall")
+            actual_msg = actual_msg.replace("\n", "")
+            expected = "Paul: Hello WorldNancy:Yes, Hello World indeed!"
+            assert actual_msg == expected

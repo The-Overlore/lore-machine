@@ -14,7 +14,11 @@ A_RESOURCES = 10 / 100
 # Same as above
 A_DAMAGES = 10 / 1000
 
-MOCK_GPT_RESPONSE = ("Hello World!!end of discussion! Villagers say hello", "mock system prompt", "mock user prompt")
+MOCK_GPT_RESPONSE = (
+    "Paul: Hello World\nNancy:Yes, Hello World indeed!!end of discussion! Villagers say hello",
+    "mock system prompt",
+    "mock user prompt",
+)
 
 
 def is_error(townhall: str) -> bool:
@@ -22,7 +26,6 @@ def is_error(townhall: str) -> bool:
 
 
 def get_townhall_summary(townhall: str) -> tuple[str, str]:
-    print(townhall)
     res = townhall.split("!end of discussion!")
     return (res[0], res[1])
 
