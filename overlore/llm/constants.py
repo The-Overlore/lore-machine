@@ -84,6 +84,7 @@ PREVIOUS_TOWNHALL = (
 
 AGENT_CREATION_TEMPLATE = """
     Generate for an npc:
+     - age
      - name
      - surname
      - {trait_type} character trait
@@ -97,6 +98,7 @@ AGENT_CREATION_EXAMPLE = """
     Use these examples as reference:
 
     \"\"\"
+    Age: 23
     Name: Theo
     Surname: Blackwood
     Character Trait: Resourceful
@@ -107,7 +109,7 @@ AGENT_CREATION_EXAMPLE = """
     \"\"\"
 
     \"\"\"
-
+    Age: 47
     Name: Elena
     Surname: Marwood
     Character Trait: Perceptive

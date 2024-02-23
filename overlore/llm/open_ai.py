@@ -96,7 +96,7 @@ class OpenAIHandler:
 
         return (await self.request_prompt(systemPrompt, userPrompt, "gpt-4-1106-preview"), systemPrompt, userPrompt)
 
-    async def generate_name_and_character_trait(self) -> str:
+    async def generate_npc_profile(self) -> str:
         "trait_type == either 'positive' or 'negative'. Otherwise, GPT calls only give out positive traits"
         trait_type = TRAIT_TYPE[random.randrange(2)]
 
