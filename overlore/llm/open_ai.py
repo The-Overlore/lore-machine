@@ -8,13 +8,13 @@ from openai import OpenAI
 from overlore.eternum.types import Villager
 from overlore.llm.constants import (
     AGENT_CREATION_EXAMPLE,
-    AGENT_CREATION_TEMPLATE,
+    AGENT_CREATION_SYSTEM_PROMPT_TEMPLATE,
+    AGENT_CREATION_USER_PROMPT_TEMPLATE,
     EVENT,
     NPCS,
     PREVIOUS_TOWNHALL,
     REALM,
     ROLE,
-    SEX,
     SYSTEM_STRING_EMPTY_PREV_TOWNHALL,
     SYSTEM_STRING_HAS_PREV_TOWNHALL,
     TRAIT_TYPE,
@@ -100,14 +100,9 @@ class OpenAIHandler:
         "trait_type == either 'positive' or 'negative'. Otherwise, GPT calls only give out positive traits"
         trait_type = TRAIT_TYPE[random.randrange(2)]
 
-        formatted_sex_list = ", ".join(SEX)
         formatted_role_list = ", ".join(ROLE)
 
-        systemPrompt = AGENT_CREATION_EXAMPLE
-        userPrompt = AGENT_CREATION_TEMPLATE.format(
-            trait_type=trait_type, sex=formatted_sex_list, roles=formatted_role_list
-        )
+        systemPrompt = AGENT_CREATION_SYSTEM_PROMPT_TEMPLATE.format(examples=AGENT_CREATION_EXAMPLE)
+        userPrompt = AGENT_CREATION_USER_PROMPT_TEMPLATE.format(trait_type=trait_type, roles=formatted_role_list)
 
-        print(userPrompt)
-        # return ("")
         return await self.request_prompt(systemPrompt, userPrompt, "gpt-3.5-turbo-0125")

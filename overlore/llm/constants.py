@@ -2,42 +2,6 @@
 SEX = ["male", "female"]
 ROLE = ["farmer", "miner", "fisherman", "merchant", "trader", "soldier"]
 TRAIT_TYPE = ["positive", "negative"]
-HUNGER = [
-    "starving",
-    "famished",
-    "ravenous",
-    "hungry",
-    "peckish",
-    "content",
-    "satisfied",
-    "full",
-    "stuffed",
-    "overfed",
-]
-HAPPINESS = [
-    "miserable",
-    "unhappy",
-    "slightly content",
-    "content",
-    "happy",
-    "joyful",
-    "delighted",
-    "ecstatic",
-    "blissful",
-    "euphoric",
-]
-BELLIGERENT = [
-    "peaceful",
-    "calm",
-    "slightly agitated",
-    "agitated",
-    "hostile",
-    "combative",
-    "antagonistic",
-    "belligerent",
-    "furious",
-    "enraged",
-]
 
 AGENT_TEMPLATE = """{name}, a {sex} {role}."""
 
@@ -82,23 +46,22 @@ PREVIOUS_TOWNHALL = (
     """Here's the previous conversation that was had in my realm about the event: \"\"\"{previous_townhall}\"\"\""""
 )
 
-AGENT_CREATION_TEMPLATE = """
+AGENT_CREATION_SYSTEM_PROMPT_TEMPLATE = """
+    Imagine you're the game master for a strategy game, you are tasked with creating Non-Playable Characters. Use these examples as reference: {examples}.
+"""
+AGENT_CREATION_USER_PROMPT_TEMPLATE = """
     Generate for an npc:
-     - age
-     - name
-     - surname
-     - {trait_type} character trait
-     - sex
-     - role
-     List of sex: {sex}
-     List of roles: {roles}
+    - age (random between 15 and 50)
+    - name
+    - surname
+    - {trait_type} character trait
+    - sex (male or female)
+    - role ({roles})
 """
 
 AGENT_CREATION_EXAMPLE = """
-    Use these examples as reference:
-
     \"\"\"
-    Age: 23
+    Age: 15
     Name: Theo
     Surname: Blackwood
     Character Trait: Resourceful
