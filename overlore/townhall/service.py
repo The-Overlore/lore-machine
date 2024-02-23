@@ -5,6 +5,7 @@ import logging
 import signal
 from types import FrameType
 
+import responses
 from websockets import WebSocketServerProtocol, serve
 from websockets.exceptions import ConnectionClosedError
 
@@ -20,6 +21,7 @@ from overlore.llm.open_ai import OpenAIHandler
 from overlore.sqlite.events_db import EventsDatabase
 from overlore.sqlite.vector_db import VectorDatabase
 from overlore.townhall.logic import handle_townhall_request
+from overlore.townhall.mocks import MOCK_KATANA_RESPONSE
 
 logger = logging.getLogger("overlore")
 
@@ -31,14 +33,18 @@ EVENT_SUBS_AND_CALLBACKS = [
 
 
 async def prompt_loop(config: BootConfig) -> None:
-    while True:
-        txt = input("hit enter to generate townhall with realm_id 73 or enter realm_id\n")
-        realm_id = 73 if len(txt) == 0 else int(txt)
-        msg = f'{{"realm_id": {realm_id}, "order": 1}}'
-        (rowid, townhall, systemPrompt, userPrompt) = await handle_townhall_request(msg, config=config)
-        logger.debug(f"______System prompt______\n{systemPrompt}\n________________________")
-        logger.debug(f"______User prompt______\n{userPrompt}\n________________________")
-        logger.debug(f"______GPT answer______\n{townhall}\n________________________\n\n\n\n\n\n\n\n")
+    test_url = config.env["KATANA_URL"]
+    mock_response = json.dumps(MOCK_KATANA_RESPONSE)
+    with responses.RequestsMock() as rsps:
+        rsps.add(rsps.POST, test_url, body=mock_response, status=200)
+        while True:
+            txt = input("hit enter to generate townhall with realm_id 73 or enter realm_id\n")
+            realm_id = 73 if len(txt) == 0 else int(txt)
+            msg = f'{{"realm_id": {realm_id}, "orderId": 1}}'
+            (rowid, townhall, systemPrompt, userPrompt) = await handle_townhall_request(msg, config=config)
+            logger.debug(f"______System prompt______\n{systemPrompt}\n________________________")
+            logger.debug(f"______User prompt______\n{userPrompt}\n________________________")
+            logger.debug(f"______GPT answer______\n{townhall}\n________________________\n\n\n\n\n\n\n\n")
 
 
 async def cancel_all_tasks() -> None:

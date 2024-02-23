@@ -13,24 +13,8 @@ from overlore.graphql.subscriptions import process_received_event
 from overlore.llm.open_ai import OpenAIHandler
 from overlore.sqlite.events_db import EventsDatabase
 from overlore.sqlite.vector_db import VectorDatabase
+from overlore.townhall.mocks import MOCK_KATANA_RESPONSE
 from overlore.townhall.service import service
-
-KATANA_RESPONSE = {
-    "jsonrpc": "2.0",
-    "result": {
-        "status": "ACCEPTED_ON_L1",
-        "block_hash": "0x38937c85771a65ee96dd2fcd37f28a159b7c9f553c17807fd30feae68506a67",
-        "parent_hash": "0x0",
-        "block_number": 0,
-        "new_root": "0x0",
-        "timestamp": 0,
-        "sequencer_address": "0x1",
-        "l1_gas_price": {"price_in_strk": "0x0", "price_in_wei": "0x174876e800"},
-        "starknet_version": "0.12.2",
-        "transactions": [],
-    },
-    "id": 1,
-}
 
 
 # Function to run the torii mock in a separate thread
@@ -83,7 +67,7 @@ def setup():
 @pytest.mark.asyncio
 async def test_mock_response(setup):
     test_url = "https://localhost:8080"
-    mock_response = json.dumps(KATANA_RESPONSE)
+    mock_response = json.dumps(MOCK_KATANA_RESPONSE)
 
     with responses.RequestsMock() as rsps:
         rsps.add(rsps.POST, test_url, body=mock_response, status=200)
