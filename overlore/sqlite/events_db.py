@@ -21,6 +21,8 @@ MAX_DISTANCE_M = 10000
 A_TIME = float(-10.0 / MAX_TIME_S)
 A_DISTANCE = float(-10.0 / MAX_DISTANCE_M)
 
+QUERY_RES_POS_INDEX_START = 9
+
 
 def decayFunction(a: float, b: float, x: float) -> float:
     y = (a * x) + b
@@ -53,7 +55,9 @@ class EventsDatabase(Database):
                 type INTEGER NOT NULL,
                 torii_event_id TEXT,
                 active_realm_entity_id INTEGER NOT NULL,
+                active_realm_id INTEGER NOT NULL,
                 passive_realm_entity_id INTEGER NOT NULL,
+                passive_realm_id INTEGER NOT NULL,
                 importance FLOAT NOT NULL,
                 ts INTEGER NOT NULL,
                 metadata TEXT
@@ -91,7 +95,20 @@ class EventsDatabase(Database):
         self.realms = Realms.instance().init()
         return self
 
-    def insert_event(self, event: ParsedEvent, only_if_not_present: bool) -> int:
+    def format_records(self, records: list[Any]) -> list[StoredEvent]:
+        return cast(
+            list[StoredEvent],
+            [
+                [
+                    *tup[:QUERY_RES_POS_INDEX_START],
+                    (tup[QUERY_RES_POS_INDEX_START], tup[QUERY_RES_POS_INDEX_START + 1]),
+                    (tup[QUERY_RES_POS_INDEX_START + 2], tup[QUERY_RES_POS_INDEX_START + 3]),
+                ]
+                for tup in records
+            ],
+        )
+
+    def insert_event(self, event: ParsedEvent) -> int:
         event_copy = deepcopy(event)
 
         torii_event_id = event["torii_event_id"]
@@ -100,8 +117,12 @@ class EventsDatabase(Database):
         del event["type"]
         active_realm_entity_id = event["active_realm_entity_id"]
         del event["active_realm_entity_id"]
+        active_realm_id = event["active_realm_id"]
+        del event["active_realm_id"]
         passive_realm_entity_id = event["passive_realm_entity_id"]
         del event["passive_realm_entity_id"]
+        passive_realm_id = event["passive_realm_id"]
+        del event["passive_realm_id"]
         active_pos = cast(RealmPosition, event["active_pos"])
         del event["active_pos"]
         passive_pos = cast(RealmPosition, event["passive_pos"])
@@ -112,21 +133,18 @@ class EventsDatabase(Database):
         del event["importance"]
         additional_data = json.dumps(event)
         query = (
-            "INSERT INTO events (torii_event_id, type, active_realm_entity_id, passive_realm_entity_id,"
-            " importance, ts,"
-            " metadata, active_pos, passive_pos) SELECT ?, ?, ?, ?, ?, ?, ?, MakePoint(?,?),MakePoint(?, ?)"
-            " WHERE NOT EXISTS (SELECT 1 FROM events WHERE torii_event_id=?);"
-            if only_if_not_present
-            else (
-                "INSERT INTO events (torii_event_id, type, active_realm_entity_id, passive_realm_entity_id, importance,"
-                " ts, metadata, active_pos, passive_pos) VALUES (?, ?, ?, ?, ?, ?, ?, MakePoint(?,?),MakePoint(?, ?));"
-            )
+            "INSERT INTO events (torii_event_id, type, active_realm_entity_id, active_realm_id,"
+            " passive_realm_entity_id, passive_realm_id, importance, ts, metadata, active_pos, passive_pos) SELECT ?,"
+            " ?, ?, ?, ?, ?, ?, ?, ?, MakePoint(?,?),MakePoint(?, ?) WHERE NOT EXISTS (SELECT 1 FROM events WHERE"
+            " torii_event_id=?);"
         )
         values: tuple[Any, ...] = (
             torii_event_id,
             event_type,
             active_realm_entity_id,
+            active_realm_id,
             passive_realm_entity_id,
+            passive_realm_id,
             importance,
             ts,
             additional_data,
@@ -134,9 +152,9 @@ class EventsDatabase(Database):
             active_pos[1],
             passive_pos[0],
             passive_pos[1],
+            torii_event_id,
         )
-        if only_if_not_present:
-            values += (torii_event_id,)
+
         added_id: int = self._insert(query, values)
 
         logger.info(f"Stored event received at rowid {added_id}: {event_copy}")
@@ -146,19 +164,19 @@ class EventsDatabase(Database):
     def get_by_ids(self, event_ids: list[int]) -> list[StoredEvent]:
         placeholders = ", ".join(["?" for _ in event_ids])
         records = self.execute_query(
-            "SELECT rowid, type, active_realm_entity_id, passive_realm_entity_id, importance, ts, metadata,"
-            " X(active_pos), Y(active_pos), X(passive_pos), Y(passive_pos) FROM events WHERE rowid IN"
-            f" ({placeholders})",
+            "SELECT rowid, type, active_realm_entity_id, active_realm_id, passive_realm_entity_id, passive_realm_id,"
+            " importance, ts, metadata, X(active_pos), Y(active_pos), X(passive_pos), Y(passive_pos) FROM events WHERE"
+            f" rowid IN ({placeholders})",
             (*event_ids,),
         )
-        events: list[StoredEvent] = [[*tup[:7], (tup[7], tup[8]), (tup[9], tup[10])] for tup in records]
-        return events
+
+        return self.format_records(records=records)
 
     def get_all(self) -> list[StoredEvent]:
-        query = """SELECT rowid, type, active_realm_entity_id, passive_realm_entity_id, importance, ts, metadata, X(active_pos), Y(active_pos), X(passive_pos), Y(passive_pos) from events ORDER BY rowid ASC"""
+        query = """SELECT rowid, type, active_realm_entity_id, active_realm_id, passive_realm_entity_id, passive_realm_id, importance, ts, metadata, X(active_pos), Y(active_pos), X(passive_pos), Y(passive_pos) from events ORDER BY rowid ASC"""
         records = self.execute_query(query, ())
-        AllEvents: list[StoredEvent] = [[*tup[:7], (tup[7], tup[8]), (tup[9], tup[10])] for tup in records]
-        return AllEvents
+
+        return self.format_records(records=records)
 
     def fetch_most_relevant(self, realm_position: RealmPosition, current_time: int) -> list[StoredEvent]:
         """Attributes an importance score depending on the distance in kilometers, the recency
@@ -167,7 +185,9 @@ class EventsDatabase(Database):
                     rowid,
                     type,
                     active_realm_entity_id,
+                    active_realm_id,
                     passive_realm_entity_id,
+                    passive_realm_id,
                     importance,
                     ts,
                     metadata,
@@ -180,7 +200,9 @@ class EventsDatabase(Database):
                             rowid,
                             type,
                             active_realm_entity_id,
+                            active_realm_id,
                             passive_realm_entity_id,
+                            passive_realm_id,
                             importance,
                             ts,
                             metadata,
@@ -209,5 +231,4 @@ class EventsDatabase(Database):
             current_time,
         )
         records = self.execute_query(query=query, params=params)
-        events: list[StoredEvent] = [[*tup[:7], (tup[7], tup[8]), (tup[9], tup[10])] for tup in records]
-        return events
+        return self.format_records(records=records)

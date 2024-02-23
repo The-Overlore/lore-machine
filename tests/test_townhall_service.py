@@ -1,42 +1,49 @@
 import asyncio
 import functools
+import json
 import time
 from threading import Thread
 
 import pytest
+import responses
 import websockets
 
-from overlore.config import Config
-from overlore.graphql.event import process_event
+from overlore.config import BootConfig
+from overlore.graphql.subscriptions import process_received_event
 from overlore.llm.open_ai import OpenAIHandler
 from overlore.sqlite.events_db import EventsDatabase
 from overlore.sqlite.vector_db import VectorDatabase
+from overlore.townhall.mocks import MOCK_KATANA_RESPONSE
 from overlore.townhall.service import service
 
 
-# Function to run the server in a separate thread
-def run_server():
+# Function to run the torii mock in a separate thread
+def run_lore_machine():
+    OpenAIHandler.instance().init("")
     # Initialize our dbs
     _vector_db = VectorDatabase.instance().init(":memory:")
     _events_db = EventsDatabase.instance().init(":memory:")
-    OpenAIHandler.instance().init("")
-    config = Config()
+    config = BootConfig()
     config.mock = True
     config.port = 8766
+    config.env["KATANA_URL"] = "https://localhost:8080"
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
 
-    process_event(
+    process_received_event(
         {
             "eventEmitted": {
-                "id": "0x00000000000000000000000000000000000000000000000000000000000001ad:0x0000:0x0023",
+                "id": "0x00000000000000000000000000000000000000000000000000000000000001c8:0x0000:0x0002",
                 "keys": [
-                    "0x20e86edfa14c93309aa6559742e993d42d48507f3bf654a12d77a54f10f8945",
-                    "0x88",
-                    "0x63cbe849cf6325e727a8d6f82f25fad7dc7eb9433767f5c1b8c59189e36c9b6",
+                    "0x1736c207163ad481e2a196c0fb6394f90c66c2e2b52e0c03d4a077ac6cea918",
+                    "0x4b",
+                    "0x1",
+                    "0x49",
+                    "0x2",
+                    "0x1b0a83a27a357e0574393ab06c0c774db7312a0993538cc0186d054f75ee84e",
                 ],
-                "data": ["0x6", "0x5", "0x1", "0xfd", "0xc350", "0x1", "0x3", "0xc350", "0x659daba0"],
-                "createdAt": "2024-01-08 16:38:25",
+                "data": ["0x1", "0x53", "0x0", "0x0", "0x64", "0x65a1bec0"],
+                "createdAt": "2024-01-02 12:35:45",
             }
         }
     )
@@ -49,31 +56,26 @@ def run_server():
 
 
 @pytest.fixture(scope="module")
-def server():
-    # Start the server in a separate thread
-    server_thread = Thread(target=run_server, daemon=True)
+def setup():
+    # Start the Torii server in a separate thread
+    server_thread = Thread(target=run_lore_machine, daemon=True)
     server_thread.start()
     yield
     # Cleanup code here if needed
 
 
 @pytest.mark.asyncio
-async def test_mock_response(server):
-    time.sleep(1)
-    async with websockets.connect("ws://localhost:8766") as websocket:
-        test_message = '{"realm_id": 1, "order": 1}'
-        await websocket.send(test_message)
-        actual = await websocket.recv()
-        expected = """{"0":\"Paul: Friends, we must not lose sight of what keeps us afloat. Straejelas depends on both wheat and minerals.
-        James: But Paul, look at the gold we can get for just a grain of our wheat!
-        Lisa: Yes, we should be investing more in our mining initiatives.
-        Paul: While I agree that deal is superficially advantageous, we traded a mountain of wheat for practically nothing earlier today. We need a balanced approach.
-        Daniel: You farmers just want more for yourselves, bloated with gluttony and greed.
-        Nancy: That's unfair, Daniel! We are all working for the benefit of Straejelas. We are happy as a realm and must remain united against threats, be it hunger or outside forces.
-        Paul: Exactly, Nancy. The strength and happiness of our realm resides in the balance of our efforts. Walking the path of greed will only lead us to ruin. We cannot sacrifice our self-sustainability in the name of temporary wealth.
-        James: Maybe you're right, Paul. As long as we are safe and fed, the gold is just a bonus. We should indeed be more mindful about our trades.
-        Paul: That's the spirit, James. Together, we'll keep Straejelas thriving and prosperous.\"}"""
-        actual_trimed = "".join(actual.split())
-        actual_trimed = actual_trimed.replace("\\n\\n", "")
-        expected_trimed = "".join(expected.split())
-        assert actual_trimed == expected_trimed
+async def test_mock_response(setup):
+    test_url = "https://localhost:8080"
+    mock_response = json.dumps(MOCK_KATANA_RESPONSE)
+
+    with responses.RequestsMock() as rsps:
+        rsps.add(rsps.POST, test_url, body=mock_response, status=200)
+        time.sleep(1)
+        async with websockets.connect("ws://localhost:8766") as websocket:
+            await websocket.send('{"realm_id": 1, "orderId": 1}')
+            actual = await websocket.recv()
+            actual_msg = json.loads(actual).get("townhall")
+            actual_msg = actual_msg.replace("\n", "")
+            expected = "Paul: Hello WorldNancy:Yes, Hello World indeed!"
+            assert actual_msg == expected

@@ -33,20 +33,23 @@ def setup_logging(log_to_file: Optional[str] = None) -> None:
     logger.addHandler(handler)
 
 
-class Config:
+class BootConfig:
     # CLI Argument
-    address: str
-    port: int
     world_db: str
     prod: bool
     mock: bool
     prompt: bool
 
+    env_variables: list[str] = [
+        "OPENAI_API_KEY",
+        "TORII_GRAPHQL",
+        "TORII_WS",
+        "KATANA_URL",
+        "HOST_ADDRESS",
+        "HOST_PORT",
+    ]
     # .env variables
-    OPENAI_API_KEY: str
-    TORII_WS: str
-    TORII_GRAPHQL: str
-    KATANA_URL: str
+    env: dict[str, str]
 
     def __init__(self) -> None:
         self._get_args()
@@ -71,15 +74,11 @@ class Config:
             action="store_true",
             help="Run lore-machine in production mode.",
         )
-        parser.add_argument("-a", "--address", help="Host address for ws connection", type=str, default="localhost")
-        parser.add_argument("-p", "--port", help="Host port for ws connection", type=int, default=8766)
         parser.add_argument("-w", "--world_db", help="location of the world db", type=str, default="/litefs/world.db")
         parser.add_argument("-l", "--logging_file", help="location of the logging file", type=str)
         args = parser.parse_args()
         setup_logging(args.logging_file)
 
-        self.address = args.address
-        self.port = args.port
         self.world_db = args.world_db
         self.prod = args.prod
         self.mock = args.mock
@@ -90,17 +89,7 @@ class Config:
 
         dotenv_path = ".env.production" if self.prod is True else ".env.development"
         load_dotenv(dotenv_path=dotenv_path)
-
-        tmp_torii_ws = os.environ.get("TORII_WS")
-        tmp_torii_graphql = os.environ.get("TORII_GRAPHQL")
-        tmp_katana_url = os.environ.get("KATANA_URL")
-        self.OPENAI_API_KEY = (
-            "OpenAI API Key" if os.environ.get("OPENAI_API_KEY") is None else str(os.environ.get("OPENAI_API_KEY"))
-        )
-
-        if tmp_torii_ws is None or tmp_torii_graphql is None or tmp_katana_url is None:
-            raise RuntimeError("Required URLs not provided in .env file.")
-
-        self.TORII_WS = str(tmp_torii_ws)
-        self.TORII_GRAPHQL = str(tmp_torii_graphql)
-        self.KATANA_URL = str(tmp_katana_url)
+        try:
+            self.env = {var: os.environ[var] for var in self.env_variables}
+        except KeyError as e:
+            raise RuntimeError("Failed to gather env variables from .env: ", e) from e

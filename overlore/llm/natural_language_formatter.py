@@ -26,12 +26,15 @@ class NaturalLanguageFormatter:
         #   for COMBAT_OUTCOME: {attacking_entity_ids: [id, ...], stolen_resources:  [{type: x, amount: y}, ...], winner: ATTACKER/TARGER, damage: x}
         nl = ""
         realms = Realms.instance()
-        active_realm_entity_id = int(str(event[2]))
-        passive_realm_entity_id = int(str(event[3]))
-        active_realm_name = realms.name_by_id(active_realm_entity_id)
-        passive_realm_name = realms.name_by_id(passive_realm_entity_id)
+        int(str(event[2]))
+        active_realm_id = int(str(event[3]))
+        int(str(event[4]))
+        passive_realm_id = int(str(event[5]))
+        active_realm_name = realms.name_by_id(active_realm_id)
+        passive_realm_name = realms.name_by_id(passive_realm_id)
 
-        metadata: dict[Any, Any] = str_to_json(str(event[6]))
+        metadata: dict[Any, Any] = str_to_json(str(event[8]))
+
         if metadata["damage"] == 0:
             nl += f"Pillage of realm {passive_realm_name} by realm {active_realm_name}. "
             stolen_resources = self._resources_to_nl(metadata["stolen_resources"])
@@ -50,11 +53,15 @@ class NaturalLanguageFormatter:
         # metadata:
         #   for ORDER_ACCEPTED: {resources_maker: [{type: x, amount: y}, ...], resources_taker:  [{type: x, amount: y}, ...], }
         realms = Realms.instance()
-        active_realm_entity_id = int(str(event[2]))
-        passive_realm_entity_id = int(str(event[3]))
-        active_realm_name = realms.name_by_id(active_realm_entity_id)
-        passive_realm_name = realms.name_by_id(passive_realm_entity_id)
-        metadata: dict[Any, Any] = str_to_json(str(event[6]))
+
+        int(str(event[2]))
+        active_realm_id = int(str(event[3]))
+        int(str(event[4]))
+        passive_realm_id = int(str(event[5]))
+        active_realm_name = realms.name_by_id(active_realm_id)
+        passive_realm_name = realms.name_by_id(passive_realm_id)
+
+        metadata: dict[Any, Any] = str_to_json(str(event[8]))
         resources_taker = self._resources_to_nl(metadata["resources_taker"])
         resources_maker = self._resources_to_nl(metadata["resources_maker"])
         nl = f"Trade happened: between {active_realm_name} and {passive_realm_name} realms. "
@@ -73,8 +80,8 @@ class NaturalLanguageFormatter:
 
     def _event_to_nl(self, event: StoredEvent) -> str:
         #  event
-        #  0      1     2                       3                        4           5   6         70         1          80          1
-        # [rowid, type, active_realm_entity_id, passive_realm_entity_id, importance, ts, metadata, (X_active, Y_active), (X_passive, Y_passive)]
+        #  0      1     2                       3                4                        5                 6           7   8          9,0        9,1        10,0       10,1
+        # [rowid, type, active_realm_entity_id, active_realm_id, passive_realm_entity_id, passive_realm_id, importance, ts, metadata, (X_active, Y_active), (X_passive, Y_passive)]
         event_type = event[1]
         if event_type == EventType.COMBAT_OUTCOME.value:
             return self._combat_outcome_to_nl(event=event)
