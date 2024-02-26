@@ -1,10 +1,47 @@
 import logging
-from typing import Any, cast
+from typing import Any
 
-from overlore.eternum.types import Villager
 from overlore.utils import open_json_file
 
 logger = logging.getLogger("overlore")
+
+MOCK_VILLAGERS = [
+    {
+        "entityId": "0x371b96bc40f0a933f41da3af6999dfe1c8079fb1004c874f6e1022efb6af567",
+        "realmEntityId": 92,
+        "characteristics": {"age": 25, "role": 1, "sex": 0},
+        "characterTrait": "Smartass",
+        "name": "John",
+    },
+    {
+        "entityId": "0x44e494923bc21faf42778b2432683cf8206cd331826e89e45298de0df854f52",
+        "realmEntityId": 92,
+        "characteristics": {"age": 45, "role": 0, "sex": 1},
+        "characterTrait": "Helpful",
+        "name": "Emma",
+    },
+    {
+        "entityId": "0x493619825a69dfc0fca6523f2714ded59c434c62d2d480d64439b96d9767006",
+        "realmEntityId": 92,
+        "characteristics": {"age": 60, "role": 1, "sex": 0},
+        "characterTrait": "egotistical",
+        "name": "Fred",
+    },
+    {
+        "entityId": "0xcbcd5931acd6625981947fd91d9ea41dfbee0211518b8954cddbffdad30f11",
+        "realmEntityId": 92,
+        "characteristics": {"age": 15, "role": 0, "sex": 0},
+        "characterTrait": "neurotic",
+        "name": "Sally",
+    },
+    {
+        "entityId": "0xDEADBAAF",
+        "realmEntityId": 92,
+        "characteristics": {"age": 28, "role": 1, "sex": 1},
+        "characterTrait": "friendly",
+        "name": "Matilda",
+    },
+]
 
 MOCK_KATANA_RESPONSE = {
     "jsonrpc": "2.0",
@@ -24,10 +61,6 @@ MOCK_KATANA_RESPONSE = {
 }
 
 
-def load_mock_villagers() -> list[Villager]:
-    return cast(list[Villager], open_json_file("./data/villagers.json"))
-
-
 def load_mock_events() -> Any:
     events = open_json_file("./data/events.json")
     # Use a list comprehension to extract eventEmitted details
@@ -36,7 +69,3 @@ def load_mock_events() -> Any:
     ]
 
     return processed_events
-
-
-def fetch_villagers() -> list[Villager]:
-    return load_mock_villagers()

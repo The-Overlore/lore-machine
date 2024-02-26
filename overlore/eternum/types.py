@@ -8,4 +8,4 @@ ResourceAmounts: TypeAlias = list[ResourceAmount]
 
 AttackingEntityIds: TypeAlias = list[int]
 
-Villager: TypeAlias = dict[str, int | str | dict[str, int]]
+Npc: TypeAlias = dict[str, int | str | dict[str, int]]

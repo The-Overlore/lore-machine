@@ -1,11 +1,13 @@
+from typing import cast
+
 from overlore.config import BootConfig
 from overlore.eternum.constants import Realms
-from overlore.eternum.types import ResourceAmounts, Villager
+from overlore.eternum.types import Npc, ResourceAmounts
 from overlore.llm.open_ai import OpenAIHandler
 from overlore.sqlite.events_db import EventsDatabase
 from overlore.sqlite.types import StoredEvent
 from overlore.sqlite.vector_db import VectorDatabase
-from overlore.townhall.mocks import fetch_villagers
+from overlore.townhall.mocks import MOCK_VILLAGERS
 from overlore.utils import get_katana_timestamp, str_to_json
 
 # A is calculated by setting a max amount of resources, any value equal to or higher than MAX will get attributed a score of 10.
@@ -47,7 +49,10 @@ async def handle_townhall_request(message: str, config: BootConfig) -> tuple[int
     realm_order_id = int(data.get("orderId"))
     realm_order = realms.order_by_order_id(realm_order_id)
 
-    villagers: list[Villager] = fetch_villagers()
+    npcs: list[Npc] = data.get("npcs")
+
+    # This is only temporary until the NPCs actually age. Otherwise for now we get the same npc 5 times
+    npcs = cast(list[Npc], MOCK_VILLAGERS)
 
     ts = await get_katana_timestamp(config.env["KATANA_URL"])
 
@@ -65,9 +70,7 @@ async def handle_townhall_request(message: str, config: BootConfig) -> tuple[int
     (generated_townhall, systemPrompt, userPrompt) = (
         MOCK_GPT_RESPONSE
         if config.mock is True
-        else await gpt_interface.generate_townhall_discussion(
-            realm_name, realm_order, summaries, villagers, relevant_events
-        )
+        else await gpt_interface.generate_townhall_discussion(realm_name, realm_order, summaries, npcs, relevant_events)
     )
 
     if is_error(generated_townhall):
