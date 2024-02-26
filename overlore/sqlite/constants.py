@@ -7,10 +7,9 @@ class EventType(Enum):
 
 
 class Profile(Enum):
-    "REALMID = 0,AGE = 1, NAME = 2, SEX = 3, ROLE = 4, TRAIT = 5, SUMMARY = 6"
+    "REALMID = 0,AGE = 1, NAME = 2, SEX = 3, TRAIT = 4, SUMMARY = 5"
     REALMID = 0
     NAME = 1
     SEX = 2
-    ROLE = 3
-    TRAIT = 4
-    SUMMARY = 5
+    TRAIT = 3
+    SUMMARY = 4

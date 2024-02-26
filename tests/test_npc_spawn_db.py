@@ -5,9 +5,9 @@ from overlore.sqlite.npc_spawn_db import NpcSpawnDatabase
 from overlore.sqlite.types import StoredNpcProfile
 
 DATA: list[StoredNpcProfile] = [
-    (1, "Luke Luke", "Male", "Farmer", "Assertive", "Short summary"),
-    (2, "Bobby Bob", "Female", "Soldier", "Submissive", "Short summary"),
-    (3, "Lenny Len", "Male", "Merchant", "Happy", "Short summary"),
+    (1, "Luke Luke", "Male", "Assertive", "Short summary"),
+    (2, "Bobby Bob", "Female", "Submissive", "Short summary"),
+    (3, "Lenny Len", "Male", "Happy", "Short summary"),
 ]
 
 
@@ -30,7 +30,7 @@ async def test_create_and_read_entry():
     assert None is db.fetch_npc_spawn_by_realm(DATA[0][Profile.REALMID.value])
 
     assert db.insert_npc_spawn(DATA[0]) == 1
-    assert (1, "Luke Luke", "Male", "Farmer", "Assertive", "Short summary") == db.fetch_npc_spawn_by_realm(
+    assert (1, "Luke Luke", "Male", "Assertive", "Short summary") == db.fetch_npc_spawn_by_realm(
         DATA[0][Profile.REALMID.value]
     )
 
@@ -39,7 +39,7 @@ async def test_create_and_read_entry():
     assert len(db.get_all()) == 1
 
     assert db.insert_npc_spawn(DATA[1]) == 2
-    assert (2, "Bobby Bob", "Female", "Soldier", "Submissive", "Short summary") == db.fetch_npc_spawn_by_realm(
+    assert (2, "Bobby Bob", "Female", "Submissive", "Short summary") == db.fetch_npc_spawn_by_realm(
         DATA[1][Profile.REALMID.value]
     )
 
@@ -55,8 +55,6 @@ async def test_create_and_read_entry():
         db.insert_npc_spawn(empty_str_at_index(DATA[2], Profile.NAME.value))
     with pytest.raises(ValueError):
         db.insert_npc_spawn(empty_str_at_index(DATA[2], Profile.SEX.value))
-    with pytest.raises(ValueError):
-        db.insert_npc_spawn(empty_str_at_index(DATA[2], Profile.ROLE.value))
     with pytest.raises(ValueError):
         db.insert_npc_spawn(empty_str_at_index(DATA[2], Profile.TRAIT.value))
     with pytest.raises(ValueError):

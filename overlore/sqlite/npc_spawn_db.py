@@ -20,7 +20,6 @@ class NpcSpawnDatabase(Database):
                 realm_id INTEGER NOT NULL,
                 name TEXT,
                 sex TEXT,
-                role TEXT,
                 trait TEXT,
                 summary TEXT
             );
@@ -63,16 +62,13 @@ class NpcSpawnDatabase(Database):
             for index in [
                 Profile.NAME.value,
                 Profile.SEX.value,
-                Profile.ROLE.value,
                 Profile.TRAIT.value,
                 Profile.SUMMARY.value,
             ]
         ):
             raise ValueError("Found empty field in npc profile")
 
-        row_id = self._insert(
-            "INSERT INTO npc_spawn(realm_id, name, sex, role, trait, summary) VALUES (?, ?, ?, ?, ?, ?)", npc
-        )
+        row_id = self._insert("INSERT INTO npc_spawn(realm_id, name, sex, trait, summary) VALUES (?, ?, ?, ?, ?)", npc)
 
         logger.info(f"Stored npc_spawn entry at rowid {row_id} for realm_id {npc[Profile.REALMID.value]}")
         return row_id
