@@ -1,42 +1,7 @@
 # NPC PARAMS
 SEX = ["male", "female"]
 ROLE = ["farmer", "miner", "fisherman", "merchant", "trader", "soldier"]
-HUNGER = [
-    "starving",
-    "famished",
-    "ravenous",
-    "hungry",
-    "peckish",
-    "content",
-    "satisfied",
-    "full",
-    "stuffed",
-    "overfed",
-]
-HAPPINESS = [
-    "miserable",
-    "unhappy",
-    "slightly content",
-    "content",
-    "happy",
-    "joyful",
-    "delighted",
-    "ecstatic",
-    "blissful",
-    "euphoric",
-]
-BELLIGERENT = [
-    "peaceful",
-    "calm",
-    "slightly agitated",
-    "agitated",
-    "hostile",
-    "combative",
-    "antagonistic",
-    "belligerent",
-    "furious",
-    "enraged",
-]
+TRAIT_TYPE = ["positive", "negative"]
 
 AGENT_TEMPLATE = """{name}, a {sex} {role}."""
 
@@ -81,16 +46,32 @@ PREVIOUS_TOWNHALL = (
     """Here's the previous conversation that was had in my realm about the event: \"\"\"{previous_townhall}\"\"\""""
 )
 
-AGENT_CREATION_TEMPLATE = """
-    {name}, a {sex} {role}, has just arrived in {realm_name} to settle.
-    Upon entering the realm, {name} addresses the lord with the following matters:
+AGENT_CREATION_SYSTEM_PROMPT_TEMPLATE = """
+    Imagine you're the game master for a strategy game, you are tasked with creating Non-Playable Characters as babies. Use these examples as reference: {examples}.
+"""
+AGENT_CREATION_USER_PROMPT_TEMPLATE = """
+    Generate for an npc:
+    - name
+    - surname
+    - {trait_type} character trait
+    - sex (male or female)
+    - description
+"""
 
-    1. Expresses gratitude for the warm welcome and hospitality extended by the realm.
-    2. Highlights the skills and contributions he/she brings as a {role}.
-    3. Explain his background and where he comes from.
-    4. Discusses the significance of recent events: {events}.
+AGENT_CREATION_EXAMPLE = """
+    \"\"\"
+    Name: Aurora
+    Surname: Frost
+    Character Trait: Resilient
+    Sex: Female
+    Description: Aurora has a determined look in her eyes showing hints of the resilience that will define her character. Her fair hair shines like frost in the sunlight, symbolizing her inner strength and ability to weather any challenge that comes her way.
+    \"\"\"
 
-    During the speech, {name} maintains a demeanor that is {happiness}, {hunger} and {belligerent}.
-
-    Format the speech like so: <name>:<speech>.
+    \"\"\"
+    Name: Oliver
+    Surname: Stone
+    Character Trait: Intelligent
+    Sex: Male
+    Description: Oliver has a thoughtful expression on his face, indicating his innate intelligence even at such a young age. His hazel eyes seem to carefully observe his surroundings, hinting at the sharp mind that will develop as he grows. With a head of dark curls that frame his face, Oliver exudes a quiet sense of wisdom and knowledge beyond his years.
+    \"\"\"
 """

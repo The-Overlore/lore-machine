@@ -1,17 +1,23 @@
 from __future__ import annotations
 
 import logging
+import random
 
 from openai import OpenAI
 
 from overlore.eternum.types import Villager
 from overlore.llm.constants import (
+    AGENT_CREATION_EXAMPLE,
+    AGENT_CREATION_SYSTEM_PROMPT_TEMPLATE,
+    AGENT_CREATION_USER_PROMPT_TEMPLATE,
     EVENT,
     NPCS,
     PREVIOUS_TOWNHALL,
     REALM,
+    ROLE,
     SYSTEM_STRING_EMPTY_PREV_TOWNHALL,
     SYSTEM_STRING_HAS_PREV_TOWNHALL,
+    TRAIT_TYPE,
 )
 from overlore.llm.natural_language_formatter import NaturalLanguageFormatter
 from overlore.sqlite.types import StoredEvent
@@ -40,10 +46,10 @@ class OpenAIHandler:
         self.client = OpenAI(api_key=open_ai_api_key)
         self.nl_formatter = NaturalLanguageFormatter()
 
-    async def request_prompt(self, system: str, user: str) -> str:
+    async def request_prompt(self, system: str, user: str, model: str) -> str:
         logger.debug("Requesting completion of prompt...")
         response = self.client.chat.completions.create(
-            model="gpt-4-1106-preview",
+            model=model,
             messages=[
                 {"role": "system", "content": system},
                 {"role": "user", "content": user},
@@ -55,7 +61,7 @@ class OpenAIHandler:
 
     async def request_embedding(self, str_input: str) -> list[float]:
         response = self.client.embeddings.create(
-            model="text-embedding-ada-002", input=str_input, encoding_format="float"
+            model="text-embedding-3-small", input=str_input, encoding_format="float"
         )
         return response.data[0].embedding
 
@@ -86,4 +92,15 @@ class OpenAIHandler:
             else ""
         )
 
-        return (await self.request_prompt(systemPrompt, userPrompt), systemPrompt, userPrompt)
+        return (await self.request_prompt(systemPrompt, userPrompt, "gpt-4-1106-preview"), systemPrompt, userPrompt)
+
+    async def generate_npc_profile(self) -> str:
+        "trait_type == either 'positive' or 'negative'. Otherwise, GPT calls only gives out positive traits"
+        trait_type = TRAIT_TYPE[random.randrange(2)]
+
+        formatted_role_list = ", ".join(ROLE)
+
+        systemPrompt = AGENT_CREATION_SYSTEM_PROMPT_TEMPLATE.format(examples=AGENT_CREATION_EXAMPLE)
+        userPrompt = AGENT_CREATION_USER_PROMPT_TEMPLATE.format(trait_type=trait_type, roles=formatted_role_list)
+
+        return await self.request_prompt(systemPrompt, userPrompt, "gpt-3.5-turbo-0125")
