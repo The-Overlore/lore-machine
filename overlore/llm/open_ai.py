@@ -5,7 +5,7 @@ import random
 
 from openai import OpenAI
 
-from overlore.eternum.types import Villager
+from overlore.eternum.types import Npc
 from overlore.llm.constants import (
     AGENT_CREATION_EXAMPLE,
     AGENT_CREATION_SYSTEM_PROMPT_TEMPLATE,
@@ -13,7 +13,6 @@ from overlore.llm.constants import (
     EVENT,
     NPCS,
     PREVIOUS_TOWNHALL,
-    REALM,
     ROLE,
     SYSTEM_STRING_EMPTY_PREV_TOWNHALL,
     SYSTEM_STRING_HAS_PREV_TOWNHALL,
@@ -70,7 +69,7 @@ class OpenAIHandler:
         realm_name: str,
         realm_order: str,
         townhall_summaries: list[str],
-        npc_list: list[Villager],
+        npc_list: list[Npc],
         events: list[StoredEvent],
     ) -> tuple[str, str, str]:
         townhall_summaries_string = "\n".join(townhall_summaries)
@@ -83,8 +82,7 @@ class OpenAIHandler:
         npcs = self.nl_formatter.npcs_to_nl(npc_list)
         event_string = self.nl_formatter.events_to_nl(events)
 
-        userPrompt = REALM.format(realm_name=realm_name, realm_order=realm_order)
-        userPrompt += NPCS.format(npcs=npcs)
+        userPrompt = NPCS.format(npcs=npcs)
         userPrompt += EVENT.format(realm_name=realm_name, event_string=event_string)
         userPrompt += (
             PREVIOUS_TOWNHALL.format(previous_townhall=townhall_summaries_string)

@@ -1,7 +1,7 @@
 from typing import Any, cast
 
 from overlore.eternum.constants import Realms, ResourceIds, Winner
-from overlore.eternum.types import ResourceAmounts, Villager
+from overlore.eternum.types import Npc, ResourceAmounts
 from overlore.llm.constants import (
     AGENT_TEMPLATE,
     ROLE,
@@ -69,14 +69,16 @@ class NaturalLanguageFormatter:
         nl += f"{passive_realm_name} will get {resources_maker}. "
         return nl
 
-    def _npc_to_nl(self, npc: Villager) -> str:
-        sex: int = cast(int, npc["sex"])
-        role: int = cast(int, npc["role"])
-        return AGENT_TEMPLATE.format(
-            name=npc["name"],
-            sex=SEX[sex],
-            role=ROLE[role],
-        )
+    def _npc_to_nl(self, npc: Npc) -> str:
+        characteristics = cast(dict[str, int], npc["characteristics"])
+
+        age: int = cast(int, characteristics["age"])
+        role: int = cast(int, characteristics["role"])
+        sex: int = cast(int, characteristics["sex"])
+
+        character_trait: str = cast(str, npc["characterTrait"])
+        name: str = cast(str, npc["name"])
+        return AGENT_TEMPLATE.format(name=name, sex=SEX[sex], role=ROLE[role], character_trait=character_trait, age=age)
 
     def _event_to_nl(self, event: StoredEvent) -> str:
         #  event
@@ -90,7 +92,7 @@ class NaturalLanguageFormatter:
         else:
             raise RuntimeError("Unknown event type")
 
-    def npcs_to_nl(self, villagers: list[Villager]) -> str:
+    def npcs_to_nl(self, villagers: list[Npc]) -> str:
         return "\n".join(self._npc_to_nl(npc) for npc in villagers)
 
     def events_to_nl(self, events: list[StoredEvent]) -> str:

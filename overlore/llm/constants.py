@@ -3,14 +3,14 @@ SEX = ["male", "female"]
 ROLE = ["farmer", "miner", "fisherman", "merchant", "trader", "soldier"]
 TRAIT_TYPE = ["positive", "negative"]
 
-AGENT_TEMPLATE = """{name}, a {sex} {role}."""
+AGENT_TEMPLATE = """{name} is a {age} year old {sex} {role}. He/she is {character_trait}"""
 
 SUMMARY_EXAMPLE = """Here's the previous conversation that was had in my realm about the event: \"\"\"Summary: "John doubted the artifact's significance, while Mary believed it could heal the village's sick.\"\"\""""
 PREVIOUS_SUMMARY_MENTION = (
     """Use the previous conversation's summary (\"\"\"Summary: <summary>\"\"\") to continue the story. """
 )
 
-SYSTEM_STRING_TEMPLATE = """Imagine you're the game master for a strategy game, tasked with crafting dialogues for non-player characters (NPCs). Based on a brief character description provided in the format \"\"\"NPCs: <descriptions>\"\"\" and a key event described as \"\"\"event: <event>\"\"\", create engaging dialogues that reflect the NPCs' reactions and perspectives on the event. For combat related events, don't mention the number of damages directly. If no event is provided, create an event yourself. Ensure each NPC speaks no more than twice and maintain consistency with their character traits. {previous_summary_mention} Introduce a plot twist (such as a love interest, the death of a character, a natural disaster, drama, a magical beast appears) to add depth. Format each dialogue line as "<name>: <phrase>\n". Do not answer with anything before the dialogue (specifically do not output "Dialogue start"). Conclude with "!end of discussion!". Afterwards, summarize the dialogue, outlining each NPC's contributions and reactions to the event. If unable to generate a conversation, reply only with \"\"\"!failure!:<enter reason of failure>\"\"\".
+SYSTEM_STRING_TEMPLATE = """Imagine you're the game master for a strategy game, tasked with crafting dialogues for non-player characters (NPCs). Based on a brief character description provided in the format \"\"\"NPCs: <descriptions>\"\"\" and a key event described as \"\"\"event: <event>\"\"\", create engaging dialogues that reflect the NPCs' reactions and perspectives on the event. For combat related events, don't mention the number of damages directly. Ensure each NPC speaks no more than twice. {previous_summary_mention} Introduce a plot twist (such as a love interest, the death of a character, a natural disaster, drama, a magical beast appears) to add depth. Format each dialogue line as "<name>: <phrase>\n". Do not answer with anything before the dialogue (specifically do not output "Dialogue start"). Conclude with "!end of discussion!". Afterwards, summarize the dialogue, outlining each NPC's contributions and reactions to the event. If unable to generate a conversation, reply only with \"\"\"!failure!:<enter reason of failure>\"\"\".
 
 Example:
 
@@ -32,7 +32,7 @@ SYSTEM_STRING_HAS_PREV_TOWNHALL = SYSTEM_STRING_TEMPLATE.format(
 SYSTEM_STRING_EMPTY_PREV_TOWNHALL = SYSTEM_STRING_TEMPLATE.format(previous_summary_mention="", summary_example="")
 
 NPCS = """
-NPCS:
+These are my villagers:
 \"\"\"{npcs}\"\"\".
 """
 

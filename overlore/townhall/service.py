@@ -21,7 +21,7 @@ from overlore.llm.open_ai import OpenAIHandler
 from overlore.sqlite.events_db import EventsDatabase
 from overlore.sqlite.vector_db import VectorDatabase
 from overlore.townhall.logic import handle_townhall_request
-from overlore.townhall.mocks import MOCK_KATANA_RESPONSE
+from overlore.townhall.mocks import MOCK_KATANA_RESPONSE, MOCK_VILLAGERS
 
 logger = logging.getLogger("overlore")
 
@@ -40,7 +40,7 @@ async def prompt_loop(config: BootConfig) -> None:
         while True:
             txt = input("hit enter to generate townhall with realm_id 73 or enter realm_id\n")
             realm_id = 73 if len(txt) == 0 else int(txt)
-            msg = f'{{"realm_id": {realm_id}, "orderId": 1}}'
+            msg = f'{{"realm_id": {realm_id}, "orderId": 1, "npcs" : {json.dumps(MOCK_VILLAGERS)}}}'
             (rowid, townhall, systemPrompt, userPrompt) = await handle_townhall_request(msg, config=config)
             logger.debug(f"______System prompt______\n{systemPrompt}\n________________________")
             logger.debug(f"______User prompt______\n{userPrompt}\n________________________")
