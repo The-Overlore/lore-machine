@@ -7,8 +7,8 @@ from overlore.llm.open_ai import OpenAIHandler
 from overlore.sqlite.events_db import EventsDatabase
 from overlore.sqlite.types import StoredEvent
 from overlore.sqlite.vector_db import VectorDatabase
-from overlore.townhall.mocks import MOCK_VILLAGERS
-from overlore.utils import get_katana_timestamp, str_to_json
+from overlore.types import TownhallRequestMsgData
+from overlore.utils import get_katana_timestamp
 
 # A is calculated by setting a max amount of resources, any value equal to or higher than MAX will get attributed a score of 10.
 # The linear equation is then a * MAX + 0 = 10. We can derive a easily from there
@@ -32,27 +32,19 @@ def get_townhall_summary(townhall: str) -> tuple[str, str]:
     return (res[0], res[1])
 
 
-async def handle_townhall_request(message: str, config: BootConfig) -> tuple[int, str, str, str]:
+async def handle_townhall_request(data: TownhallRequestMsgData, config: BootConfig) -> tuple[int, str, str, str]:
     events_db = EventsDatabase.instance()
     vector_db = VectorDatabase.instance()
     gpt_interface = OpenAIHandler.instance()
     realms = Realms.instance()
 
-    try:
-        data = str_to_json(message)
-    except Exception as error:
-        return (0, f"Failure to generate a dialog: {error}", "", "")
-
-    realm_id = int(data.get("realm_id"))
+    realm_id = cast(int, data.get("realm_id"))
     realm_name = realms.name_by_id(realm_id)
 
-    realm_order_id = int(data.get("orderId"))
+    realm_order_id = cast(int, data.get("orderId"))
     realm_order = realms.order_by_order_id(realm_order_id)
 
-    npcs: list[Npc] = data.get("npcs")
-
-    # This is only temporary until the NPCs actually age. Otherwise for now we get the same npc 5 times
-    npcs = cast(list[Npc], MOCK_VILLAGERS)
+    npcs: list[Npc] = cast(list[Npc], data.get("npcs"))
 
     ts = await get_katana_timestamp(config.env["KATANA_URL"])
 

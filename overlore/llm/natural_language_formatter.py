@@ -1,18 +1,17 @@
+import random
 from typing import Any, cast
 
 from overlore.eternum.constants import Realms, ResourceIds, Winner
 from overlore.eternum.types import Npc, ResourceAmounts
 from overlore.llm.constants import (
     AGENT_TEMPLATE,
-    ROLE,
-    SEX,
 )
 from overlore.sqlite.constants import EventType
 from overlore.sqlite.types import StoredEvent
 from overlore.utils import get_enum_name_by_value, str_to_json
 
 
-class NaturalLanguageFormatter:
+class LlmFormatter:
     def _resources_to_nl(self, resources: ResourceAmounts) -> str:
         resources_strings: list[str] = []
         for resource in resources:
@@ -78,7 +77,7 @@ class NaturalLanguageFormatter:
 
         character_trait: str = cast(str, npc["characterTrait"])
         name: str = cast(str, npc["name"])
-        return AGENT_TEMPLATE.format(name=name, sex=SEX[sex], role=ROLE[role], character_trait=character_trait, age=age)
+        return AGENT_TEMPLATE.format(name=name, sex=sex, role=role, character_trait=character_trait, age=age)
 
     def _event_to_nl(self, event: StoredEvent) -> str:
         #  event
@@ -97,3 +96,14 @@ class NaturalLanguageFormatter:
 
     def events_to_nl(self, events: list[StoredEvent]) -> str:
         return "\n".join(self._event_to_nl(event) for event in events)
+
+    def spawn_npc_response_to_profile(self, response: str) -> Npc:
+        ret: Npc = {}
+        lines = response.split("\n")
+        for line in lines:
+            if line.isspace() or len(line) == 0:
+                continue
+            (name, val) = line.split(":")
+            ret[name.strip()] = val.strip()
+        ret["age"] = random.randint(15, 65)
+        return ret
