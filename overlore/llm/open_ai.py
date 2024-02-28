@@ -13,12 +13,12 @@ from overlore.llm.constants import (
     EVENT,
     NPCS,
     PREVIOUS_TOWNHALL,
-    ROLE,
     SYSTEM_STRING_EMPTY_PREV_TOWNHALL,
     SYSTEM_STRING_HAS_PREV_TOWNHALL,
     TRAIT_TYPE,
 )
-from overlore.llm.natural_language_formatter import NaturalLanguageFormatter
+from overlore.llm.natural_language_formatter import LlmFormatter
+from overlore.npcs.constants import ROLES
 from overlore.sqlite.types import StoredEvent
 
 logger = logging.getLogger("overlore")
@@ -28,7 +28,7 @@ class OpenAIHandler:
     _instance: OpenAIHandler | None = None
     API_KEY: str | None = None
     client: OpenAI
-    nl_formatter: NaturalLanguageFormatter
+    nl_formatter: LlmFormatter
 
     def __init__(self) -> None:
         raise RuntimeError("Call instance() instead")
@@ -43,7 +43,7 @@ class OpenAIHandler:
     def init(self, open_ai_api_key: str) -> None:
         self.API_KEY = open_ai_api_key
         self.client = OpenAI(api_key=open_ai_api_key)
-        self.nl_formatter = NaturalLanguageFormatter()
+        self.nl_formatter = LlmFormatter()
 
     async def request_prompt(self, system: str, user: str, model: str) -> str:
         logger.debug("Requesting completion of prompt...")
@@ -96,9 +96,10 @@ class OpenAIHandler:
         "trait_type == either 'positive' or 'negative'. Otherwise, GPT calls only gives out positive traits"
         trait_type = TRAIT_TYPE[random.randrange(2)]
 
-        formatted_role_list = ", ".join(ROLE)
+        roles = [str(index) + " for " + role for index, role in enumerate(ROLES)]
+        roles_str = ",".join(roles)
 
         systemPrompt = AGENT_CREATION_SYSTEM_PROMPT_TEMPLATE.format(examples=AGENT_CREATION_EXAMPLE)
-        userPrompt = AGENT_CREATION_USER_PROMPT_TEMPLATE.format(trait_type=trait_type, roles=formatted_role_list)
+        userPrompt = AGENT_CREATION_USER_PROMPT_TEMPLATE.format(trait_type=trait_type, roles=roles_str)
 
         return await self.request_prompt(systemPrompt, userPrompt, "gpt-3.5-turbo-0125")

@@ -73,7 +73,7 @@ async def test_mock_response(setup):
         rsps.add(rsps.POST, test_url, body=mock_response, status=200)
         time.sleep(1)
         async with websockets.connect("ws://localhost:8766") as websocket:
-            await websocket.send('{"realm_id": 1, "orderId": 1}')
+            await websocket.send('{"type": 0, "realm_id": 1, "orderId": 1}')
             actual = await websocket.recv()
             actual_msg = json.loads(actual).get("townhall")
             actual_msg = actual_msg.replace("\n", "")

@@ -4,6 +4,7 @@ import json
 import logging
 import signal
 from types import FrameType
+from typing import cast
 
 import responses
 from websockets import WebSocketServerProtocol, serve
@@ -18,10 +19,13 @@ from overlore.graphql.subscriptions import (
     torii_subscription_connection,
 )
 from overlore.llm.open_ai import OpenAIHandler
+from overlore.npcs.spawn import spawn_npc
 from overlore.sqlite.events_db import EventsDatabase
 from overlore.sqlite.vector_db import VectorDatabase
 from overlore.townhall.logic import handle_townhall_request
 from overlore.townhall.mocks import MOCK_KATANA_RESPONSE, MOCK_VILLAGERS
+from overlore.types import MsgType
+from overlore.utils import get_ws_msg_type, str_to_json
 
 logger = logging.getLogger("overlore")
 
@@ -41,7 +45,7 @@ async def prompt_loop(config: BootConfig) -> None:
             txt = input("hit enter to generate townhall with realm_id 73 or enter realm_id\n")
             realm_id = 73 if len(txt) == 0 else int(txt)
             msg = f'{{"realm_id": {realm_id}, "orderId": 1, "npcs" : {json.dumps(MOCK_VILLAGERS)}}}'
-            (rowid, townhall, systemPrompt, userPrompt) = await handle_townhall_request(msg, config=config)
+            (rowid, townhall, systemPrompt, userPrompt) = await handle_townhall_request(json.loads(msg), config=config)
             logger.debug(f"______System prompt______\n{systemPrompt}\n________________________")
             logger.debug(f"______User prompt______\n{userPrompt}\n________________________")
             logger.debug(f"______GPT answer______\n{townhall}\n________________________\n\n\n\n\n\n\n\n")
@@ -63,14 +67,24 @@ def handle_sigint(_signum: int, _frame: FrameType | None) -> None:
 
 async def service(websocket: WebSocketServerProtocol, config: BootConfig) -> None:
     async for message in websocket:
+        response: dict[str, int | str] = {}
         if message is None:
             continue
         logger.debug("generating townhall")
-        # convert message to string instead of bytes
-        message_str = str(message)
-        (rowid, response, _, _) = await handle_townhall_request(message_str, config)
-        logger.debug(response)
-        await websocket.send(json.dumps({"id": rowid, "townhall": response}))
+        try:
+            data = str_to_json(cast(str, message))
+        except Exception as error:
+            await websocket.send(json.dumps(response))
+            response = {"type": MsgType.ERROR.value, "reason": f"Failure to generate a dialog: {error}"}
+        ws_msg_type = get_ws_msg_type(data)
+        if ws_msg_type == MsgType.TOWNHALL.value:
+            (rowid, response, _, _) = await handle_townhall_request(data, config)
+            response = {"type": MsgType.TOWNHALL.value, "id": rowid, "townhall": response}
+        elif ws_msg_type == MsgType.SPAWN_NPC.value:
+            npc_profile = await spawn_npc(data)
+            response = {"type": MsgType.SPAWN_NPC.value, "npc": npc_profile}
+            logger.debug(response)
+        await websocket.send(json.dumps(response))
 
 
 def setup() -> BootConfig:

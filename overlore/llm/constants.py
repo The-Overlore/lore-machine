@@ -1,6 +1,3 @@
-# NPC PARAMS
-SEX = ["male", "female"]
-ROLE = ["farmer", "miner", "fisherman", "merchant", "trader", "soldier"]
 TRAIT_TYPE = ["positive", "negative"]
 
 AGENT_TEMPLATE = """{name} is a {age} year old {sex} {role}. He/she is {character_trait}"""
@@ -47,31 +44,27 @@ PREVIOUS_TOWNHALL = (
 )
 
 AGENT_CREATION_SYSTEM_PROMPT_TEMPLATE = """
-    Imagine you're the game master for a strategy game, you are tasked with creating Non-Playable Characters as babies. Use these examples as reference: {examples}.
+    Imagine you're the game master for a strategy game, you are tasked with creating Non-Playable Characters. Use these examples as reference: {examples}. Do not change anything from the output format. Don't go over 31 characters for the full name or for the character trait.
 """
 AGENT_CREATION_USER_PROMPT_TEMPLATE = """
     Generate for an npc:
-    - name
-    - surname
-    - {trait_type} character trait
-    - sex (male or female)
+    - fullName
+    - characterTrait ({trait_type})
+    - role ({roles})
+    - sex (0 for male or 1 for female)
     - description
 """
 
 AGENT_CREATION_EXAMPLE = """
-    \"\"\"
-    Name: Aurora
-    Surname: Frost
-    Character Trait: Resilient
-    Sex: Female
-    Description: Aurora has a determined look in her eyes showing hints of the resilience that will define her character. Her fair hair shines like frost in the sunlight, symbolizing her inner strength and ability to weather any challenge that comes her way.
-    \"\"\"
+fullName: Aurora Frost
+characterTrait: Resilient
+role: 3
+sex: 1
+description: Aurora has a determined look in her eyes showing hints of the resilience that will define her character. Her fair hair shines like frost in the sunlight, symbolizing her inner strength and ability to weather any challenge that comes her way.
 
-    \"\"\"
-    Name: Oliver
-    Surname: Stone
-    Character Trait: Intelligent
-    Sex: Male
-    Description: Oliver has a thoughtful expression on his face, indicating his innate intelligence even at such a young age. His hazel eyes seem to carefully observe his surroundings, hinting at the sharp mind that will develop as he grows. With a head of dark curls that frame his face, Oliver exudes a quiet sense of wisdom and knowledge beyond his years.
-    \"\"\"
+fullName: Oliver Stone
+characterTrait: Intelligent
+role: 1
+sex: 0
+description: Oliver has a thoughtful expression on his face, indicating his innate intelligence even at such a young age. His hazel eyes seem to carefully observe his surroundings, hinting at the sharp mind that will develop as he grows. With a head of dark curls that frame his face, Oliver exudes a quiet sense of wisdom and knowledge beyond his years.
 """

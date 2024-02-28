@@ -1,10 +1,16 @@
 import json
 import logging
-from typing import Any
+from typing import Any, cast
 
 import requests
 
+from overlore.types import MsgType, WsData
+
 logger = logging.getLogger("overlore")
+
+
+def get_ws_msg_type(message: WsData) -> MsgType:
+    return cast(MsgType, message.get("type"))
 
 
 def str_to_json(message: str) -> Any:
