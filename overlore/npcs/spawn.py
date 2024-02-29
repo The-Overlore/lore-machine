@@ -27,7 +27,7 @@ async def build_response(realm_entity_id: int, npc: Npc, config: BootConfig) -> 
         npc["character_trait"],
         npc["full_name"],
     ]
-    signature = sign_parameters(signature_params, config=config)
+    signature = sign_parameters(signature_params, config.env["LOREMACHINE_PRIVATE_KEY"])
 
     return (npc, signature)
 

@@ -7,7 +7,6 @@ from starknet_py.cairo.felt import encode_shortstring
 from starknet_py.hash.utils import ECSignature, message_signature
 from starknet_py.hash.utils import compute_hash_on_elements as pedersen
 
-from overlore.config import BootConfig
 from overlore.types import MsgType, WsIncomingMsg
 
 logger = logging.getLogger("overlore")
@@ -67,8 +66,8 @@ async def query_katana_node(katana_url: str, data: dict[str, Any]) -> Any:
     return json_response
 
 
-def sign_parameters(msg: Sequence, config: BootConfig) -> ECSignature:
+def sign_parameters(msg: Sequence, priv_key: str) -> ECSignature:
     msg_felt = [encode_shortstring(elem) if type(elem) == str else elem for elem in msg]
     msg_hash = pedersen(msg_felt)
 
-    return message_signature(msg_hash, int(config.env["LOREMACHINE_PRIVATE_KEY"], base=16))
+    return message_signature(msg_hash, int(priv_key, base=16))
