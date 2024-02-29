@@ -44,27 +44,29 @@ PREVIOUS_TOWNHALL = (
 )
 
 AGENT_CREATION_SYSTEM_PROMPT_TEMPLATE = """
-    Imagine you're the game master for a strategy game, you are tasked with creating Non-Playable Characters. Use these examples as reference: {examples}. Do not change anything from the output format. Don't go over 31 characters for the full name or for the character trait.
+Imagine you're the game master for a strategy game, you are tasked with creating Non-Playable Characters. Use these examples as reference: {examples}. Do not change anything from the output format. Don't go over 31 characters for the character trait
 """
 AGENT_CREATION_USER_PROMPT_TEMPLATE = """
     Generate for an npc:
-    - fullName
-    - characterTrait ({trait_type})
+    - character_trait ({trait_type})
     - role ({roles})
     - sex (0 for male or 1 for female)
     - description
 """
 
 AGENT_CREATION_EXAMPLE = """
-fullName: Aurora Frost
-characterTrait: Resilient
+character_trait: Resilient
 role: 3
 sex: 1
-description: Aurora has a determined look in her eyes showing hints of the resilience that will define her character. Her fair hair shines like frost in the sunlight, symbolizing her inner strength and ability to weather any challenge that comes her way.
+description: She has a determined look in her eyes showing hints of the resilience that will define her character. Her fair hair shines like frost in the sunlight, symbolizing her inner strength and ability to weather any challenge that comes her way.
 
-fullName: Oliver Stone
-characterTrait: Intelligent
+character_trait: Intelligent
 role: 1
 sex: 0
-description: Oliver has a thoughtful expression on his face, indicating his innate intelligence even at such a young age. His hazel eyes seem to carefully observe his surroundings, hinting at the sharp mind that will develop as he grows. With a head of dark curls that frame his face, Oliver exudes a quiet sense of wisdom and knowledge beyond his years.
+description: He has a thoughtful expression on his face, indicating his innate intelligence even at such a young age. His hazel eyes seem to carefully observe his surroundings, hinting at the sharp mind that will develop as he grows. With a head of dark curls that frame his face, he exudes a quiet sense of wisdom and knowledge beyond his years.
 """
+
+AGENT_NAME_SYSTEM_PROMPT = """Imagine you're the game master for a strategy game, you are tasked with creating a Non-Playable Characters. Don't go over 31 characters for the full name. Only answer with this output: <name> <surname>
+"""
+
+AGENT_NAME_USER_PROMPT = """Generate one name for a {sex} npc"""

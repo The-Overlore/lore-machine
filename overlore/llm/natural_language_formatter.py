@@ -2,7 +2,7 @@ import random
 from typing import Any, cast
 
 from overlore.eternum.constants import Realms, ResourceIds, Winner
-from overlore.eternum.types import Npc, ResourceAmounts
+from overlore.eternum.types import Npc, NpcCharacteristics, ResourceAmounts
 from overlore.llm.constants import (
     AGENT_TEMPLATE,
 )
@@ -69,14 +69,14 @@ class LlmFormatter:
         return nl
 
     def _npc_to_nl(self, npc: Npc) -> str:
-        characteristics = cast(dict[str, int], npc["characteristics"])
+        characteristics = cast(NpcCharacteristics, npc["characteristics"])
 
         age: int = cast(int, characteristics["age"])
         role: int = cast(int, characteristics["role"])
         sex: int = cast(int, characteristics["sex"])
 
-        character_trait: str = cast(str, npc["characterTrait"])
-        name: str = cast(str, npc["name"])
+        character_trait: str = cast(str, npc["character_trait"])
+        name: str = cast(str, npc["full_name"])
         return AGENT_TEMPLATE.format(name=name, sex=sex, role=role, character_trait=character_trait, age=age)
 
     def _event_to_nl(self, event: StoredEvent) -> str:
@@ -97,13 +97,24 @@ class LlmFormatter:
     def events_to_nl(self, events: list[StoredEvent]) -> str:
         return "\n".join(self._event_to_nl(event) for event in events)
 
-    def spawn_npc_response_to_profile(self, response: str) -> Npc:
-        ret: Npc = {}
+    def convert_llm_response_to_profile(self, response: str) -> Npc:
+        profile: Any = {}
         lines = response.split("\n")
+
         for line in lines:
             if line.isspace() or len(line) == 0:
                 continue
             (name, val) = line.split(":")
-            ret[name.strip()] = val.strip()
-        ret["age"] = random.randint(15, 65)
-        return ret
+            profile[name.strip()] = val.strip()
+
+        npc: Npc = {
+            "characteristics": {
+                "age": random.randint(15, 65),
+                "role": int(profile["role"]),
+                "sex": int(profile["sex"]),
+            },
+            "character_trait": profile["character_trait"],
+            "full_name": "",
+            "description": profile["description"],
+        }
+        return npc

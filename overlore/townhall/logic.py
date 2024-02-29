@@ -38,10 +38,11 @@ async def handle_townhall_request(data: TownhallRequestMsgData, config: BootConf
     gpt_interface = OpenAIHandler.instance()
     realms = Realms.instance()
 
-    realm_id = cast(int, data.get("realm_id"))
+    realm_id = int(cast(str, data.get("realm_id")))
+
     realm_name = realms.name_by_id(realm_id)
 
-    realm_order_id = cast(int, data.get("orderId"))
+    realm_order_id = cast(int, data.get("order_id"))
     realm_order = realms.order_by_order_id(realm_order_id)
 
     npcs: list[Npc] = cast(list[Npc], data.get("npcs"))

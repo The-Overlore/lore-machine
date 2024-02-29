@@ -1,4 +1,4 @@
-from typing import TypeAlias
+from typing import TypeAlias, TypedDict
 
 RealmPosition: TypeAlias = tuple[float, float]
 
@@ -8,4 +8,16 @@ ResourceAmounts: TypeAlias = list[ResourceAmount]
 
 AttackingEntityIds: TypeAlias = list[int]
 
-Npc: TypeAlias = dict[str, int | str | dict[str, int | str]]
+
+class NpcCharacteristics(TypedDict):
+    age: int
+    role: int
+    sex: int
+
+
+class Npc(TypedDict):
+    characteristics: NpcCharacteristics
+    character_trait: str
+    full_name: str
+    # Not used ATM
+    description: str

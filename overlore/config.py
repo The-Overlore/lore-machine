@@ -2,9 +2,11 @@ import argparse
 import logging
 import os
 from logging import Handler
-from typing import Optional
+from typing import Optional, cast
 
 from dotenv import load_dotenv
+
+from overlore.types import EnvVariables
 
 
 def setup_logging(log_to_file: Optional[str] = None) -> None:
@@ -40,16 +42,8 @@ class BootConfig:
     mock: bool
     prompt: bool
 
-    env_variables: list[str] = [
-        "OPENAI_API_KEY",
-        "TORII_GRAPHQL",
-        "TORII_WS",
-        "KATANA_URL",
-        "HOST_ADDRESS",
-        "HOST_PORT",
-    ]
     # .env variables
-    env: dict[str, str]
+    env: EnvVariables
 
     def __init__(self) -> None:
         self._get_args()
@@ -89,7 +83,8 @@ class BootConfig:
 
         dotenv_path = ".env.production" if self.prod is True else ".env.development"
         load_dotenv(dotenv_path=dotenv_path)
+        keys = EnvVariables.__annotations__.keys()
         try:
-            self.env = {var: os.environ[var] for var in self.env_variables}
+            self.env = cast(EnvVariables, {var: os.environ[var] for var in keys})
         except KeyError as e:
             raise RuntimeError("Failed to gather env variables from .env: ", e) from e

@@ -1,7 +1,4 @@
 import logging
-from typing import Any
-
-from overlore.utils import open_json_file
 
 logger = logging.getLogger("overlore")
 
@@ -59,13 +56,3 @@ MOCK_KATANA_RESPONSE = {
     },
     "id": 1,
 }
-
-
-def load_mock_events() -> Any:
-    events = open_json_file("./data/events.json")
-    # Use a list comprehension to extract eventEmitted details
-    processed_events = [
-        [event.get("data", {}).get("eventEmitted", {}) for event in event_group] for event_group in events
-    ]
-
-    return processed_events
