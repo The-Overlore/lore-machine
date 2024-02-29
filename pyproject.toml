@@ -9,7 +9,7 @@ readme = "README.md"
 packages = [{ include = "overlore" }]
 
 [tool.poetry.scripts]
-lore-machine = "overlore.townhall.main:main"
+lore-machine = "overlore.main:main"
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.12"
