@@ -14,7 +14,7 @@ from overlore.llm.open_ai import OpenAIHandler
 from overlore.sqlite.events_db import EventsDatabase
 from overlore.sqlite.vector_db import VectorDatabase
 from overlore.townhall.mocks import MOCK_KATANA_RESPONSE
-from overlore.townhall.service import service
+from overlore.ws import handle_client_connection
 
 
 # Function to run the torii mock in a separate thread
@@ -48,7 +48,7 @@ def run_lore_machine():
         }
     )
 
-    bound_handler = functools.partial(service, config=config)
+    bound_handler = functools.partial(handle_client_connection, config=config)
     start_server = websockets.serve(bound_handler, "localhost", config.port)  # Specify a fixed port
 
     loop.run_until_complete(start_server)
@@ -73,9 +73,10 @@ async def test_mock_response(setup):
         rsps.add(rsps.POST, test_url, body=mock_response, status=200)
         time.sleep(1)
         async with websockets.connect("ws://localhost:8766") as websocket:
-            await websocket.send('{"type": 0, "realm_id": 1, "orderId": 1}')
+            await websocket.send('{"msg_type": 0, "data": {"realm_id": 1, "order_id": 1}}')
             actual = await websocket.recv()
-            actual_msg = json.loads(actual).get("townhall")
+            print(actual)
+            actual_msg = json.loads(actual)["data"]["townhall"]
             actual_msg = actual_msg.replace("\n", "")
             expected = "Paul: Hello WorldNancy:Yes, Hello World indeed!"
             assert actual_msg == expected

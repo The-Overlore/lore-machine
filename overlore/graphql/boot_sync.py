@@ -1,9 +1,8 @@
 import logging
 from typing import cast
 
-from overlore.graphql.constants import Queries
 from overlore.graphql.parsing import parse_event
-from overlore.graphql.query import run_torii_query
+from overlore.graphql.query import Queries, run_torii_query
 from overlore.sqlite.events_db import EventsDatabase
 from overlore.types import SyncEvents
 

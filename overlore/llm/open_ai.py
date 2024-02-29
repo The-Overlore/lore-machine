@@ -10,6 +10,8 @@ from overlore.llm.constants import (
     AGENT_CREATION_EXAMPLE,
     AGENT_CREATION_SYSTEM_PROMPT_TEMPLATE,
     AGENT_CREATION_USER_PROMPT_TEMPLATE,
+    AGENT_NAME_SYSTEM_PROMPT,
+    AGENT_NAME_USER_PROMPT,
     EVENT,
     NPCS,
     PREVIOUS_TOWNHALL,
@@ -18,7 +20,7 @@ from overlore.llm.constants import (
     TRAIT_TYPE,
 )
 from overlore.llm.natural_language_formatter import LlmFormatter
-from overlore.npcs.constants import ROLES
+from overlore.npcs.constants import ROLES, SEX
 from overlore.sqlite.types import StoredEvent
 
 logger = logging.getLogger("overlore")
@@ -45,7 +47,7 @@ class OpenAIHandler:
         self.client = OpenAI(api_key=open_ai_api_key)
         self.nl_formatter = LlmFormatter()
 
-    async def request_prompt(self, system: str, user: str, model: str) -> str:
+    async def request_prompt(self, system: str, user: str, model: str, temperature: float = 1) -> str:
         logger.debug("Requesting completion of prompt...")
         response = self.client.chat.completions.create(
             model=model,
@@ -53,6 +55,7 @@ class OpenAIHandler:
                 {"role": "system", "content": system},
                 {"role": "user", "content": user},
             ],
+            temperature=temperature,
         )
         if response is None:
             raise RuntimeError("GPT interface could not request a townhall")
@@ -103,3 +106,8 @@ class OpenAIHandler:
         userPrompt = AGENT_CREATION_USER_PROMPT_TEMPLATE.format(trait_type=trait_type, roles=roles_str)
 
         return await self.request_prompt(systemPrompt, userPrompt, "gpt-3.5-turbo-0125")
+
+    async def generate_npc_name(self, sex: int) -> str:
+        return await self.request_prompt(
+            AGENT_NAME_SYSTEM_PROMPT, AGENT_NAME_USER_PROMPT.format(sex=SEX[sex]), "gpt-3.5-turbo-0125", 1.4
+        )

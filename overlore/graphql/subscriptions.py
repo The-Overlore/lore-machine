@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import sys
+from enum import Enum
 from typing import Callable
 
 import backoff
@@ -8,7 +9,7 @@ from backoff._typing import Details
 from gql import Client, gql
 from gql.transport.websockets import WebsocketsTransport
 
-from overlore.graphql.constants import Subscriptions
+from overlore.graphql.constants import EventType
 from overlore.graphql.parsing import parse_event
 from overlore.sqlite.events_db import EventsDatabase
 from overlore.types import ToriiEmittedEvent
@@ -16,6 +17,32 @@ from overlore.types import ToriiEmittedEvent
 logger = logging.getLogger("overlore")
 
 OnEventCallbackType = Callable[[ToriiEmittedEvent], int]
+
+
+class Subscriptions(Enum):
+    KEY_BASED_SUB_TEMPLATE = """
+          subscription {{
+                eventEmitted(keys: ["{event_hash}"]) {{
+                    id
+                    keys
+                    data
+                    createdAt
+                }}
+            }}
+        """
+    ANY_EVENT_EMITTED = """
+          subscription {
+                eventEmitted {
+                    id
+                    keys
+                    data
+                    createdAt
+                }
+            }
+        """
+    ORDER_ACCEPTED = KEY_BASED_SUB_TEMPLATE.format(event_hash=EventType.ORDER_ACCEPTED.value)
+    COMBAT_OUTCOME = KEY_BASED_SUB_TEMPLATE.format(event_hash=EventType.COMBAT_OUTCOME.value)
+    NPC_SPAWNED = KEY_BASED_SUB_TEMPLATE.format(event_hash=EventType.NPC_SPAWNED.value)
 
 
 def backoff_logging(details: Details) -> None:
@@ -52,7 +79,7 @@ async def torii_event_sub(
 
 
 @backoff.on_exception(backoff.expo, Exception, max_time=300, on_backoff=backoff_logging)
-async def torii_subscription_connection(
+async def use_torii_subscription(
     torii_service_endpoint: str, callback_and_subs: list[tuple[Subscriptions, OnEventCallbackType]]
 ) -> None:
     transport = WebsocketsTransport(url=torii_service_endpoint)

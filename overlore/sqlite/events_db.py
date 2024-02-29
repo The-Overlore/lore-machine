@@ -180,7 +180,7 @@ class EventsDatabase(Database):
 
     def fetch_most_relevant(self, realm_position: RealmPosition, current_time: int) -> list[StoredEvent]:
         """Attributes an importance score depending on the distance in kilometers, the recency
-        and general importance score of an event, then gets the 5 events that scored the highest"""
+        and general importance score of an event, then gets the event that scored the highest"""
         query = """SELECT
                     rowid,
                     type,
