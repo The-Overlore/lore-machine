@@ -22,5 +22,5 @@ StoredVector: TypeAlias = tuple[int, float]
 
 TownhallEventResponse: TypeAlias = tuple[int | str, bool]
 
-StoredNpcProfile: TypeAlias = tuple[int, str, str, str, str]
-"Realm_id, Name, Sex, Trait, Summary"
+StoredNpcProfile: TypeAlias = tuple[int, str, str, str, str, str]
+"Realm_id, Name, Sex, Role, Trait, Summary"
