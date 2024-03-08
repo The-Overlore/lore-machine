@@ -5,7 +5,6 @@ from typing import Any, Optional, TypedDict
 
 from guardrails.validators import TwoWords, ValidChoices, ValidLength, ValidRange
 from pydantic import BaseModel, Field
-from starknet_py.hash.utils import ECSignature
 
 from overlore.eternum.types import RealmPosition
 from overlore.npcs.constants import ROLES
@@ -117,7 +116,7 @@ class WsErrorResponse(TypedDict):
 
 class WsSpawnNpcResponse(TypedDict):
     npc: Npc
-    signature: ECSignature
+    signature: list[str]
 
 
 class WsTownhallResponse(TypedDict):
