@@ -3,6 +3,7 @@ docs/source
 events.db
 events.db-journal
 vector.db
+npc_spawn.db
 
 # From https://raw.githubusercontent.com/github/gitignore/main/Python.gitignore
 
