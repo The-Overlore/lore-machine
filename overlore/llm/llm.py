@@ -15,6 +15,8 @@ from overlore.llm.constants import (
     RELEVANT_EVENT,
     TOWNHALL_SYSTEM,
     TOWNHALL_USER,
+    ChatCompletionModel,
+    EmbeddingsModel,
 )
 from overlore.llm.natural_language_formatter import LlmFormatter
 from overlore.npcs.constants import TRAIT_TYPE
@@ -33,10 +35,12 @@ class Llm:
         num_reasks=2,
     )
 
-    townhall_guard: Guard = Guard.from_pydantic(output_class=Townhall, instructions=TOWNHALL_SYSTEM, num_reasks=0)
+    townhall_guard: Guard = Guard.from_pydantic(output_class=Townhall, instructions=TOWNHALL_SYSTEM, num_reasks=1)
 
     def request_embedding(self, str_input: str) -> list[float]:
-        response = openai.embeddings.create(model="text-embedding-3-small", input=str_input, encoding_format="float")
+        response = openai.embeddings.create(
+            model=EmbeddingsModel.TEXT_EMBEDDING_SMALL.value, input=str_input, encoding_format="float"
+        )
         return response.data[0].embedding
 
     def generate_townhall_discussion(
@@ -55,7 +59,7 @@ class Llm:
         )
         _raw_llm_response, validated_response, *_rest = self.townhall_guard(
             openai.chat.completions.create,
-            model="gpt-4-0125-preview",
+            model=ChatCompletionModel.GPT_4_PREVIEW.value,
             temperature=1,
             prompt=TOWNHALL_USER.format(
                 realm_name=realm_name,
@@ -73,7 +77,7 @@ class Llm:
 
         raw_llm_response, validated_response, *rest = self.npc_profile_guard(
             openai.chat.completions.create,
-            model="gpt-3.5-turbo-0125",
+            model=ChatCompletionModel.GPT_3_5_TURBO.value,
             temperature=1.6,
             prompt=NPC_PROFILE_USER.format(trait_type=trait_type),
         )
