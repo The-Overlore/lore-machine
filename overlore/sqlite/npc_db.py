@@ -85,8 +85,9 @@ class NpcDatabase(Database):
         logger.info(f"Stored npc_spawn entry at rowid {row_id} for realm_entity_id {realm_entity_id}")
         return row_id
 
-    def insert_npc_info(self, npc_id: int, description: str) -> None:
-        self._insert("INSERT INTO npc_info(npc_id, description) VALUES (?, ?)", (npc_id, description))
+    def insert_npc_info(self, npc_id: int, description: str) -> int:
+        row_id = self._insert("INSERT INTO npc_info(npc_id, description) VALUES (?, ?)", (npc_id, description))
+        return row_id
 
     def fetch_npc_spawn_by_realm(self, realm_entity_id: int) -> Npc | None:
         profile = self.execute_query("SELECT * FROM npc_spawn WHERE realm_entity_id = ?", (realm_entity_id,))
