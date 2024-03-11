@@ -10,7 +10,7 @@ from overlore.utils import get_contract_nonce, sign_parameters
 logger = logging.getLogger("overlore")
 
 
-async def build_response(realm_entity_id: int, npc: Npc, config: BootConfig) -> tuple[Npc, list[str]]:
+def build_response(realm_entity_id: int, npc: Npc, config: BootConfig) -> tuple[Npc, list[str]]:
     data = run_torii_query(config.env["TORII_GRAPHQL"], Queries.OWNER.value.format(entity_id=realm_entity_id))
     realm_owner_address = data["ownerModels"]["edges"][0]["node"]["address"]
 
@@ -33,7 +33,7 @@ async def build_response(realm_entity_id: int, npc: Npc, config: BootConfig) -> 
     return (npc, [str(signature[0]), str(signature[1])])
 
 
-async def spawn_npc(data: NpcSpawnMsgData, config: BootConfig) -> tuple[Npc, list[str]]:
+def spawn_npc(data: NpcSpawnMsgData, config: BootConfig) -> tuple[Npc, list[str]]:
     llm = Llm()
     npc_db = NpcDatabase.instance()
 
