@@ -43,6 +43,7 @@ class Subscriptions(Enum):
     ORDER_ACCEPTED = KEY_BASED_SUB_TEMPLATE.format(event_hash=EventType.ORDER_ACCEPTED.value)
     COMBAT_OUTCOME = KEY_BASED_SUB_TEMPLATE.format(event_hash=EventType.COMBAT_OUTCOME.value)
     NPC_SPAWNED = KEY_BASED_SUB_TEMPLATE.format(event_hash=EventType.NPC_SPAWNED.value)
+    NONE = "None"
 
 
 def backoff_logging(details: Details) -> None:

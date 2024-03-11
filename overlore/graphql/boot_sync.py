@@ -1,28 +1,24 @@
 import logging
-from typing import cast
 
 from overlore.graphql.parsing import parse_event
 from overlore.graphql.query import Queries, run_torii_query
 from overlore.sqlite.events_db import EventsDatabase
-from overlore.types import SyncEvents
+from overlore.types import ToriiDataNode
 
 logger = logging.getLogger("overlore")
 
 
-def store_synced_events(events: list[SyncEvents]) -> None:
+def store_synced_events(events: list[ToriiDataNode]) -> None:
     events_db = EventsDatabase.instance()
     for event in events:
-        event_emitted = event.get("node")
-        if not event_emitted:
-            raise RuntimeError("node not present in event")
-        parsed_event = parse_event(event=event_emitted)
+        parsed_event = parse_event(event=event)
         events_db.insert_event(event=parsed_event)
 
 
-def get_synced_events(torii_endpoint: str, query: str) -> list[SyncEvents]:
-    query_result = run_torii_query(torii_endpoint=torii_endpoint, query=query)
-    edges = query_result["events"]["edges"]
-    return cast(list[SyncEvents], edges)
+def get_synced_events(torii_endpoint: str, query: str) -> list[ToriiDataNode]:
+    query_results = run_torii_query(torii_endpoint=torii_endpoint, query=query)
+    events = [query_result["node"] for query_result in query_results["events"]["edges"]]
+    return events
 
 
 async def torii_boot_sync(torii_service_endpoint: str) -> None:

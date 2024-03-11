@@ -34,6 +34,8 @@ def setup_logging(log_to_file: Optional[str] = None) -> None:
     # Add the handler to the logger
     logger.addHandler(handler)
 
+    logger.propagate = False
+
 
 class BootConfig:
     # CLI Argument

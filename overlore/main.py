@@ -2,8 +2,10 @@ import asyncio
 import functools
 import json
 import logging
+import os
 import signal
 from types import FrameType
+from typing import cast
 
 import responses
 from websockets import serve
@@ -12,20 +14,22 @@ from websockets.exceptions import ConnectionClosedError
 from overlore.config import BootConfig
 from overlore.graphql.boot_sync import torii_boot_sync
 from overlore.graphql.subscriptions import (
+    OnEventCallbackType,
     Subscriptions,
     assign_name_character_trait_to_npc,
     process_received_event,
     use_torii_subscription,
 )
-from overlore.llm.open_ai import OpenAIHandler
+from overlore.llm.constants import GUARD_RAILS_HUB_URL
 from overlore.sqlite.events_db import EventsDatabase
 from overlore.sqlite.npc_db import NpcDatabase
 from overlore.sqlite.vector_db import VectorDatabase
-from overlore.townhall.logic import handle_townhall_request
-from overlore.townhall.mocks import MOCK_KATANA_RESPONSE, MOCK_VILLAGERS
+from overlore.townhall.mocks import MOCK_KATANA_RESPONSE, MOCK_VILLAGERS, with_mock_responses
+from overlore.townhall.request import handle_townhall_request
+from overlore.types import WsTownhallResponse
 from overlore.ws import handle_client_connection
 
-SUBSCRIPTIONS_WITH_CALLBACKS = [
+SUBSCRIPTIONS_WITH_CALLBACKS: list[tuple[Subscriptions, OnEventCallbackType]] = [
     (Subscriptions.COMBAT_OUTCOME, process_received_event),
     (Subscriptions.ORDER_ACCEPTED, process_received_event),
     (Subscriptions.NPC_SPAWNED, assign_name_character_trait_to_npc),
@@ -35,18 +39,16 @@ logger = logging.getLogger("overlore")
 
 
 async def use_prompt_loop(config: BootConfig) -> None:
-    test_url = config.env["KATANA_URL"]
     mock_response = json.dumps(MOCK_KATANA_RESPONSE)
     with responses.RequestsMock() as rsps:
-        rsps.add(rsps.POST, test_url, body=mock_response, status=200)
+        rsps.add(rsps.POST, config.env["KATANA_URL"], body=mock_response, status=200)
+        rsps.add_passthru(GUARD_RAILS_HUB_URL)
         while True:
             txt = input("hit enter to generate townhall with realm_id 73 or enter realm_id\n")
             realm_id = 73 if len(txt) == 0 else int(txt)
-            msg = f'{{"realm_id": {realm_id}, "orderId": 1, "npcs" : {json.dumps(MOCK_VILLAGERS)}}}'
-            (rowid, townhall, systemPrompt, userPrompt) = await handle_townhall_request(json.loads(msg), config=config)
-            logger.debug(f"______System prompt______\n{systemPrompt}\n________________________")
-            logger.debug(f"______User prompt______\n{userPrompt}\n________________________")
-            logger.debug(f"______GPT answer______\n{townhall}\n________________________\n\n\n\n\n\n\n\n")
+            msg = f'{{"realm_id": {realm_id}, "order_id": 1, "npcs" : {json.dumps(MOCK_VILLAGERS)}}}'
+            res = cast(WsTownhallResponse, handle_townhall_request(json.loads(msg), config=config))
+            logger.debug(f"______GPT answer______\n{res['dialogue']}\n________________________\n\n\n\n\n\n\n\n")
 
 
 async def cancel_all_tasks() -> None:
@@ -68,11 +70,17 @@ def setup() -> BootConfig:
 
     signal.signal(signal.SIGINT, handle_sigint)
 
-    EventsDatabase.instance().init()
-    VectorDatabase.instance().init()
-    NpcDatabase.instance().init()
+    if config.mock is True:
+        EventsDatabase.instance().init(":memory:")
+        VectorDatabase.instance().init(":memory:")
+        NpcDatabase.instance().init(":memory:")
+    else:
+        EventsDatabase.instance().init()
+        VectorDatabase.instance().init()
+        NpcDatabase.instance().init()
 
-    OpenAIHandler.instance().init(config.env["OPENAI_API_KEY"])
+    os.environ["GUARDRAILS_PROCESS_COUNT"] = "30"
+
     return config
 
 
@@ -100,12 +108,19 @@ async def start() -> None:
     config = setup()
 
     if config.prompt:
-        await use_prompt_loop(config)
+        global SUBSCRIPTIONS_WITH_CALLBACKS
+        SUBSCRIPTIONS_WITH_CALLBACKS = [(Subscriptions.NONE, use_prompt_loop)]  # type: ignore[list-item]
+        task = asyncio.create_task(use_prompt_loop(config=config))
+        await asyncio.wait_for(task, None)
+        return
 
     # Sync events database on boot
-    await torii_boot_sync(config.env["TORII_GRAPHQL"])
+    await torii_boot_sync(torii_service_endpoint=config.env["TORII_GRAPHQL"])
 
-    await launch_services(config)
+    if config.mock is True:
+        await with_mock_responses(launch_services, config, config)
+    else:
+        await launch_services(config=config)
 
 
 # hardcode for now, when more mature we need some plumbing to read this off a config

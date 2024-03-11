@@ -1,13 +1,13 @@
-import random
 from typing import Any, cast
 
 from overlore.eternum.constants import Realms, ResourceIds, Winner
-from overlore.eternum.types import Npc, NpcCharacteristics, ResourceAmounts
+from overlore.eternum.types import ResourceAmounts
 from overlore.llm.constants import (
     AGENT_TEMPLATE,
 )
 from overlore.sqlite.constants import EventType
 from overlore.sqlite.types import StoredEvent
+from overlore.types import Npc
 from overlore.utils import get_enum_name_by_value, str_to_json
 
 
@@ -16,12 +16,12 @@ class LlmFormatter:
         resources_strings: list[str] = []
         for resource in resources:
             resource_str = str(resource["amount"])
-            resource_str += " " + get_enum_name_by_value(ResourceIds, resource["type"])
+            resource_str += " " + get_enum_name_by_value(ResourceIds, resource["resource_type"])
             resources_strings.append(resource_str)
         return ", ".join(resources_strings)
 
     def _combat_outcome_to_nl(self, event: StoredEvent) -> str:
-        # metadata:
+        # type_dependent_data:
         #   for COMBAT_OUTCOME: {attacking_entity_ids: [id, ...], stolen_resources:  [{type: x, amount: y}, ...], winner: ATTACKER/TARGER, damage: x}
         nl = ""
         realms = Realms.instance()
@@ -32,24 +32,24 @@ class LlmFormatter:
         active_realm_name = realms.name_by_id(active_realm_id)
         passive_realm_name = realms.name_by_id(passive_realm_id)
 
-        metadata: dict[Any, Any] = str_to_json(str(event[8]))
+        type_dependent_data: dict[Any, Any] = str_to_json(str(event[8]))
 
-        if metadata["damage"] == 0:
+        if type_dependent_data["damage"] == 0:
             nl += f"Pillage of realm {passive_realm_name} by realm {active_realm_name}. "
-            stolen_resources = self._resources_to_nl(metadata["stolen_resources"])
+            stolen_resources = self._resources_to_nl(type_dependent_data["stolen_resources"])
             nl += f"Stolen resources are {stolen_resources}."
         else:
             nl += f"War waged: by {active_realm_name} against {passive_realm_name}. "
-            winner = metadata["winner"]
+            winner = type_dependent_data["winner"]
             winner_name = active_realm_name if (winner == Winner.Attacker.value) else passive_realm_name
             loser_name = passive_realm_name if (winner == Winner.Attacker.value) else active_realm_name
             nl += f"Winner is {winner_name}. Loser is {loser_name}. "
-            nl += f"Damages taken by {loser_name}: {metadata['damage']}. "
+            nl += f"Damages taken by {loser_name}: {type_dependent_data['damage']}. "
         return nl
 
     def _order_accepted_to_nl(self, event: StoredEvent) -> str:
         # TODO: https://github.com/The-Overlore/lore-machine/issues/26
-        # metadata:
+        # type_dependent_data:
         #   for ORDER_ACCEPTED: {resources_maker: [{type: x, amount: y}, ...], resources_taker:  [{type: x, amount: y}, ...], }
         realms = Realms.instance()
 
@@ -60,29 +60,30 @@ class LlmFormatter:
         active_realm_name = realms.name_by_id(active_realm_id)
         passive_realm_name = realms.name_by_id(passive_realm_id)
 
-        metadata: dict[Any, Any] = str_to_json(str(event[8]))
-        resources_taker = self._resources_to_nl(metadata["resources_taker"])
-        resources_maker = self._resources_to_nl(metadata["resources_maker"])
+        type_dependent_data: dict[Any, Any] = str_to_json(str(event[8]))
+        resources_taker = self._resources_to_nl(type_dependent_data["resources_taker"])
+        resources_maker = self._resources_to_nl(type_dependent_data["resources_maker"])
         nl = f"Trade happened: between {active_realm_name} and {passive_realm_name} realms. "
         nl += f"{active_realm_name} will get {resources_taker}. "
         nl += f"{passive_realm_name} will get {resources_maker}. "
         return nl
 
     def _npc_to_nl(self, npc: Npc) -> str:
-        characteristics = cast(NpcCharacteristics, npc["characteristics"])
+        characteristics = npc["characteristics"]  # type: ignore[index]
 
         age: int = cast(int, characteristics["age"])
-        role: int = cast(int, characteristics["role"])
-        sex: int = cast(int, characteristics["sex"])
+        role: str = cast(str, characteristics["role"])
+        sex: str = cast(str, characteristics["sex"])
 
-        character_trait: str = cast(str, npc["character_trait"])
-        name: str = cast(str, npc["full_name"])
+        character_trait: str = cast(str, npc["character_trait"])  # type: ignore[index]
+        name: str = cast(str, npc["full_name"])  # type: ignore[index]
+        print(f"age {age} sex {sex} role {role} charac trait {character_trait}")
         return AGENT_TEMPLATE.format(name=name, sex=sex, role=role, character_trait=character_trait, age=age)
 
-    def _event_to_nl(self, event: StoredEvent) -> str:
+    def event_to_nl(self, event: StoredEvent) -> str:
         #  event
-        #  0      1     2                       3                4                        5                 6           7   8          9,0        9,1        10,0       10,1
-        # [rowid, type, active_realm_entity_id, active_realm_id, passive_realm_entity_id, passive_realm_id, importance, ts, metadata, (X_active, Y_active), (X_passive, Y_passive)]
+        #  0      1     2                       3                4                        5                 6           7   8                     9,0        9,1        10,0       10,1
+        # [rowid, type, active_realm_entity_id, active_realm_id, passive_realm_entity_id, passive_realm_id, importance, ts, type_dependent_data, (X_active, Y_active), (X_passive, Y_passive)]
         event_type = event[1]
         if event_type == EventType.COMBAT_OUTCOME.value:
             return self._combat_outcome_to_nl(event=event)
@@ -93,28 +94,3 @@ class LlmFormatter:
 
     def npcs_to_nl(self, villagers: list[Npc]) -> str:
         return "\n".join(self._npc_to_nl(npc) for npc in villagers)
-
-    def events_to_nl(self, events: list[StoredEvent]) -> str:
-        return "\n".join(self._event_to_nl(event) for event in events)
-
-    def convert_llm_response_to_profile(self, response: str) -> Npc:
-        profile: Any = {}
-        lines = response.split("\n")
-
-        for line in lines:
-            if line.isspace() or len(line) == 0:
-                continue
-            (name, val) = line.split(":")
-            profile[name.strip()] = val.strip()
-
-        npc: Npc = {
-            "characteristics": {
-                "age": random.randint(15, 65),
-                "role": int(profile["role"]),
-                "sex": int(profile["sex"]),
-            },
-            "character_trait": profile["character_trait"],
-            "full_name": "",
-            "description": profile["description"],
-        }
-        return npc

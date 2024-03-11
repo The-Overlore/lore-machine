@@ -2,12 +2,15 @@ from __future__ import annotations
 
 import logging
 from enum import Enum
-from typing import TypeAlias, cast
+from typing import TypedDict, cast
 
 from overlore.eternum.types import RealmPosition
 from overlore.utils import open_json_file
 
-RealmGeodata: TypeAlias = dict[str, list[float] | int | str]
+
+class RealmGeodata(TypedDict):
+    xy: list[float]
+    name: str
 
 
 logger = logging.getLogger("overlore")

@@ -37,7 +37,10 @@ async def test_trade_event():
             2,
             1.0,
             1705106173,
-            '{"resources_maker": [{"type": 8, "amount": 5}], "resources_taker": [{"type": 1, "amount": 5}]}',
+            (
+                '{"resources_maker": [{"resource_type": 8, "amount": 5}], "resources_taker": [{"resource_type": 1,'
+                ' "amount": 5}]}'
+            ),
             (0.0, 0.0),
             (0.0, 2000.0),
         ]
@@ -144,7 +147,10 @@ async def test_combat_steal():
             2,
             1.0,
             1705098944,
-            '{"attacking_entity_ids": [], "stolen_resources": [{"type": 8, "amount": 10}], "winner": 0, "damage": 0}',
+            (
+                '{"attacking_entity_ids": [], "stolen_resources": [{"resource_type": 8, "amount": 10}], "winner": 0,'
+                ' "damage": 0}'
+            ),
             (0.0, 0.0),
             (0.0, 2000.0),
         ]
@@ -177,7 +183,10 @@ async def test_combat_steal():
             2,
             5.0,
             1705098944,
-            '{"attacking_entity_ids": [], "stolen_resources": [{"type": 8, "amount": 50}], "winner": 0, "damage": 0}',
+            (
+                '{"attacking_entity_ids": [], "stolen_resources": [{"resource_type": 8, "amount": 50}], "winner": 0,'
+                ' "damage": 0}'
+            ),
             (0.0, 0.0),
             (0.0, 2000.0),
         ]
@@ -291,7 +300,10 @@ async def test_get_all():
             2,
             1.0,
             1705098944,
-            '{"attacking_entity_ids": [], "stolen_resources": [{"type": 8, "amount": 10}], "winner": 0, "damage": 0}',
+            (
+                '{"attacking_entity_ids": [], "stolen_resources": [{"resource_type": 8, "amount": 10}], "winner": 0,'
+                ' "damage": 0}'
+            ),
             (0.0, 0.0),
             (0.0, 2000.0),
         ],
@@ -304,7 +316,10 @@ async def test_get_all():
             2,
             5.0,
             1705098944,
-            '{"attacking_entity_ids": [], "stolen_resources": [{"type": 8, "amount": 50}], "winner": 0, "damage": 0}',
+            (
+                '{"attacking_entity_ids": [], "stolen_resources": [{"resource_type": 8, "amount": 50}], "winner": 0,'
+                ' "damage": 0}'
+            ),
             (0.0, 0.0),
             (0.0, 2000.0),
         ],
@@ -361,20 +376,21 @@ async def test_fetch_relevant_events_decay_time():
         ts -= 86400
         test_message["eventEmitted"]["data"][8] = hex(ts)
 
-    assert db.fetch_most_relevant(realm_position=db.realms.position_by_id(2), current_time=1704831904) == [
-        [
-            1,
-            0,
-            73,
-            1,
-            75,
-            2,
-            10.0,
-            1704831904,
-            '{"resources_maker": [{"type": 253, "amount": 50}], "resources_taker": [{"type": 3, "amount": 50}]}',
-            (0.0, 0.0),
-            (0.0, 2000.0),
-        ]
+    assert db.fetch_most_relevant_event(realm_position=db.realms.position_by_id(2), current_time=1704831904) == [
+        1,
+        0,
+        73,
+        1,
+        75,
+        2,
+        10.0,
+        1704831904,
+        (
+            '{"resources_maker": [{"resource_type": 253, "amount": 50}], "resources_taker": [{"resource_type": 3,'
+            ' "amount": 50}]}'
+        ),
+        (0.0, 0.0),
+        (0.0, 2000.0),
     ]
 
 
@@ -452,24 +468,25 @@ async def test_fetch_relevant_events_decay_distance():
             }
         }
     )
-    assert db.fetch_most_relevant(realm_position=db.realms.position_by_id(1), current_time=0x659DABA0) == [
-        [
-            1,
-            0,
-            17,
-            1,
-            16,
-            6,
-            10.0,
-            1704831904,
-            '{"resources_maker": [{"type": 253, "amount": 50}], "resources_taker": [{"type": 3, "amount": 50}]}',
-            (0.0, 0.0),
-            (9999.0, 9999.0),
-        ]
+    assert db.fetch_most_relevant_event(realm_position=db.realms.position_by_id(1), current_time=0x659DABA0) == [
+        1,
+        0,
+        17,
+        1,
+        16,
+        6,
+        10.0,
+        1704831904,
+        (
+            '{"resources_maker": [{"resource_type": 253, "amount": 50}], "resources_taker": [{"resource_type": 3,'
+            ' "amount": 50}]}'
+        ),
+        (0.0, 0.0),
+        (9999.0, 9999.0),
     ]
 
 
 @pytest.mark.asyncio
 async def test_fetch_relevant_events_empty_db():
     db = init_db()
-    assert [] == db.fetch_most_relevant(realm_position=db.realms.position_by_id(1), current_time=0x659DABA0)
+    assert None is db.fetch_most_relevant_event(realm_position=db.realms.position_by_id(1), current_time=0x659DABA0)

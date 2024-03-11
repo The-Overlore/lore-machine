@@ -38,24 +38,24 @@ def get_enum_name_by_value(enum: Any, val: Any) -> str:
     raise RuntimeError(f"No value for val {val} in enum")
 
 
-async def get_contract_nonce(katana_url: str, contract_address: str) -> int:
+def get_contract_nonce(katana_url: str, contract_address: str) -> int:
     data = {
         "jsonrpc": "2.0",
         "method": "starknet_getNonce",
         "params": {"block_id": "latest", "contract_address": contract_address},
         "id": 1,
     }
-    ret = await query_katana_node(katana_url, data)
+    ret = query_katana_node(katana_url, data)
     return cast(int, ret.get("result"))
 
 
-async def get_katana_timestamp(katana_url: str) -> int:
+def get_katana_timestamp(katana_url: str) -> int:
     data = {"jsonrpc": "2.0", "method": "starknet_getBlockWithTxs", "params": {"block_id": "latest"}, "id": 1}
-    ret = await query_katana_node(katana_url, data)
+    ret = query_katana_node(katana_url, data)
     return cast(int, ret.get("result").get("timestamp"))
 
 
-async def query_katana_node(katana_url: str, data: dict[str, Any]) -> Any:
+def query_katana_node(katana_url: str, data: dict[str, Any]) -> Any:
     # Define the URL and the header
     headers = {"Content-Type": "application/json"}
 
@@ -69,5 +69,4 @@ async def query_katana_node(katana_url: str, data: dict[str, Any]) -> Any:
 def sign_parameters(msg: Sequence, priv_key: str) -> ECSignature:
     msg_felt = [encode_shortstring(elem) if type(elem) == str else elem for elem in msg]
     msg_hash = pedersen(msg_felt)
-
     return message_signature(msg_hash, int(priv_key, base=16))
