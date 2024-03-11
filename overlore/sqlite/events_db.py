@@ -58,7 +58,7 @@ class EventsDatabase(Database):
                 passive_realm_id INTEGER NOT NULL,
                 importance FLOAT NOT NULL,
                 ts INTEGER NOT NULL,
-                type_dependent_data TEXT
+                type_specific_data TEXT
             );
         """,
         # maker/attacker
@@ -108,7 +108,7 @@ class EventsDatabase(Database):
     def insert_event(self, event: ParsedEvent) -> int:
         query = (
             "INSERT INTO events (torii_event_id, event_type, active_realm_entity_id, active_realm_id,"
-            " passive_realm_entity_id, passive_realm_id, importance, ts, type_dependent_data, active_pos, passive_pos)"
+            " passive_realm_entity_id, passive_realm_id, importance, ts, type_specific_data, active_pos, passive_pos)"
             " SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, MakePoint(?,?),MakePoint(?, ?) WHERE NOT EXISTS (SELECT 1 FROM events"
             " WHERE torii_event_id=?);"
         )
@@ -121,7 +121,7 @@ class EventsDatabase(Database):
             event["passive_realm_id"],
             event["importance"],
             event["ts"],
-            event["type_dependent_data"],
+            event["type_specific_data"],
             event["active_pos"][0],
             event["active_pos"][1],
             event["passive_pos"][0],
@@ -140,7 +140,7 @@ class EventsDatabase(Database):
         placeholders = ", ".join(["?" for _ in event_ids])
         records = self.execute_query(
             "SELECT rowid, event_type, active_realm_entity_id, active_realm_id, passive_realm_entity_id,"
-            " passive_realm_id, importance, ts, type_dependent_data, X(active_pos), Y(active_pos), X(passive_pos),"
+            " passive_realm_id, importance, ts, type_specific_data, X(active_pos), Y(active_pos), X(passive_pos),"
             f" Y(passive_pos) FROM events WHERE rowid IN ({placeholders})",
             (*event_ids,),
         )
@@ -148,7 +148,7 @@ class EventsDatabase(Database):
         return self.format_records(records=records)
 
     def get_all(self) -> list[StoredEvent]:
-        query = """SELECT rowid, event_type, active_realm_entity_id, active_realm_id, passive_realm_entity_id, passive_realm_id, importance, ts, type_dependent_data, X(active_pos), Y(active_pos), X(passive_pos), Y(passive_pos) from events ORDER BY rowid ASC"""
+        query = """SELECT rowid, event_type, active_realm_entity_id, active_realm_id, passive_realm_entity_id, passive_realm_id, importance, ts, type_specific_data, X(active_pos), Y(active_pos), X(passive_pos), Y(passive_pos) from events ORDER BY rowid ASC"""
         records = self.execute_query(query, ())
 
         return self.format_records(records=records)
@@ -165,7 +165,7 @@ class EventsDatabase(Database):
                     passive_realm_id,
                     importance,
                     ts,
-                    type_dependent_data,
+                    type_specific_data,
                     X(active_pos),
                     Y(active_pos),
                     X(passive_pos),
@@ -180,7 +180,7 @@ class EventsDatabase(Database):
                             passive_realm_id,
                             importance,
                             ts,
-                            type_dependent_data,
+                            type_specific_data,
                             active_pos,
                             passive_pos,
                             average(

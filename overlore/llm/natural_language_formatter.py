@@ -21,7 +21,7 @@ class LlmFormatter:
         return ", ".join(resources_strings)
 
     def _combat_outcome_to_nl(self, event: StoredEvent) -> str:
-        # type_dependent_data:
+        # type_specific_data:
         #   for COMBAT_OUTCOME: {attacking_entity_ids: [id, ...], stolen_resources:  [{type: x, amount: y}, ...], winner: ATTACKER/TARGER, damage: x}
         nl = ""
         realms = Realms.instance()
@@ -32,24 +32,24 @@ class LlmFormatter:
         active_realm_name = realms.name_by_id(active_realm_id)
         passive_realm_name = realms.name_by_id(passive_realm_id)
 
-        type_dependent_data: dict[Any, Any] = str_to_json(str(event[8]))
+        type_specific_data: dict[Any, Any] = str_to_json(str(event[8]))
 
-        if type_dependent_data["damage"] == 0:
+        if type_specific_data["damage"] == 0:
             nl += f"Pillage of realm {passive_realm_name} by realm {active_realm_name}. "
-            stolen_resources = self._resources_to_nl(type_dependent_data["stolen_resources"])
+            stolen_resources = self._resources_to_nl(type_specific_data["stolen_resources"])
             nl += f"Stolen resources are {stolen_resources}."
         else:
             nl += f"War waged: by {active_realm_name} against {passive_realm_name}. "
-            winner = type_dependent_data["winner"]
+            winner = type_specific_data["winner"]
             winner_name = active_realm_name if (winner == Winner.Attacker.value) else passive_realm_name
             loser_name = passive_realm_name if (winner == Winner.Attacker.value) else active_realm_name
             nl += f"Winner is {winner_name}. Loser is {loser_name}. "
-            nl += f"Damages taken by {loser_name}: {type_dependent_data['damage']}. "
+            nl += f"Damages taken by {loser_name}: {type_specific_data['damage']}. "
         return nl
 
     def _order_accepted_to_nl(self, event: StoredEvent) -> str:
         # TODO: https://github.com/The-Overlore/lore-machine/issues/26
-        # type_dependent_data:
+        # type_specific_data:
         #   for ORDER_ACCEPTED: {resources_maker: [{type: x, amount: y}, ...], resources_taker:  [{type: x, amount: y}, ...], }
         realms = Realms.instance()
 
@@ -60,9 +60,9 @@ class LlmFormatter:
         active_realm_name = realms.name_by_id(active_realm_id)
         passive_realm_name = realms.name_by_id(passive_realm_id)
 
-        type_dependent_data: dict[Any, Any] = str_to_json(str(event[8]))
-        resources_taker = self._resources_to_nl(type_dependent_data["resources_taker"])
-        resources_maker = self._resources_to_nl(type_dependent_data["resources_maker"])
+        type_specific_data: dict[Any, Any] = str_to_json(str(event[8]))
+        resources_taker = self._resources_to_nl(type_specific_data["resources_taker"])
+        resources_maker = self._resources_to_nl(type_specific_data["resources_maker"])
         nl = f"Trade happened: between {active_realm_name} and {passive_realm_name} realms. "
         nl += f"{active_realm_name} will get {resources_taker}. "
         nl += f"{passive_realm_name} will get {resources_maker}. "
@@ -83,7 +83,7 @@ class LlmFormatter:
     def event_to_nl(self, event: StoredEvent) -> str:
         #  event
         #  0      1     2                       3                4                        5                 6           7   8                     9,0        9,1        10,0       10,1
-        # [rowid, type, active_realm_entity_id, active_realm_id, passive_realm_entity_id, passive_realm_id, importance, ts, type_dependent_data, (X_active, Y_active), (X_passive, Y_passive)]
+        # [rowid, type, active_realm_entity_id, active_realm_id, passive_realm_entity_id, passive_realm_id, importance, ts, type_specific_data, (X_active, Y_active), (X_passive, Y_passive)]
         event_type = event[1]
         if event_type == EventType.COMBAT_OUTCOME.value:
             return self._combat_outcome_to_nl(event=event)

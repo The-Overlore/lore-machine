@@ -38,7 +38,7 @@ class ParsedEvent(TypedDict):
     passive_realm_id: int
     active_pos: RealmPosition
     passive_pos: RealmPosition
-    type_dependent_data: str
+    type_specific_data: str
 
 
 class Characteristics(BaseModel):

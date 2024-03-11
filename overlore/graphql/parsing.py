@@ -48,7 +48,7 @@ def parse_combat_outcome_event(torii_event_id: str, keys: EventKeys, data: Event
     ts = int(data[2], base=16)
 
     importance = get_combat_outcome_importance(stolen_resources=stolen_resources, damage=damage)
-    type_dependent_data = json.dumps(
+    type_specific_data = json.dumps(
         {
             "attacking_entity_ids": attacking_entity_ids,
             "stolen_resources": stolen_resources,
@@ -67,7 +67,7 @@ def parse_combat_outcome_event(torii_event_id: str, keys: EventKeys, data: Event
         "passive_pos": realms.position_by_id(target_realm_id),
         "importance": importance,
         "ts": ts,
-        "type_dependent_data": type_dependent_data,
+        "type_specific_data": type_specific_data,
     }
     return parsed_event
 
@@ -89,7 +89,7 @@ def parse_trade_event(torii_event_id: str, keys: EventKeys, data: EventData) -> 
     ts = int(data[0], base=16)
 
     importance = get_trade_importance(resources_maker + resources_taker)
-    type_dependent_data = json.dumps({"resources_maker": resources_maker, "resources_taker": resources_taker})
+    type_specific_data = json.dumps({"resources_maker": resources_maker, "resources_taker": resources_taker})
 
     parsed_event: ParsedEvent = {
         "torii_event_id": torii_event_id,
@@ -102,7 +102,7 @@ def parse_trade_event(torii_event_id: str, keys: EventKeys, data: EventData) -> 
         "passive_pos": realms.position_by_id(maker_realm_id),
         "importance": importance,
         "ts": ts,
-        "type_dependent_data": type_dependent_data,
+        "type_specific_data": type_specific_data,
     }
     return parsed_event
 
