@@ -1,7 +1,7 @@
 import pytest
 
-from overlore.eternum.types import Npc
 from overlore.sqlite.npc_db import NpcDatabase
+from overlore.types import Npc
 
 DATA: list[Npc] = [
     {
@@ -32,25 +32,27 @@ async def test_create_and_read_entry():
     assert None is db.fetch_npc_spawn_by_realm(1)
 
     assert db.insert_npc_spawn(1, DATA[0]) == 1
+
     assert {
+        "character_trait": "Assertive",
         "characteristics": {
             "age": 33,
             "role": 1,
             "sex": 0,
         },
-        "character_trait": "Assertive",
         "full_name": "Luke Luke",
         "description": "Short summary",
     } == db.fetch_npc_spawn_by_realm(1)
 
     assert db.insert_npc_spawn(2, DATA[1]) == 2
+
     assert {
+        "character_trait": "Submissive",
         "characteristics": {
             "age": 28,
             "role": 2,
             "sex": 1,
         },
-        "character_trait": "Submissive",
         "full_name": "Bobby Bob",
         "description": "Short summary",
     } == db.fetch_npc_spawn_by_realm(2)
@@ -66,7 +68,10 @@ async def test_delete_entry():
 
     db.insert_npc_spawn(1, DATA[0])
     assert len(db.get_all_npc_spawn()) == 1
-    db.delete_npc_spawn_by_realm(1, 1)
+
+    db.delete_npc_spawn_by_realm(
+        {"torii_event_id": "0xDEADCONSTANTIN", "event_type": 2, "realm_entity_id": 1, "npc_entity_id": 1}
+    )
     assert len(db.get_all_npc_spawn()) == 0
     assert db.fetch_npc_info(1) == "Short summary"
     assert len(db.get_all_npc_info()) == 1

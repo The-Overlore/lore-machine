@@ -10,8 +10,9 @@ from gql import Client, gql
 from gql.transport.websockets import WebsocketsTransport
 
 from overlore.graphql.constants import EventType
-from overlore.graphql.parsing import parse_event
+from overlore.graphql.parsing import parse_event, parse_npc_spawn_event
 from overlore.sqlite.events_db import EventsDatabase
+from overlore.sqlite.npc_db import NpcDatabase
 from overlore.types import ToriiEmittedEvent
 
 logger = logging.getLogger("overlore")
@@ -43,6 +44,7 @@ class Subscriptions(Enum):
     ORDER_ACCEPTED = KEY_BASED_SUB_TEMPLATE.format(event_hash=EventType.ORDER_ACCEPTED.value)
     COMBAT_OUTCOME = KEY_BASED_SUB_TEMPLATE.format(event_hash=EventType.COMBAT_OUTCOME.value)
     NPC_SPAWNED = KEY_BASED_SUB_TEMPLATE.format(event_hash=EventType.NPC_SPAWNED.value)
+    NONE = "None"
 
 
 def backoff_logging(details: Details) -> None:
@@ -57,13 +59,8 @@ def backoff_logging(details: Details) -> None:
 
     # Format the exception information for logging
     logger.warning(
-        "Backing off %s seconds after %s tries calling function %s with args %s and kwargs %s due to %s",
-        details["wait"],
-        details["tries"],
-        details["target"].__name__,
-        details["args"],
-        details["kwargs"],
-        exc_info,
+        f'Backing off {details["wait"]} seconds after {details["tries"]} tries calling function'
+        f' {details["target"].__name__} with args and kwargs {details["kwargs"]} due to {exc_info}',
     )
 
 
@@ -101,6 +98,11 @@ def process_received_event(event: ToriiEmittedEvent) -> int:
     return added_id
 
 
-def assign_name_character_trait_to_npc(_event: ToriiEmittedEvent) -> int:
-    _event
+def delete_npc_from_db(event: ToriiEmittedEvent) -> int:
+    npc_db = NpcDatabase.instance()
+
+    parsed_event = parse_npc_spawn_event(event=event["eventEmitted"])
+
+    npc_db.delete_npc_spawn_by_realm(event=parsed_event)
+
     return 69_420

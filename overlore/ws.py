@@ -6,8 +6,8 @@ from websockets import WebSocketServerProtocol
 
 from overlore.config import BootConfig
 from overlore.npcs.spawn import spawn_npc
-from overlore.townhall.logic import handle_townhall_request
-from overlore.types import EnumEncoder, MsgType, WsErrorResponse, WsResponse, WsSpawnNpcResponse, WsTownhallResponse
+from overlore.townhall.request import handle_townhall_request
+from overlore.types import EnumEncoder, MsgType, WsErrorResponse, WsResponse, WsSpawnNpcResponse
 from overlore.utils import get_ws_msg_type, str_to_json
 
 logger = logging.getLogger("overlore")
@@ -20,33 +20,31 @@ async def handle_client_connection(websocket: WebSocketServerProtocol, config: B
             continue
         try:
             msg = str_to_json(cast(str, message))
+            ws_msg_type = get_ws_msg_type(msg)
+            data = msg["data"]
+            if ws_msg_type == MsgType.TOWNHALL.value:
+                logger.debug("generating townhall")
+                response = WsResponse(
+                    msg_type=MsgType.TOWNHALL,
+                    data=handle_townhall_request(data, config),
+                )
+            elif ws_msg_type == MsgType.SPAWN_NPC.value:
+                logger.debug("spawning NPC")
+                (npc, signature) = spawn_npc(data, config)
+                response = {
+                    "msg_type": MsgType.SPAWN_NPC,
+                    "data": cast(WsSpawnNpcResponse, {"npc": npc, "signature": signature}),
+                }
+
         except Exception as error:
             response = {
                 "msg_type": MsgType.ERROR,
                 "data": cast(
                     WsErrorResponse,
                     {
-                        "reason": f"Failure to generate a dialog: {error}",
+                        "reason": f"Failure to generate ws response: {error}",
                     },
                 ),
             }
 
-        ws_msg_type = get_ws_msg_type(msg)
-        data = msg["data"]
-        if ws_msg_type == MsgType.TOWNHALL.value:
-            logger.debug("generating townhall")
-            (townhall_id, townhal, _, _) = await handle_townhall_request(data, config)
-            response = {
-                "msg_type": MsgType.TOWNHALL,
-                "data": cast(WsTownhallResponse, {"townhall_id": townhall_id, "townhall": townhal}),
-            }
-        elif ws_msg_type == MsgType.SPAWN_NPC.value:
-            logger.debug("spawning NPC")
-            (npc, signature) = await spawn_npc(data, config)
-            response = {
-                "msg_type": MsgType.SPAWN_NPC,
-                "data": cast(WsSpawnNpcResponse, {"npc": npc, "signature": signature}),
-            }
-
-        logger.debug(response)
         await websocket.send(json.dumps(response, cls=EnumEncoder))

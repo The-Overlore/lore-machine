@@ -22,7 +22,7 @@ class VectorDatabase(Database):
                 discussion text,
                 summary text,
                 realm_id int,
-                events_ids text,
+                event_id int,
                 ts text
             );
         """,
@@ -61,13 +61,13 @@ class VectorDatabase(Database):
         return len(records), len(records_vss)
 
     def insert_townhall_discussion(
-        self, discussion: str, summary: str, realm_id: int, event_ids: list[int], embedding: list[float]
+        self, discussion: str, summary: str, realm_id: int, event_id: int, embedding: list[float]
     ) -> int:
         discussion = discussion.strip()
         ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         rowid = self._insert(
-            "INSERT INTO townhall (discussion, summary, realm_id, events_ids, ts) VALUES (?, ?, ?, ?, ?);",
-            (discussion, summary, realm_id, json.dumps(event_ids), ts),
+            "INSERT INTO townhall (discussion, summary, realm_id, event_id, ts) VALUES (?, ?, ?, ?, ?);",
+            (discussion, summary, realm_id, event_id, ts),
         )
         self._insert("INSERT INTO vss_townhall(rowid, embedding) VALUES (?, ?)", (rowid, json.dumps(embedding)))
         return rowid
@@ -106,49 +106,19 @@ class VectorDatabase(Database):
         values = (json.dumps(query_embedding), realm_id, limit)
         return self.execute_query(query, values)
 
-    def get_townhalls_from_events(self, event_ids: list[int]) -> tuple[list[str], list[int]]:
+    def get_townhall_from_event(self, event_id: int, realm_id: int) -> str | None:
         """
         Returns tuple of:
             - List of townhalls summary. One event_id of the list given in parameter must have been involved in the generation of the discussion.
             - Events_ids in the list given in parameter which haven't generated any summary before
         """
-
-        if len(event_ids) == 0:
-            return ([], [])
-
-        event_id_placeholders = ", ".join(["(?)"] * len(event_ids))
-        query = f"""
-            WITH
-                GivenEventIds(event_id) AS (VALUES {event_id_placeholders}),
-
-                Townhalls AS (
-                    SELECT json_each.value AS event_id, T.summary, T.ts, T.rowid, ROW_NUMBER() OVER (PARTITION BY json_each.value ORDER BY T.ts DESC) as event_row_number
-                    FROM townhall T, json_each(T.events_ids)
-                    WHERE json_each.value IN ({event_id_placeholders})
-                ),
-
-                DuplicateTownhalls AS (
-                    SELECT event_id, summary, rowid, ROW_NUMBER() OVER (PARTITION BY rowid) as duplicate_townhall_row_number
-                    FROM Townhalls
-                    WHERE event_row_number = 1
-                )
-
-            SELECT event_id, summary
-            FROM DuplicateTownhalls
-            WHERE duplicate_townhall_row_number = 1
-
-            UNION ALL
-
-            SELECT event_id, NULL AS summary
-            FROM GivenEventIds
-            WHERE event_id NOT IN (SELECT event_id FROM Townhalls WHERE event_row_number = 1)
+        query = """
+            SELECT summary FROM townhall WHERE event_id = ? AND realm_id = ? ORDER BY ts DESC LIMIT 1
         """
 
-        values = tuple(event_ids) * 2
+        values = (event_id, realm_id)
 
-        # list of tuples: either (event_id, discussion) or (event_id, None) if the event_id hasn't generated and discussion before
         res = self.execute_query(query, values)
-        townhall_summaries: list[str] = [item[1] for item in res if item[1] is not None]
-        event_ids_previously_unused: list[int] = [item[0] for item in res if item[1] is None]
 
-        return (townhall_summaries, event_ids_previously_unused)
+        townhall_summary: str | None = res[0][0] if len(res) > 0 else None
+        return townhall_summary
