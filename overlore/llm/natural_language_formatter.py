@@ -77,7 +77,6 @@ class LlmFormatter:
 
         character_trait: str = cast(str, npc["character_trait"])  # type: ignore[index]
         name: str = cast(str, npc["full_name"])  # type: ignore[index]
-        print(f"age {age} sex {sex} role {role} charac trait {character_trait}")
         return AGENT_TEMPLATE.format(name=name, sex=sex, role=role, character_trait=character_trait, age=age)
 
     def event_to_nl(self, event: StoredEvent) -> str:

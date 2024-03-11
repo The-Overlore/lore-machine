@@ -19,7 +19,6 @@ def build_response(realm_entity_id: int, npc: Npc, config: BootConfig) -> tuple[
         contract_address=realm_owner_address,
     )
 
-    # do I have to increment the nonce by one?
     signature_params = [
         nonce,
         npc["characteristics"]["age"],  # type: ignore[index]

@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 
 from overlore.eternum.types import RealmPosition
 from overlore.npcs.constants import ROLES
+from overlore.sqlite.constants import EventType
 
 roles_str = ", ".join([f"{index} for {role}" for index, role in enumerate(ROLES)])
 
@@ -69,6 +70,7 @@ class Npc(BaseModel):
     description: str = Field(
         description="Description of the NPC",
     )
+
     characteristics: Characteristics = Field(description="Various characteristics")
 
 
@@ -146,3 +148,10 @@ class EnvVariables(TypedDict):
     HOST_PORT: str
     LOREMACHINE_PUBLIC_KEY: str
     LOREMACHINE_PRIVATE_KEY: str
+
+
+class ParsedSpawnEvent(TypedDict):
+    torii_event_id: str
+    event_type: EventType
+    realm_entity_id: int
+    npc_entity_id: int

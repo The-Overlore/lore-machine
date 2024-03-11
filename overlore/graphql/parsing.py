@@ -5,7 +5,7 @@ from overlore.eternum.constants import Realms
 from overlore.eternum.types import AttackingEntityIds, ResourceAmount, ResourceAmounts
 from overlore.graphql.constants import EventType as EventKeyHash
 from overlore.sqlite.constants import EventType as SqLiteEventType
-from overlore.types import EventData, EventKeys, ParsedEvent, ToriiDataNode
+from overlore.types import EventData, EventKeys, ParsedEvent, ParsedSpawnEvent, ToriiDataNode
 
 # A is calculated by setting a max amount of resources, any value equal to or higher than MAX will get attributed a score of 10.
 # The linear equation is then a * MAX + 0 = 10. We can derive a easily from there
@@ -104,6 +104,32 @@ def parse_trade_event(torii_event_id: str, keys: EventKeys, data: EventData) -> 
         "ts": ts,
         "type_specific_data": type_specific_data,
     }
+    return parsed_event
+
+
+def parse_npc_spawn_event(event: ToriiDataNode) -> ParsedSpawnEvent:
+    keys = cast(EventKeys, event.get("keys"))
+    if not keys:
+        raise RuntimeError("Event had no keys")
+    data = cast(EventData, event.get("data"))
+    if not data:
+        raise RuntimeError("Event had no data")
+    torii_event_id = cast(str, event.get("id"))
+    if not torii_event_id:
+        raise RuntimeError("Event had no torii_event_id")
+
+    event_type = get_event_type(keys=keys)
+    if event_type == EventKeyHash.NPC_SPAWNED.value:
+        realm_entity_id = int(keys[1], base=16)
+        npc_entity_id = int(data[0], base=16)
+
+        parsed_event: ParsedSpawnEvent = {
+            "torii_event_id": torii_event_id,
+            "event_type": SqLiteEventType.NPC_SPAWNED,
+            "realm_entity_id": realm_entity_id,
+            "npc_entity_id": npc_entity_id,
+        }
+
     return parsed_event
 
 

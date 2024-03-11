@@ -46,7 +46,7 @@ def get_contract_nonce(katana_url: str, contract_address: str) -> int:
         "id": 1,
     }
     ret = query_katana_node(katana_url, data)
-    return cast(int, ret.get("result"))
+    return int(ret.get("result"), base=16)
 
 
 def get_katana_timestamp(katana_url: str) -> int:

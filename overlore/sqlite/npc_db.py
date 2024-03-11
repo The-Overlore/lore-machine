@@ -6,7 +6,7 @@ from typing import cast
 
 from overlore.sqlite.constants import Profile
 from overlore.sqlite.db import Database
-from overlore.types import Characteristics, Npc
+from overlore.types import Npc, ParsedSpawnEvent
 
 logger = logging.getLogger("overlore")
 
@@ -95,15 +95,18 @@ class NpcDatabase(Database):
             return None
         else:
             profile = profile[0]
-            return Npc(
-                character_trait=profile[Profile.TRAIT.value],
-                characteristics=Characteristics(
-                    age=cast(int, profile[Profile.AGE.value]),
-                    role=cast(int, profile[Profile.ROLE.value]),
-                    sex=cast(int, profile[Profile.SEX.value]),
-                ),
-                full_name=profile[Profile.FULL_NAME.value],
-                description=profile[Profile.DESCRIPTION.value],
+            return cast(
+                Npc,
+                {
+                    "character_trait": profile[Profile.TRAIT.value],
+                    "characteristics": {
+                        "age": cast(int, profile[Profile.AGE.value]),
+                        "role": cast(int, profile[Profile.ROLE.value]),
+                        "sex": cast(int, profile[Profile.SEX.value]),
+                    },
+                    "full_name": profile[Profile.FULL_NAME.value],
+                    "description": profile[Profile.DESCRIPTION.value],
+                },
             )
 
     def fetch_npc_info(self, npc_id: int) -> str | None:
@@ -112,12 +115,15 @@ class NpcDatabase(Database):
             return str(description[0][0])
         return None
 
-    def delete_npc_spawn_by_realm(self, realm_entity_id: int, npc_id: int) -> None:
+    def delete_npc_spawn_by_realm(self, event: ParsedSpawnEvent) -> None:
+        realm_entity_id = event["realm_entity_id"]
+        npc_entity_id = event["npc_entity_id"]
+
         description = self.execute_query(
             "SELECT description FROM npc_spawn WHERE realm_entity_id == (?)", (realm_entity_id,)
         )
         if description != []:
-            self.insert_npc_info(npc_id, str(description[0][0]))
+            self.insert_npc_info(npc_entity_id, str(description[0][0]))
 
         start_count = len(self.get_all_npc_spawn())
         self.execute_query("DELETE FROM npc_spawn WHERE realm_entity_id == (?)", (realm_entity_id,))
