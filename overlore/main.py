@@ -19,6 +19,7 @@ from overlore.graphql.subscriptions import (
 )
 from overlore.llm.open_ai import OpenAIHandler
 from overlore.sqlite.events_db import EventsDatabase
+from overlore.sqlite.npc_db import NpcDatabase
 from overlore.sqlite.vector_db import VectorDatabase
 from overlore.townhall.logic import handle_townhall_request
 from overlore.townhall.mocks import MOCK_KATANA_RESPONSE, MOCK_VILLAGERS
@@ -69,6 +70,7 @@ def setup() -> BootConfig:
 
     EventsDatabase.instance().init()
     VectorDatabase.instance().init()
+    NpcDatabase.instance().init()
 
     OpenAIHandler.instance().init(config.env["OPENAI_API_KEY"])
     return config

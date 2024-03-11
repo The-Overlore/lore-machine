@@ -1,3 +1,5 @@
+import logging
+
 from starknet_py.hash.utils import ECSignature
 
 from overlore.config import BootConfig
@@ -5,8 +7,11 @@ from overlore.eternum.types import Npc
 from overlore.graphql.query import Queries, run_torii_query
 from overlore.llm.natural_language_formatter import LlmFormatter
 from overlore.llm.open_ai import OpenAIHandler
+from overlore.sqlite.npc_db import NpcDatabase
 from overlore.types import NpcSpawnMsgData
 from overlore.utils import get_contract_nonce, sign_parameters
+
+logger = logging.getLogger("overlore")
 
 
 async def build_response(realm_entity_id: int, npc: Npc, config: BootConfig) -> tuple[Npc, ECSignature]:
@@ -34,12 +39,22 @@ async def build_response(realm_entity_id: int, npc: Npc, config: BootConfig) -> 
 
 async def spawn_npc(data: NpcSpawnMsgData, config: BootConfig) -> tuple[Npc, ECSignature]:
     llm_formatter = LlmFormatter()
+    npc_db = NpcDatabase.instance()
     open_ai = OpenAIHandler.instance()
 
-    npc_string = await open_ai.generate_npc_profile()
+    realm_entity_id = data["realm_entity_id"]
+    npc = npc_db.fetch_npc_spawn_by_realm(realm_entity_id)
 
-    npc = llm_formatter.convert_llm_response_to_profile(npc_string)
+    if npc is None:
+        logger.info(f"Generating new npc profile for realm_entity_id {realm_entity_id}")
+        npc_string = await open_ai.generate_npc_profile()
 
-    npc["full_name"] = (await open_ai.generate_npc_name(npc["characteristics"]["sex"])).strip()
+        npc = llm_formatter.convert_llm_response_to_profile(npc_string)
 
-    return await build_response(realm_entity_id=data["realm_entity_id"], npc=npc, config=config)
+        npc["full_name"] = (await open_ai.generate_npc_name(npc["characteristics"]["sex"])).strip()
+
+        npc_db.insert_npc_spawn(realm_entity_id, npc)
+    else:
+        logger.info(f"Existing npc profile found for realm_entity_id {realm_entity_id}")
+
+    return await build_response(realm_entity_id=realm_entity_id, npc=npc, config=config)
