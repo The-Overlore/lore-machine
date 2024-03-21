@@ -4,6 +4,7 @@ events.db
 events.db-journal
 vector.db
 npc_spawn.db
+npc_spawn.db-journal
 
 # From https://raw.githubusercontent.com/github/gitignore/main/Python.gitignore
 

@@ -1,10 +1,13 @@
 import logging
 from enum import Enum
-from typing import Any
+from typing import Any, cast
 
 import requests
+from starknet_py.cairo.felt import decode_shortstring
 
 from overlore.graphql.constants import EventType
+from overlore.types import Npc
+from overlore.utils import unpack_characteristics
 
 logger = logging.getLogger("overlore")
 
@@ -26,46 +29,6 @@ class Queries(Enum):
     }}
     """
 
-    PENDING_TRADES = """
-    statusModels(where: {valueEQ: "0"}) {
-            edges{
-            node {
-            value
-            trade_id
-            }
-        }
-    }
-    """
-
-    TRADE = """
-    tradeModels(where: {trade_id: "{id}"}, last: 30) {
-            edges {
-        node {
-            maker_resource_chest_id
-            taker_resource_chest_id
-        }
-        }
-    }
-    """
-
-    TRADE_CHEST = """
-    resourcechestModels(where: {entity_id: "{id}"}) {
-        edges {
-            node {
-                resources_count
-                entity_id
-                entity {
-                    keys
-                    eventId
-                    models {
-                        __typename
-                    }
-                }
-            }
-        }
-    }
-    """
-
     OWNER = """
     query owners {{
             ownerModels (where: {{entity_id: "{entity_id}"}}){{
@@ -78,15 +41,20 @@ class Queries(Enum):
     }}
     """
 
-    ALL_REALMS = """
-    realmModels {
-        edges {
-            node {
-                realm_id,
-                entity_id,
-            }
-        }
-    }
+    NPC_BY_CURRENT_REALM_ENTITY_ID = """
+    query {{
+        npcModels (where: {{current_realm_entity_id: "{realm_entity_id}"}}){{
+            edges {{
+                node {{
+                    entity_id
+                    character_trait
+                    full_name
+                    current_realm_entity_id
+                    characteristics
+                }}
+            }}
+        }}
+    }}
     """
 
     ORDER_ACCEPTED_EVENT_QUERY = EVENTS.format(event_hash=EventType.ORDER_ACCEPTED.value)
@@ -100,7 +68,27 @@ def run_torii_query(torii_endpoint: str, query: str) -> Any:
         json_response = response.json()
         data = json_response["data"]
     except KeyError as e:
-        logger.error("KeyError accessing %s in JSON response: %s", e, json_response)
+        logger.exception("KeyError accessing %s in JSON response: %s", e, json_response)
     if data is None:
         raise RuntimeError(f"Failed to run query {json_response['errors']}")
     return data
+
+
+def get_npcs_by_realm_entity_id(torii_endpoint: str, realm_entity_id: int) -> list[Npc]:
+    query_results = run_torii_query(
+        torii_endpoint=torii_endpoint,
+        query=Queries.NPC_BY_CURRENT_REALM_ENTITY_ID.value.format(realm_entity_id=realm_entity_id),
+    )
+    npcs = [
+        cast(
+            Npc,
+            {
+                "character_trait": decode_shortstring(int(query_result["node"]["character_trait"], base=16)),
+                "full_name": decode_shortstring(int(query_result["node"]["full_name"], base=16)),
+                "description": "",
+                "characteristics": unpack_characteristics(int(query_result["node"]["characteristics"], base=16)),
+            },
+        )
+        for query_result in query_results["npcModels"]["edges"]
+    ]
+    return npcs

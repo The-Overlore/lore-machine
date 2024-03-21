@@ -78,7 +78,7 @@ class Llm:
         raw_llm_response, validated_response, *rest = self.npc_profile_guard(
             openai.chat.completions.create,
             model=ChatCompletionModel.GPT_3_5_TURBO.value,
-            temperature=1.6,
+            temperature=1.8,
             prompt=NPC_PROFILE_USER.format(trait_type=trait_type),
         )
         print(self.npc_profile_guard.history.last.tree)
