@@ -23,7 +23,7 @@ from overlore.graphql.subscriptions import (
 from overlore.llm.constants import GUARD_RAILS_HUB_URL
 from overlore.sqlite.events_db import EventsDatabase
 from overlore.sqlite.npc_db import NpcDatabase
-from overlore.sqlite.vector_db import VectorDatabase
+from overlore.sqlite.townhall_db import TownhallDatabase
 from overlore.townhall.mocks import MOCK_KATANA_RESPONSE, MOCK_VILLAGERS, with_mock_responses
 from overlore.townhall.request import handle_townhall_request
 from overlore.types import WsTownhallResponse
@@ -72,11 +72,11 @@ def setup() -> BootConfig:
 
     if config.mock is True:
         EventsDatabase.instance().init(":memory:")
-        VectorDatabase.instance().init(":memory:")
+        TownhallDatabase.instance().init(":memory:")
         NpcDatabase.instance().init(":memory:")
     else:
         EventsDatabase.instance().init()
-        VectorDatabase.instance().init()
+        TownhallDatabase.instance().init()
         NpcDatabase.instance().init()
 
     os.environ["GUARDRAILS_PROCESS_COUNT"] = "30"

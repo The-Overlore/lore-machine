@@ -6,7 +6,7 @@ import requests
 from starknet_py.cairo.felt import decode_shortstring
 
 from overlore.graphql.constants import EventType
-from overlore.types import Npc
+from overlore.types import NpcEntity
 from overlore.utils import unpack_characteristics
 
 logger = logging.getLogger("overlore")
@@ -74,19 +74,20 @@ def run_torii_query(torii_endpoint: str, query: str) -> Any:
     return data
 
 
-def get_npcs_by_realm_entity_id(torii_endpoint: str, realm_entity_id: int) -> list[Npc]:
+def get_npcs_by_realm_entity_id(torii_endpoint: str, realm_entity_id: int) -> list[NpcEntity]:
     query_results = run_torii_query(
         torii_endpoint=torii_endpoint,
         query=Queries.NPC_BY_CURRENT_REALM_ENTITY_ID.value.format(realm_entity_id=realm_entity_id),
     )
     npcs = [
         cast(
-            Npc,
+            NpcEntity,
             {
                 "character_trait": decode_shortstring(int(query_result["node"]["character_trait"], base=16)),
                 "full_name": decode_shortstring(int(query_result["node"]["full_name"], base=16)),
-                "description": "",
                 "characteristics": unpack_characteristics(int(query_result["node"]["characteristics"], base=16)),
+                "entity_id": int(query_result["node"]["entity_id"], base=16),
+                "current_realm_entity_id": int(query_result["node"]["current_realm_entity_id"], base=16),
             },
         )
         for query_result in query_results["npcModels"]["edges"]

@@ -9,10 +9,11 @@ from guardrails import Guard
 from rich import print
 
 from overlore.llm.constants import (
+    CURRENT_PLOTLINE,
     NPC_PROFILE_SYSTEM,
     NPC_PROFILE_USER,
-    PREVIOUS_TOWNHALL,
     RELEVANT_EVENT,
+    RELEVANT_THOUGHTS,
     TOWNHALL_SYSTEM,
     TOWNHALL_USER,
     ChatCompletionModel,
@@ -21,7 +22,7 @@ from overlore.llm.constants import (
 from overlore.llm.natural_language_formatter import LlmFormatter
 from overlore.npcs.constants import TRAIT_TYPE
 from overlore.sqlite.types import StoredEvent
-from overlore.types import Npc, Townhall
+from overlore.types import NpcEntity, NpcProfile, Townhall
 
 logger = logging.getLogger("overlore")
 
@@ -30,7 +31,7 @@ class Llm:
     nl_formatter: LlmFormatter = LlmFormatter()
 
     npc_profile_guard: Guard = Guard.from_pydantic(
-        output_class=Npc,
+        output_class=NpcProfile,
         instructions=NPC_PROFILE_SYSTEM,
         num_reasks=2,
     )
@@ -46,17 +47,20 @@ class Llm:
     def generate_townhall_discussion(
         self,
         realm_name: str,
-        townhall_summary: str | None,
-        npc_list: list[Npc],
+        realm_npcs: list[NpcEntity],
         relevant_event: StoredEvent | None,
+        plotline: str | None,
+        relevant_thoughts: list[str],
     ) -> Townhall:
-        previous_townhall = PREVIOUS_TOWNHALL.format(summary=townhall_summary) if townhall_summary is not None else ""
-
         relevant_event_string = (
             RELEVANT_EVENT.format(event_string=self.nl_formatter.event_to_nl(relevant_event))
             if relevant_event is not None
             else ""
         )
+
+        current_plotline_string = CURRENT_PLOTLINE.format(plotline=plotline)
+        thoughts_string = RELEVANT_THOUGHTS.format(thoughts=relevant_thoughts)
+
         _raw_llm_response, validated_response, *_rest = self.townhall_guard(
             openai.chat.completions.create,
             model=ChatCompletionModel.GPT_4_PREVIEW.value,
@@ -64,15 +68,15 @@ class Llm:
             prompt=TOWNHALL_USER.format(
                 realm_name=realm_name,
                 relevant_event=relevant_event_string,
-                previous_townhall=previous_townhall,
-                npcs=self.nl_formatter.npcs_to_nl(npc_list),
+                plotline=current_plotline_string,
+                thoughts=thoughts_string,
+                npcs=self.nl_formatter.npcs_to_nl(realm_npcs),
             ),
         )
-
         print(self.townhall_guard.history.last.tree)
         return cast(Townhall, validated_response)
 
-    def generate_npc_profile(self) -> Npc:
+    def generate_npc_profile(self) -> NpcProfile:
         trait_type = TRAIT_TYPE[random.randrange(2)]
 
         raw_llm_response, validated_response, *rest = self.npc_profile_guard(
@@ -83,4 +87,4 @@ class Llm:
         )
         print(self.npc_profile_guard.history.last.tree)
 
-        return cast(Npc, validated_response)
+        return cast(NpcProfile, validated_response)

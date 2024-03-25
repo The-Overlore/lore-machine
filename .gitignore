@@ -1,10 +1,14 @@
 docs/source
 
-events.db
 events.db-journal
+events.db
 vector.db
 npc_spawn.db
 npc_spawn.db-journal
+
+databases/events.db
+databases/townhall.db
+databases/npc_spawn.db
 
 # From https://raw.githubusercontent.com/github/gitignore/main/Python.gitignore
 

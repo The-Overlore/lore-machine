@@ -12,7 +12,6 @@ from overlore.sqlite.constants import EventType
 
 roles_str = ", ".join([f"{index} for {role}" for index, role in enumerate(ROLES)])
 
-
 EventKeys = list[str]
 EventData = list[str]
 
@@ -43,7 +42,7 @@ class ParsedEvent(TypedDict):
 
 
 class Characteristics(BaseModel):
-    age: int = Field(description="Age of the character", validators=ValidRange(min=15, max=65))
+    age: int = Field(description="Age of the character, between 15 and 65", validators=ValidRange(min=15, max=65))
     role: int = Field(
         description=f"Job of the NPC. {roles_str}",
         validators=[ValidChoices(choices=[index for index, role in enumerate(ROLES)], on_fail="reask")],
@@ -54,7 +53,7 @@ class Characteristics(BaseModel):
     )
 
 
-class Npc(BaseModel):
+class NpcProfile(BaseModel):
     character_trait: str = Field(
         description="Trait of character that defines the NPC. One word max.",
         validators=[
@@ -75,20 +74,27 @@ class Npc(BaseModel):
 
 
 class DialogueSegment(BaseModel):
-    full_name: str = Field(description="Full name of the NPC saying the sentence.")
-    dialogue_segment: str = Field(description="What the NPC says")
+    full_name: str = Field(description="Full name of the NPC speaking.")
+    dialogue_segment: str = Field(description="The dialogue spoken by the NPC.")
+
+
+class Thought(BaseModel):
+    full_name: str = Field(description="Full name of the NPC expressing the thought.")
+    value: str = Field(
+        description="""The NPC's thoughts and feelings about the discussion, including nuanced emotional responses and sentiments towards the topics being discussed."""
+    )
 
 
 class Townhall(BaseModel):
     dialogue: list[DialogueSegment] = Field(
-        description="Discussion that was held by the NPCs. Make each NPC speak twice"
+        description="""Discussion held by the NPCs, structured to ensure each NPC speaks twice, revealing their viewpoints and
+            emotional reactions to the discussion topics."""
     )
-    summary: str = Field(
-        description="A summary of the dialogue, outlining each NPC's contributions and reactions to the event"
+    thoughts: list[Thought] = Field(
+        description="""Collection of NPCs' thoughts post-discussion, highlighting their reflective sentiments and emotional
+            responses to the topics covered."""
     )
-    plot_twist: str = Field(
-        description="The plot twist that you introduced in the dialogue. Only output one sentence for the plot twist."
-    )
+    plotline: str = Field(description="The central theme or main storyline that unfolds throughout the dialogue.")
 
 
 class MsgType(Enum):
@@ -99,8 +105,9 @@ class MsgType(Enum):
 
 class TownhallRequestMsgData(TypedDict):
     realm_id: str
+    realm_entity_id: str
     order_id: int
-    npcs: list[Npc]
+    townhall_input: str
 
 
 class NpcSpawnMsgData(TypedDict):
@@ -117,7 +124,7 @@ class WsErrorResponse(TypedDict):
 
 
 class WsSpawnNpcResponse(TypedDict):
-    npc: Npc
+    npc: NpcProfile
     signature: list[str]
 
 
@@ -155,3 +162,11 @@ class ParsedSpawnEvent(TypedDict):
     event_type: EventType
     realm_entity_id: int
     npc_entity_id: int
+
+
+class NpcEntity(TypedDict):
+    character_trait: str
+    full_name: str
+    characteristics: Characteristics
+    entity_id: int
+    current_realm_entity_id: int

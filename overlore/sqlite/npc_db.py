@@ -4,14 +4,14 @@ import logging
 from sqlite3 import Connection
 from typing import cast
 
+from overlore.sqlite.base_db import BaseDatabase
 from overlore.sqlite.constants import Profile
-from overlore.sqlite.db import Database
-from overlore.types import Npc, ParsedSpawnEvent
+from overlore.types import NpcProfile, ParsedSpawnEvent
 
 logger = logging.getLogger("overlore")
 
 
-class NpcDatabase(Database):
+class NpcDatabase(BaseDatabase):
     _instance: NpcDatabase | None = None
 
     EXTENSIONS: list[str] = []
@@ -49,7 +49,7 @@ class NpcDatabase(Database):
         # noop
         pass
 
-    def init(self, path: str = "./npc_spawn.db") -> NpcDatabase:
+    def init(self, path: str = "./databases/npc_spawn.db") -> NpcDatabase:
         # Call parent init function
         self._init(
             path,
@@ -60,13 +60,13 @@ class NpcDatabase(Database):
         )
         return self
 
-    def get_all_npc_spawn(self) -> list[Npc]:
+    def get_all_npc_spawn(self) -> list[NpcProfile]:
         return self.execute_query("SELECT * FROM npc_spawn", ())
 
-    def get_all_npc_info(self) -> list[Npc]:
+    def get_all_npc_info(self) -> list[NpcProfile]:
         return self.execute_query("SELECT * FROM npc_info", ())
 
-    def insert_npc_spawn(self, realm_entity_id: int, npc: Npc) -> int:
+    def insert_npc_spawn(self, realm_entity_id: int, npc: NpcProfile) -> int:
         query = (
             "INSERT INTO npc_spawn(realm_entity_id, full_name, age, role, sex, trait, description) VALUES (?, ?, ?, ?,"
             " ?, ?, ?)"
@@ -89,14 +89,14 @@ class NpcDatabase(Database):
         row_id = self._insert("INSERT INTO npc_info(npc_id, description) VALUES (?, ?)", (npc_id, description))
         return row_id
 
-    def fetch_npc_spawn_by_realm(self, realm_entity_id: int) -> Npc | None:
+    def fetch_npc_spawn_by_realm(self, realm_entity_id: int) -> NpcProfile | None:
         profile = self.execute_query("SELECT * FROM npc_spawn WHERE realm_entity_id = ?", (realm_entity_id,))
         if profile == []:
             return None
         else:
             profile = profile[0]
             return cast(
-                Npc,
+                NpcProfile,
                 {
                     "character_trait": profile[Profile.TRAIT.value],
                     "characteristics": {

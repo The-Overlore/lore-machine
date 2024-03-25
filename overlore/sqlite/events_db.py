@@ -6,7 +6,7 @@ from typing import Any, cast
 
 from overlore.eternum.constants import Realms
 from overlore.eternum.types import RealmPosition
-from overlore.sqlite.db import Database
+from overlore.sqlite.base_db import BaseDatabase
 from overlore.sqlite.types import StoredEvent
 from overlore.types import ParsedEvent
 
@@ -40,7 +40,7 @@ def average(a: float, b: float, c: float) -> float:
     return (a + b + c) / 3
 
 
-class EventsDatabase(Database):
+class EventsDatabase(BaseDatabase):
     _instance: EventsDatabase | None = None
     realms: Realms
 
@@ -80,7 +80,7 @@ class EventsDatabase(Database):
     def _preload(self, db: Connection) -> None:
         pass
 
-    def init(self, path: str = "./events.db") -> EventsDatabase:
+    def init(self, path: str = "./databases/events.db") -> EventsDatabase:
         # Call parent init function
         self._init(
             path,
