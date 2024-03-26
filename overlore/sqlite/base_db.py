@@ -34,8 +34,13 @@ class BaseDatabase:
         cursor = self.db.cursor()
         cursor.execute(query, values)
         self.db.commit()
-        updated_count = cursor.rowcount  # Number of rows updated
-        return updated_count
+        updated_entries_count = cursor.rowcount
+        return updated_entries_count
+
+    def _delete(self, query: str, values: tuple[Any, ...]) -> None:
+        cursor = self.db.cursor()
+        cursor.execute(query, values)
+        self.db.commit()
 
     def _use_first_boot_queries(self, queries: list[str]) -> None:
         for query in queries:

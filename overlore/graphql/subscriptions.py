@@ -2,7 +2,7 @@ import asyncio
 import logging
 import sys
 from enum import Enum
-from typing import Callable
+from typing import Callable, cast
 
 import backoff
 from backoff._typing import Details
@@ -98,11 +98,19 @@ def process_received_event(event: ToriiEmittedEvent) -> int:
     return added_id
 
 
-def delete_npc_from_db(event: ToriiEmittedEvent) -> int:
+def delete_npc_and_store_description(event: ToriiEmittedEvent) -> int:
     npc_db = NpcDatabase.instance()
 
     parsed_event = parse_npc_spawn_event(event=event["eventEmitted"])
+    npc_entity_id = cast(int, parsed_event["npc_entity_id"])
+    realm_entity_id = cast(int, parsed_event["realm_entity_id"])
 
-    npc_db.delete_npc_spawn_by_realm(event=parsed_event)
+    row_id = npc_db.insert_npc_info(npc_entity_id, realm_entity_id)
+    npc_db.delete_npc_spawn_by_realm(realm_entity_id)
 
-    return 69_420
+    if [] == npc_db.fetch_npc_spawn_by_realm(realm_entity_id):
+        logger.info(f"Deleted npc_spawn entry for realm_entity_id {realm_entity_id}")
+    else:
+        logger.info(f"Failed to delete npc_spawn entry for realm_entity_id {realm_entity_id}")
+
+    return row_id
