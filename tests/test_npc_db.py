@@ -1,82 +1,56 @@
 import pytest
 
+from overlore.sqlite.errors import NpcDescriptionNotFoundError, NpcProfileNotFoundError
 from overlore.sqlite.npc_db import NpcDatabase
-from overlore.types import Npc
-
-DATA: list[Npc] = [
-    {
-        "full_name": "Luke Luke",
-        "characteristics": {"age": 33, "sex": 0, "role": 1},
-        "character_trait": "Assertive",
-        "description": "Short summary",
-    },
-    {
-        "full_name": "Bobby Bob",
-        "characteristics": {"age": 28, "sex": 1, "role": 2},
-        "character_trait": "Submissive",
-        "description": "Short summary",
-    },
-    {
-        "full_name": "Lenny Len",
-        "characteristics": {"age": 16, "sex": 0, "role": 3},
-        "character_trait": "Happy",
-        "description": "Short summary",
-    },
-]
+from tests.utils.npc_db_test_utils import given_insert_values, insert_data_into_db
 
 
-@pytest.mark.asyncio
-async def test_create_and_read_entry():
+@pytest.fixture
+def db():
     db = NpcDatabase.instance().init(":memory:")
-
-    assert None is db.fetch_npc_spawn_by_realm(1)
-
-    assert db.insert_npc_spawn(1, DATA[0]) == 1
-
-    assert {
-        "character_trait": "Assertive",
-        "characteristics": {
-            "age": 33,
-            "role": 1,
-            "sex": 0,
-        },
-        "full_name": "Luke Luke",
-        "description": "Short summary",
-    } == db.fetch_npc_spawn_by_realm(1)
-
-    assert db.insert_npc_spawn(2, DATA[1]) == 2
-
-    assert {
-        "character_trait": "Submissive",
-        "characteristics": {
-            "age": 28,
-            "role": 2,
-            "sex": 1,
-        },
-        "full_name": "Bobby Bob",
-        "description": "Short summary",
-    } == db.fetch_npc_spawn_by_realm(2)
-
-    assert None is db.fetch_npc_spawn_by_realm(100)
-    assert None is db.fetch_npc_spawn_by_realm(0)
-    assert None is db.fetch_npc_spawn_by_realm(-100)
+    yield db
+    db.close_conn()
 
 
-@pytest.mark.asyncio
-async def test_delete_entry():
-    db = NpcDatabase.instance().init(":memory:")
+def test_insert_and_fetch_spawn_npc(db):
+    for item in given_insert_values:
+        added_rowid = db.insert_npc_spawn(item["realm_entity_id"], item["profile"])
+        retrieved_entry = db.fetch_npc_spawn_by_realm(item["realm_entity_id"])
 
-    db.insert_npc_spawn(1, DATA[0])
-    assert len(db.get_all_npc_spawn()) == 1
+        assert added_rowid == item["rowid"], f"Expected rowid {item['rowid']}, got {added_rowid}"
+        assert retrieved_entry == item["profile"], f"Expected profile '{item['profile']}', got '{retrieved_entry}'"
 
-    db.delete_npc_spawn_by_realm(
-        {"torii_event_id": "0xDEADCONSTANTIN", "event_type": 2, "realm_entity_id": 1, "npc_entity_id": 1}
-    )
-    assert len(db.get_all_npc_spawn()) == 0
-    assert db.fetch_npc_info(1) == "Short summary"
-    assert len(db.get_all_npc_info()) == 1
 
-    db.insert_npc_spawn(1, DATA[0])
-    db.insert_npc_spawn(2, DATA[1])
-    db.insert_npc_spawn(3, DATA[2])
-    assert len(db.get_all_npc_spawn()) == 3
+def test_insert_and_fetch_spawn_info(db):
+    insert_data_into_db(db)
+
+    for item in given_insert_values:
+        added_rowid = db.insert_npc_info(item["npc_entity_id"], item["realm_entity_id"])
+        retrieved_entry = db.fetch_npc_info(item["npc_entity_id"])
+
+        assert added_rowid == item["rowid"], f"Expected rowid {item['rowid']}, got {added_rowid}"
+        assert (
+            retrieved_entry == item["profile"]["description"]
+        ), f"Expected description '{item['profile']['description']}', got '{retrieved_entry}'"
+
+
+def test_delete_spawn_npc_profile(db):
+    insert_data_into_db(db)
+
+    for item in given_insert_values:
+        db.delete_npc_spawn_by_realm(item["realm_entity_id"])
+        residual_entry = db.execute_query(
+            "SELECT rowid FROM npc_spawn WHERE realm_entity_id = ?;", (item["realm_entity_id"],)
+        )
+
+        assert residual_entry == [], "Spawn npc entry was not deleted"
+
+
+def test_fetch_spawn_npc_not_found_error(db):
+    with pytest.raises(NpcProfileNotFoundError):
+        db.fetch_npc_spawn_by_realm(999)
+
+
+def test_fetch_npc_description_not_found_error(db):
+    with pytest.raises(NpcDescriptionNotFoundError):
+        db.fetch_npc_info(999)

@@ -9,6 +9,7 @@ from typing import Any, cast
 import sqlite_vss
 
 from overlore.sqlite.base_db import BaseDatabase
+from overlore.sqlite.errors import CosineSimilarityNotFoundError
 from overlore.sqlite.types import StoredVector
 
 logger = logging.getLogger("overlore")
@@ -84,9 +85,7 @@ class TownhallDatabase(BaseDatabase):
 
     #     return self.execute_query(query, values)
 
-    def query_cosine_similarity(
-        self, query_embedding: list[float], npc_entity_id: int, limit: int = 1
-    ) -> StoredVector | None:
+    def query_cosine_similarity(self, query_embedding: list[float], npc_entity_id: int, limit: int = 1) -> StoredVector:
         if limit <= 0:
             raise ValueError("Limit must be higher than 0")
 
@@ -101,8 +100,8 @@ class TownhallDatabase(BaseDatabase):
         values = (json.dumps(query_embedding), npc_entity_id, limit)
         res = self.execute_query(query, values)
 
-        if res == []:
-            return None
+        if not res:
+            raise CosineSimilarityNotFoundError(f"No similar thought found for npc entity {npc_entity_id}")
         return cast(StoredVector, res[0])
 
     def insert_townhall_discussion(self, realm_id: int, discussion: str, townhall_input: str) -> int:
@@ -118,9 +117,6 @@ class TownhallDatabase(BaseDatabase):
             "SELECT discussion, townhall_input FROM townhall WHERE realm_id = ? ORDER BY ts DESC;",
             (realm_id,),
         )
-
-    def get_townhall_count(self, realm_id: int) -> int:
-        return len(self.execute_query("SELECT rowid FROM townhall WHERE realm_id = ?;", (realm_id,)))
 
     def insert_plotline(self, realm_id: int, plotline: str) -> int:
         return self._insert("INSERT INTO realm_plotline (plotline, realm_id) VALUES (?, ?);", (plotline, realm_id))
@@ -161,10 +157,17 @@ class TownhallDatabase(BaseDatabase):
             return stored_event_row_ids
         return None
 
-    def insert_daily_townhall_tracker(self, realm_id: int, event_row_id: int) -> int:
+    def insert_or_update_daily_townhall_tracker(self, realm_id: int, event_row_id: int) -> int:
         stored_event_row_ids = self.fetch_daily_townhall_tracker(realm_id)
 
-        if stored_event_row_ids is not None:
+        if stored_event_row_ids is None:
+            query = """
+                INSERT INTO daily_townhall_tracker(realm_id, event_row_id)
+                VALUES (?, json_array(?));
+            """
+            values = (json.dumps(realm_id), event_row_id)
+            return self._insert(query, values)
+        else:
             stored_event_row_ids.append(event_row_id)
             query = """
                 UPDATE daily_townhall_tracker
@@ -173,13 +176,6 @@ class TownhallDatabase(BaseDatabase):
             """
             values = (json.dumps(stored_event_row_ids), realm_id)
             return self._update(query, values)
-        else:
-            query = """
-                INSERT INTO daily_townhall_tracker(realm_id, event_row_id)
-                VALUES (?, json_array(?));
-            """
-            values = (json.dumps(realm_id), event_row_id)
-            return self._insert(query, values)
 
     def delete_daily_townhall_tracker(self, realm_id: int) -> None:
         query = """

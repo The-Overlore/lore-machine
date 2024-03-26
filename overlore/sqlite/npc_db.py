@@ -4,9 +4,9 @@ import logging
 from sqlite3 import Connection
 from typing import cast
 
-from overlore.errors import NpcDescriptionNotFoundError, NpcProfileNotFoundError
 from overlore.sqlite.base_db import BaseDatabase
 from overlore.sqlite.constants import Profile
+from overlore.sqlite.errors import NpcDescriptionNotFoundError, NpcProfileNotFoundError
 from overlore.types import NpcProfile
 
 logger = logging.getLogger("overlore")
