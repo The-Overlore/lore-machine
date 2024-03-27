@@ -91,7 +91,6 @@ def get_npc_thoughts(
                 row_id = res[0]
                 similarity = res[1]
 
-                # Arbitrary number, can be tuned accordingly
                 if similarity >= COSINE_SIMILARITY_THRESHOLD:
                     thoughts.append(npc["full_name"] + ":" + townhall_db.fetch_npc_thought_by_row_id(row_id))
 
@@ -127,7 +126,7 @@ def store_townhall_information(
         except KeyError:
             logger.exception(f"Failed to find npc_entity_id for npc named {thought['full_name']}")
 
-    if townhall_input != "":
+    if townhall_input == "":
         if plotline == "":
             townhall_db.insert_plotline(realm_id, townhall["plotline"])  # type: ignore[index]
         else:

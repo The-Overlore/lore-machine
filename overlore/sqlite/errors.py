@@ -11,6 +11,12 @@ class NpcDescriptionNotFoundError(Exception):
     pass
 
 
+class NpcProfileNotDeleted(Exception):
+    """Exception raised during a failed insertion of an NPC."""
+
+    pass
+
+
 # TownhallDatabase
 class CosineSimilarityNotFoundError(Exception):
     """Exception raised during a cosine similarity search."""

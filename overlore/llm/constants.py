@@ -15,7 +15,7 @@ class ChatCompletionModel(Enum):
 
 GUARD_RAILS_HUB_URL = "https://hty0gc1ok3.execute-api.us-east-1.amazonaws.com/v1/traces"
 
-AGENT_TEMPLATE = """{name} is a {age} year old {sex} {role}. He/she is considered {character_trait}."""
+AGENT_TEMPLATE = """{name} is a {age} year old {sex} {role}. He/she is considered {character_trait}. Realm of origin: {origin_realm}"""
 
 TOWNHALL_SYSTEM = """
 Imagine you're the game master for a strategy game, tasked with crafting dialogues for non-player characters (NPCs).
@@ -28,11 +28,11 @@ Create a plot twist such as a love interest, the death of a character, a natural
 You must include the plot twist into the conversation to add depth.
 ${gr.complete_json_suffix_v2}"""
 
-TOWNHALL_USER = """My realm is {realm_name}{relevant_event}{plotline}{thoughts}Here are my NPCs: {npcs}"""
+TOWNHALL_USER = """My realm is {realm_name}\n{relevant_event}{plotline}{thoughts}Here are my NPCs: {npcs}"""
 
-RELEVANT_EVENT = ". Here is the most interesting event for my realm: {event_string}\n"
+RELEVANT_EVENT = "Here is the most interesting event for my realm: {event_string}\n"
 
-CURRENT_PLOTLINE = ". This is the current plotline to follow: {plotline}\n"
+CURRENT_PLOTLINE = "This is the current plotline to follow: {plotline}\n"
 
 RELEVANT_THOUGHTS = "Here are the thoughts of the villagers relevant to the event and plotline: {thoughts}\n"
 

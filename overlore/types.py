@@ -57,7 +57,7 @@ class NpcProfile(BaseModel):
     character_trait: str = Field(
         description="Trait of character that defines the NPC. One word max.",
         validators=[
-            ValidLength(min=5, max=31, on_fail="fix"),
+            ValidLength(max=31, on_fail="fix"),
         ],
     )
 
@@ -170,3 +170,4 @@ class NpcEntity(TypedDict):
     characteristics: Characteristics
     entity_id: int
     current_realm_entity_id: int
+    origin_realm_id: int

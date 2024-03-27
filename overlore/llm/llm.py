@@ -58,9 +58,9 @@ class Llm:
             else ""
         )
 
-        current_plotline_string = CURRENT_PLOTLINE.format(plotline=plotline)
+        current_plotline_string = CURRENT_PLOTLINE.format(plotline=plotline) if plotline else ""
 
-        thoughts_string = RELEVANT_THOUGHTS.format(thoughts=relevant_thoughts)
+        thoughts_string = RELEVANT_THOUGHTS.format(thoughts=relevant_thoughts) if relevant_thoughts else ""
 
         npcs = self.nl_formatter.npcs_to_nl(realm_npcs)
 

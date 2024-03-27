@@ -111,9 +111,9 @@ def process_received_spawn_npc_event(event: ToriiEmittedEvent) -> int:
     npc_db.delete_npc_profile_by_realm_entity_id(realm_entity_id)
 
     try:
-        npc_db.fetch_npc_profile_by_realm_entity_id(realm_entity_id)
-        logger.info(f"Failed to delete npc_profile entry for realm_entity_id {realm_entity_id}")
-    except KeyError:
+        npc_db.verify_npc_profile_is_deleted(realm_entity_id)
         logger.info(f"Deleted npc_profile entry for realm_entity_id {realm_entity_id}")
+    except KeyError:
+        logger.info(f"Failed to delete npc_profile entry for realm_entity_id {realm_entity_id}")
 
     return row_id

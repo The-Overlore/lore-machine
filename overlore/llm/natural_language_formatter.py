@@ -5,6 +5,7 @@ from overlore.eternum.types import ResourceAmounts
 from overlore.llm.constants import (
     AGENT_TEMPLATE,
 )
+from overlore.npcs.constants import ROLES, SEX
 from overlore.sqlite.constants import EventType
 from overlore.sqlite.types import StoredEvent
 from overlore.types import NpcEntity
@@ -69,16 +70,22 @@ class LlmFormatter:
         return nl
 
     def _npc_to_nl(self, npc: NpcEntity) -> str:
+        realms = Realms.instance()
+
         characteristics = npc["characteristics"]
 
         age: int = cast(int, characteristics["age"])  # type: ignore[index]
-        role: str = cast(str, characteristics["role"])  # type: ignore[index]
-        sex: str = cast(str, characteristics["sex"])  # type: ignore[index]
+        role: str = cast(str, ROLES[characteristics["role"]])  # type: ignore[index]
+        sex: str = cast(str, SEX[characteristics["sex"]])  # type: ignore[index]
 
         character_trait: str = cast(str, npc["character_trait"])
         name: str = cast(str, npc["full_name"])
 
-        return AGENT_TEMPLATE.format(name=name, sex=sex, role=role, character_trait=character_trait, age=age)
+        origin_realm: str = realms.name_by_id(npc["origin_realm_id"])
+
+        return AGENT_TEMPLATE.format(
+            name=name, sex=sex, role=role, character_trait=character_trait, age=age, origin_realm=origin_realm
+        )
 
     def event_to_nl(self, event: StoredEvent) -> str:
         #  event
