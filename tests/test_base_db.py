@@ -5,11 +5,11 @@ import sqlean
 
 from overlore.sqlite.base_db import BaseDatabase
 from tests.utils.base_db_test_utils import (
-    given_insert_values,
-    given_update_values,
-    insert_data_into_db,
     insert_query,
+    prepare_data,
     select_query,
+    test_data,
+    test_update_data,
     update_query,
 )
 
@@ -23,26 +23,26 @@ def db():
 
 
 def test_execute_query(db):
-    insert_data_into_db(db)
+    prepare_data(db)
 
     results = db.execute_query("SELECT * FROM test_table", ())
 
-    assert len(results) == len(given_insert_values)
+    assert len(results) == len(test_data)
 
 
 def test_insert(db):
-    for item in given_insert_values:
-        added_rowid = db._insert(insert_query, (item["value"],))
-        retrieved_entry = db.execute_query(select_query, (added_rowid,))[0][0]
+    for item in test_data:
+        added_row_id = db._insert(insert_query, (item["value"],))
+        retrieved_entry = db.execute_query(select_query, (added_row_id,))[0][0]
 
-        assert item["rowid"] == added_rowid, f"Expected rowid {item['rowid']}, got {added_rowid}"
+        assert item["rowid"] == added_row_id, f"Expected rowid {item['rowid']}, got {added_row_id}"
         assert item["value"] == retrieved_entry, f"Expected value '{item['value']}', got '{retrieved_entry}'"
 
 
 def test_update(db):
-    insert_data_into_db(db)
+    prepare_data(db)
 
-    for item in given_update_values:
+    for item in test_update_data:
         updated_rows_count = db._update(update_query, (item["value"], item["rowid"]))
         retrieved_entry = db.execute_query(select_query, (item["rowid"],))[0][0]
 

@@ -37,13 +37,13 @@ def spawn_npc(data: NpcSpawnMsgData, config: BootConfig) -> tuple[NpcProfile, li
     npc_db = NpcDatabase.instance()
 
     realm_entity_id = data["realm_entity_id"]
-    npc = npc_db.fetch_npc_spawn_by_realm(realm_entity_id)
+    npc_profile = npc_db.fetch_npc_profile_by_realm_entity_id(realm_entity_id)
 
-    if npc is None:
+    if npc_profile is None:
         logger.info(f"Generating new npc profile for realm_entity_id {realm_entity_id}")
-        npc = llm.generate_npc_profile()
-        npc_db.insert_npc_spawn(realm_entity_id, npc)
+        npc_profile = llm.generate_npc_profile()
+        npc_db.insert_npc_profile(realm_entity_id, npc_profile)
     else:
         logger.info(f"Existing npc profile found for realm_entity_id {realm_entity_id}")
 
-    return build_response(realm_entity_id=realm_entity_id, npc=npc, config=config)
+    return build_response(realm_entity_id=realm_entity_id, npc=npc_profile, config=config)

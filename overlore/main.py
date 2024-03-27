@@ -16,8 +16,8 @@ from overlore.graphql.boot_sync import torii_boot_sync
 from overlore.graphql.subscriptions import (
     OnEventCallbackType,
     Subscriptions,
-    delete_npc_and_store_description,
     process_received_event,
+    process_received_spawn_npc_event,
     use_torii_subscription,
 )
 from overlore.llm.constants import GUARD_RAILS_HUB_URL
@@ -32,7 +32,7 @@ from overlore.ws import handle_client_connection
 SUBSCRIPTIONS_WITH_CALLBACKS: list[tuple[Subscriptions, OnEventCallbackType]] = [
     (Subscriptions.COMBAT_OUTCOME, process_received_event),
     (Subscriptions.ORDER_ACCEPTED, process_received_event),
-    (Subscriptions.NPC_SPAWNED, delete_npc_and_store_description),
+    (Subscriptions.NPC_SPAWNED, process_received_spawn_npc_event),
 ]
 
 logger = logging.getLogger("overlore")

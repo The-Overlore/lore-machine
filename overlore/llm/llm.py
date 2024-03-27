@@ -59,7 +59,10 @@ class Llm:
         )
 
         current_plotline_string = CURRENT_PLOTLINE.format(plotline=plotline)
+
         thoughts_string = RELEVANT_THOUGHTS.format(thoughts=relevant_thoughts)
+
+        npcs = self.nl_formatter.npcs_to_nl(realm_npcs)
 
         _raw_llm_response, validated_response, *_rest = self.townhall_guard(
             openai.chat.completions.create,
@@ -70,7 +73,7 @@ class Llm:
                 relevant_event=relevant_event_string,
                 plotline=current_plotline_string,
                 thoughts=thoughts_string,
-                npcs=self.nl_formatter.npcs_to_nl(realm_npcs),
+                npcs=npcs,
             ),
         )
         print(self.townhall_guard.history.last.tree)

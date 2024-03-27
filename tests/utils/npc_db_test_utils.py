@@ -1,4 +1,4 @@
-given_insert_values = [
+test_data = [
     {
         "realm_entity_id": i,
         "npc_entity_id": i * 100,
@@ -14,6 +14,6 @@ given_insert_values = [
 ]
 
 
-def insert_data_into_db(db):
-    for item in given_insert_values:
-        db.insert_npc_spawn(item["realm_entity_id"], item["profile"])
+def prepare_data(db):
+    for item in test_data:
+        db.insert_npc_profile(item["realm_entity_id"], item["profile"])

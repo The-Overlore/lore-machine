@@ -1,5 +1,8 @@
 from enum import Enum
 
+# 1 means the two inputs are exactly alike, 0 means they have no similarities
+COSINE_SIMILARITY_THRESHOLD = 0.3
+
 
 class EmbeddingsModel(Enum):
     TEXT_EMBEDDING_SMALL = "text-embedding-3-small"
@@ -47,3 +50,4 @@ THOUGHTS_USER = """Generate for each villager his thoughts on the discussion. \"
 
 class GenerationError(Enum):
     LACK_OF_NPCS = "Not enough NPCs"
+    NPC_ENTITY_ID_NOT_FOUND = "Can't find npc_entity_id from given full_name"

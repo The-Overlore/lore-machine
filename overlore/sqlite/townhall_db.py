@@ -69,22 +69,6 @@ class TownhallDatabase(BaseDatabase):
         self._init(path, self.EXTENSIONS, self.FIRST_BOOT_QUERIES, [], self._preload)
         return self
 
-    # def query_nearest_neighbour(self, query_embedding: str, npc_entity_id: int, limit: int = 1) -> list[StoredVector]:
-    #     if limit <= 0:
-    #         raise ValueError("Limit must be higher than 0")
-    #     if self.get_entries_count() == (0, 0):
-    #         return []
-
-    #     query = """
-    #         SELECT v.rowid, v.distance FROM vss_npc_thought v
-    #         INNER JOIN npc_thought t ON v.rowid = t.rowid
-    #         WHERE t.npc_entity_id = ? AND vss_search(embedding, vss_search_params(?, ?))
-    #     """
-
-    #     values = (npc_entity_id, json.dumps(query_embedding), limit + 1)
-
-    #     return self.execute_query(query, values)
-
     def query_cosine_similarity(self, query_embedding: list[float], npc_entity_id: int, limit: int = 1) -> StoredVector:
         if limit <= 0:
             raise ValueError("Limit must be higher than 0")
@@ -97,9 +81,10 @@ class TownhallDatabase(BaseDatabase):
             ORDER BY similarity DESC
             LIMIT ?;
         """
-        values = (json.dumps(query_embedding), npc_entity_id, limit)
-        res = self.execute_query(query, values)
 
+        values = (json.dumps(query_embedding), npc_entity_id, limit)
+
+        res = self.execute_query(query, values)
         if not res:
             raise CosineSimilarityNotFoundError(f"No similar thought found for npc entity {npc_entity_id}")
         return cast(StoredVector, res[0])
@@ -107,12 +92,13 @@ class TownhallDatabase(BaseDatabase):
     def insert_townhall_discussion(self, realm_id: int, discussion: str, townhall_input: str) -> int:
         discussion = discussion.strip()
         ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
         return self._insert(
             "INSERT INTO townhall (discussion, townhall_input, realm_id, ts) VALUES (?, ?, ?, ?);",
             (discussion, townhall_input, realm_id, ts),
         )
 
-    def fetch_realm_townhalls(self, realm_id: int) -> list:
+    def fetch_townhalls_by_realm_id(self, realm_id: int) -> list:
         return self.execute_query(
             "SELECT discussion, townhall_input FROM townhall WHERE realm_id = ? ORDER BY ts DESC;",
             (realm_id,),
@@ -121,33 +107,35 @@ class TownhallDatabase(BaseDatabase):
     def insert_plotline(self, realm_id: int, plotline: str) -> int:
         return self._insert("INSERT INTO realm_plotline (plotline, realm_id) VALUES (?, ?);", (plotline, realm_id))
 
-    def fetch_plotline_by_realm(self, realm_id: int) -> str:
+    def fetch_plotline_by_realm_id(self, realm_id: int) -> str:
         query = """
             SELECT plotline FROM realm_plotline
             WHERE realm_id = ?;
         """
         values = (realm_id,)
+
         res = self.execute_query(query, values)
-        if res == []:
+        if len(res) == 0:
             return ""
         return cast(str, res[0][0])
 
     def update_plotline(self, realm_id: int, new_plotline: str) -> int:
         return self._update("UPDATE realm_plotline SET plotline = ? WHERE realm_id = ?;", (new_plotline, realm_id))
 
-    def delete_plotline(self, realm_id: int) -> None:
-        self.execute_query("DELETE FROM realm_plotline WHERE realm_id = ?", (realm_id,))
+    def delete_plotline_by_realm_id(self, realm_id: int) -> None:
+        self._delete("DELETE FROM realm_plotline WHERE realm_id = ?", (realm_id,))
 
     def insert_npc_thought(self, npc_entity_id: int, thought: str, thought_embedding: list[float]) -> int:
-        row_id = self._insert(
+        added_row_id = self._insert(
             "INSERT INTO npc_thought (npc_entity_id, thought) VALUES (?, ?);", (npc_entity_id, thought)
         )
         self._insert(
-            "INSERT INTO vss_npc_thought (rowid, embedding) VALUES (?, ?);", (row_id, json.dumps(thought_embedding))
+            "INSERT INTO vss_npc_thought (rowid, embedding) VALUES (?, ?);",
+            (added_row_id, json.dumps(thought_embedding)),
         )
-        return row_id
+        return added_row_id
 
-    def fetch_npc_thought(self, row_id: int) -> str:
+    def fetch_npc_thought_by_row_id(self, row_id: int) -> str:
         return cast(str, self.execute_query("SELECT thought FROM npc_thought WHERE rowid = ?;", (row_id,))[0][0])
 
     def fetch_daily_townhall_tracker(self, realm_id: int) -> Any | None:
@@ -183,4 +171,4 @@ class TownhallDatabase(BaseDatabase):
         """
         values = (realm_id,)
 
-        self.execute_query(query, values)
+        self._delete(query, values)
