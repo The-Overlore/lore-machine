@@ -40,9 +40,8 @@ def test_delete_npc_profile(db):
     for item in test_data:
         db.delete_npc_profile_by_realm_entity_id(item["realm_entity_id"])
 
-        residual_entry = db.fetch_npc_profile_by_realm_entity_id(item["realm_entity_id"])
-
-        assert len(residual_entry) == 0, "Npc profile entry was not deleted"
+        with pytest.raises(NpcProfileNotFoundError):
+            db.fetch_npc_profile_by_realm_entity_id(item["realm_entity_id"])
 
 
 def test_fetch_npc_profile_not_found_error(db):
