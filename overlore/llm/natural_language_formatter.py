@@ -64,7 +64,7 @@ class LlmFormatter:
         type_specific_data: dict[Any, Any] = str_to_json(str(event[8]))
         resources_taker = self._resources_to_nl(type_specific_data["resources_taker"])
         resources_maker = self._resources_to_nl(type_specific_data["resources_maker"])
-        nl = f"Trade happened: between {active_realm_name} and {passive_realm_name} realms. "
+        nl = f"Trade happened: between the realms of {active_realm_name} and {passive_realm_name}. "
         nl += f"{active_realm_name} will get {resources_taker}. "
         nl += f"{passive_realm_name} will get {resources_maker}. "
         return nl

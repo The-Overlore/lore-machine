@@ -62,7 +62,7 @@ class NpcProfile(BaseModel):
     )
 
     full_name: str = Field(
-        description='First name and last name of the NPC. Don\'t use words in the name such as "Wood"',
+        description='Name of the NPC. Don\'t use common words in the name such as "Wood"',
         validators=[ValidLength(min=5, max=31), TwoWords(on_fail="reask")],
     )
 
@@ -87,12 +87,10 @@ class Thought(BaseModel):
 
 class Townhall(BaseModel):
     dialogue: list[DialogueSegment] = Field(
-        description="""Discussion held by the NPCs, structured to ensure each NPC speaks twice, revealing their viewpoints and
-            emotional reactions to the discussion topics."""
+        description="""Discussion held by the NPCs, structured to ensure each NPC speaks twice, revealing their viewpoints and emotional reactions to the discussion topics."""
     )
     thoughts: list[Thought] = Field(
-        description="""Collection of NPCs' thoughts post-discussion, highlighting their reflective sentiments and emotional
-            responses to the topics covered."""
+        description="""Collection of NPCs' thoughts post-discussion, highlighting their reflective sentiments and emotional responses to the topics covered."""
     )
     plotline: str = Field(
         description=(
@@ -100,47 +98,6 @@ class Townhall(BaseModel):
             " given as input"
         )
     )
-
-
-class MsgType(Enum):
-    TOWNHALL = 0
-    SPAWN_NPC = 1
-    ERROR = 255
-
-
-class TownhallRequestMsgData(TypedDict):
-    realm_id: str
-    realm_entity_id: str
-    order_id: int
-    townhall_input: str
-
-
-class NpcSpawnMsgData(TypedDict):
-    realm_entity_id: int
-
-
-class WsIncomingMsg(TypedDict):
-    msg_type: MsgType
-    data: NpcSpawnMsgData | TownhallRequestMsgData
-
-
-class WsErrorResponse(TypedDict):
-    reason: str
-
-
-class WsSpawnNpcResponse(TypedDict):
-    npc: NpcProfile
-    signature: list[str]
-
-
-class WsTownhallResponse(TypedDict):
-    townhall_id: int
-    dialogue: list[DialogueSegment]
-
-
-class WsResponse(TypedDict):
-    msg_type: MsgType
-    data: WsSpawnNpcResponse | WsErrorResponse | WsTownhallResponse
 
 
 # Custom JSON Encoder that handles Enum types

@@ -2,21 +2,17 @@ import json
 import logging
 from typing import Any, Sequence, cast
 
-import requests
+import aiohttp
 from starknet_py.cairo.felt import encode_shortstring
 from starknet_py.hash.utils import ECSignature, message_signature
 from starknet_py.hash.utils import compute_hash_on_elements as pedersen
 
-from overlore.types import Characteristics, MsgType, WsIncomingMsg
+from overlore.types import Characteristics
 
 logger = logging.getLogger("overlore")
 
 U2_MASK: int = 0x3
 U8_MASK: int = 0xFF
-
-
-def get_ws_msg_type(message: WsIncomingMsg) -> MsgType:
-    return cast(MsgType, message["msg_type"])
 
 
 def str_to_json(message: str) -> Any:
@@ -41,32 +37,21 @@ def get_enum_name_by_value(enum: Any, val: Any) -> str:
     raise RuntimeError(f"No value for val {val} in enum")
 
 
-def get_contract_nonce(katana_url: str, contract_address: str) -> int:
-    data = {
-        "jsonrpc": "2.0",
-        "method": "starknet_getNonce",
-        "params": {"block_id": "latest", "contract_address": contract_address},
-        "id": 1,
-    }
-    ret = query_katana_node(katana_url, data)
-    return int(ret.get("result"), base=16)
-
-
-def get_katana_timestamp(katana_url: str) -> int:
+async def get_katana_timestamp(katana_url: str) -> int:
     data = {"jsonrpc": "2.0", "method": "starknet_getBlockWithTxs", "params": {"block_id": "latest"}, "id": 1}
-    ret = query_katana_node(katana_url, data)
+    ret = await query_katana_node(katana_url, data)
     return cast(int, ret.get("result").get("timestamp"))
 
 
-def query_katana_node(katana_url: str, data: dict[str, Any]) -> Any:
+async def query_katana_node(katana_url: str, data: dict[str, Any]) -> Any:
     # Define the URL and the header
     headers = {"Content-Type": "application/json"}
 
     # Make the POST request
-    response = requests.post(katana_url, headers=headers, data=json.dumps(data), timeout=1000)
-    # throws
-    json_response = str_to_json(response.text)
-    return json_response
+    async with aiohttp.ClientSession() as session:
+        async with session.post(url=katana_url, headers=headers, data=json.dumps(data), timeout=1000) as response:
+            response = await response.json()
+    return response
 
 
 def sign_parameters(msg: Sequence, priv_key: str) -> ECSignature:

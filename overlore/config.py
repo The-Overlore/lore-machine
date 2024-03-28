@@ -90,3 +90,6 @@ class BootConfig:
             self.env = cast(EnvVariables, {var: os.environ[var] for var in keys})
         except KeyError as e:
             raise RuntimeError("Failed to gather env variables from .env: ", e) from e
+
+
+global_config = BootConfig()
