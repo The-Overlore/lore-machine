@@ -10,7 +10,6 @@ class LlmClient:
 
     def request_prompt_completion(_input: str) -> str:
         """Request the completion of an input to a LLM"""
-        print("ewwewewe")
         pass
 
 
@@ -23,7 +22,6 @@ class AsyncOpenAiClient:
     async def request_prompt_completion(self, input_str: str, instructions: str, *args, **kwargs) -> str:
         response = await self.client.chat.completions.create(
             *args,
-            **kwargs,
             messages=[
                 {
                     "role": "user",
@@ -31,6 +29,7 @@ class AsyncOpenAiClient:
                 },
                 {"role": "system", "content": instructions},
             ],
+            **kwargs,
         )
         msg = response.choices[0].message.content
         return msg

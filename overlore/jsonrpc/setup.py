@@ -7,6 +7,8 @@ from aiohttp_cors import setup as cors_setup
 from jsonrpcserver import async_dispatch
 
 from overlore.config import BootConfig
+from overlore.jsonrpc.methods.generate_town_hall.generate_town_hall import generate_town_hall
+from overlore.jsonrpc.methods.spawn_npc.spawn_npc import spawn_npc
 
 
 async def handle(request):
@@ -56,3 +58,7 @@ def launch_json_rpc_server(config: BootConfig):
     json_rpc_thread.daemon = True
 
     json_rpc_thread.start()
+
+
+generate_town_hall
+spawn_npc
