@@ -88,7 +88,6 @@ class TownHallBuilder:
         realm_entity_id = params["realm_entity_id"]
         realm_name = realms.name_by_id(params["realm_id"])
         user_input = params["user_input"].strip()
-
         plotline = townhall_db.fetch_plotline_by_realm_id(realm_id=realm_id)
 
         realm_npcs = await self.torii_client.get_npcs_by_realm_entity_id(realm_entity_id)
@@ -155,7 +154,7 @@ class TownHallBuilder:
             CURRENT_PLOTLINE_STRING.format(plotline=realm["plotline"]) if realm["plotline"] else ""
         )
 
-        user_input_string = USER_INPUT_STRING.format(townhall_input=realm["user_input"]) if realm["user_input"] else ""
+        user_input_string = USER_INPUT_STRING.format(user_input=realm["user_input"]) if realm["user_input"] else ""
 
         (
             RELEVANT_THOUGHTS_STRING.format(thoughts=realm["npcs_thoughts_on_context"])
