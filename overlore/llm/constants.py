@@ -36,7 +36,7 @@ RELEVANT_EVENT = "Here is the most interesting event for my realm: {event_string
 
 CURRENT_PLOTLINE = "This is the current plotline to follow: {plotline}\n"
 
-TOWNHALL_INPUT = "This is what the Realm's Lord gives as input to the villagers: {townhall_input}\n"
+TOWNHALL_INPUT = "The Lord of the Realm has spoken to its villagers and says: {townhall_input}\n"
 
 RELEVANT_THOUGHTS = "Here are the thoughts of the villagers relevant to the event and plotline: {thoughts}\n"
 
