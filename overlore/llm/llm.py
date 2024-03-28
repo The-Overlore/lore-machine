@@ -47,7 +47,7 @@ class Llm:
     def generate_townhall_discussion(
         self,
         realm_name: str,
-        realm_npcs: list[NpcEntity],
+        npcs: list[NpcEntity],
         relevant_event: StoredEvent | None,
         plotline: str | None,
         relevant_thoughts: list[str],
@@ -62,7 +62,7 @@ class Llm:
 
         thoughts_string = RELEVANT_THOUGHTS.format(thoughts=relevant_thoughts) if relevant_thoughts else ""
 
-        npcs = self.nl_formatter.npcs_to_nl(realm_npcs)
+        npcs_nl = self.nl_formatter.npcs_to_nl(npcs)
 
         _raw_llm_response, validated_response, *_rest = self.townhall_guard(
             openai.chat.completions.create,
@@ -73,7 +73,7 @@ class Llm:
                 relevant_event=relevant_event_string,
                 plotline=current_plotline_string,
                 thoughts=thoughts_string,
-                npcs=npcs,
+                npcs=npcs_nl,
             ),
         )
         print(self.townhall_guard.history.last.tree)

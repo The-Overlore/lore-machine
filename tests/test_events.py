@@ -376,7 +376,9 @@ async def test_fetch_relevant_events_decay_time():
         ts -= 86400
         test_message["eventEmitted"]["data"][8] = hex(ts)
 
-    assert db.fetch_most_relevant_event(realm_position=db.realms.position_by_id(2), current_time=1704831904) == [
+    assert db.fetch_most_relevant_event(
+        realm_position=db.realms.position_by_id(2), current_time=1704831904, stored_event_row_ids=[]
+    ) == [
         1,
         0,
         73,
@@ -468,7 +470,9 @@ async def test_fetch_relevant_events_decay_distance():
             }
         }
     )
-    assert db.fetch_most_relevant_event(realm_position=db.realms.position_by_id(1), current_time=0x659DABA0) == [
+    assert db.fetch_most_relevant_event(
+        realm_position=db.realms.position_by_id(1), current_time=0x659DABA0, stored_event_row_ids=[]
+    ) == [
         1,
         0,
         17,
@@ -489,4 +493,158 @@ async def test_fetch_relevant_events_decay_distance():
 @pytest.mark.asyncio
 async def test_fetch_relevant_events_empty_db():
     db = init_db()
-    assert None is db.fetch_most_relevant_event(realm_position=db.realms.position_by_id(1), current_time=0x659DABA0)
+    assert None is db.fetch_most_relevant_event(
+        realm_position=db.realms.position_by_id(1), current_time=0x659DABA0, stored_event_row_ids=[]
+    )
+
+
+@pytest.mark.asyncio
+async def test_fetch_most_relevant_event_something():
+    db = init_db()
+    process_received_event(
+        {
+            "eventEmitted": {
+                "id": "0x00000000000000000000000000000000000000000000000000000000000001c8:0x0000:0x0002",
+                "keys": [
+                    "0x1736c207163ad481e2a196c0fb6394f90c66c2e2b52e0c03d4a077ac6cea918",
+                    "0x4b",
+                    "0x1",
+                    "0x49",
+                    "0x2",
+                    "0x1b0a83a27a357e0574393ab06c0c774db7312a0993538cc0186d054f75ee84e",
+                ],
+                "data": ["0x1", "0x53", "0x1", "0x8", "0x2710", "0x0", "0x0", "0x65a1bec0"],
+                "createdAt": "2024-01-02 12:35:45",
+            }
+        }
+    )
+    process_received_event(
+        {
+            "eventEmitted": {
+                "id": "0x00000000000000000000000000000000000000000000000000000000000001c8:0x0000:0x0003",
+                "keys": [
+                    "0x1736c207163ad481e2a196c0fb6394f90c66c2e2b52e0c03d4a077ac6cea918",
+                    "0x4b",
+                    "0x1",
+                    "0x49",
+                    "0x2",
+                    "0x1b0a83a27a357e0574393ab06c0c774db7312a0993538cc0186d054f75ee84e",
+                ],
+                "data": ["0x1", "0x53", "0x1", "0x8", "0xc350", "0x0", "0x0", "0x65a1bec0"],
+                "createdAt": "2024-01-02 12:35:45",
+            }
+        }
+    )
+
+    process_received_event(
+        {
+            "eventEmitted": {
+                "id": "0x00000000000000000000000000000000000000000000000000000000000001c8:0x0000:0x0004",
+                "keys": [
+                    "0x1736c207163ad481e2a196c0fb6394f90c66c2e2b52e0c03d4a077ac6cea918",
+                    "0x4b",
+                    "0x1",
+                    "0x49",
+                    "0x2",
+                    "0x1b0a83a27a357e0574393ab06c0c774db7312a0993538cc0186d054f75ee84e",
+                ],
+                "data": ["0x1", "0x53", "0x0", "0x0", "0x64", "0x65a1bec0"],
+                "createdAt": "2024-01-02 12:35:45",
+            }
+        }
+    )
+
+    process_received_event(
+        {
+            "eventEmitted": {
+                "id": "0x00000000000000000000000000000000000000000000000000000000000001c8:0x0000:0x0005",
+                "keys": [
+                    "0x1736c207163ad481e2a196c0fb6394f90c66c2e2b52e0c03d4a077ac6cea918",
+                    "0x4b",
+                    "0x1",
+                    "0x49",
+                    "0x2",
+                    "0x1b0a83a27a357e0574393ab06c0c774db7312a0993538cc0186d054f75ee84e",
+                ],
+                "data": ["0x1", "0x53", "0x0", "0x0", "0x3e8", "0x65a1bec0"],
+                "createdAt": "2024-01-02 12:35:45",
+            }
+        }
+    )
+
+    assert db.fetch_most_relevant_event(
+        realm_position=(0.0, 0.0), current_time=1711618313, stored_event_row_ids=[]
+    ) == [
+        4,
+        1,
+        75,
+        1,
+        73,
+        2,
+        10.0,
+        1705098944,
+        '{"attacking_entity_ids": [], "stolen_resources": [], "winner": 0, "damage": 1000}',
+        (0.0, 0.0),
+        (0.0, 2000.0),
+    ]
+
+    assert db.fetch_most_relevant_event(
+        realm_position=(0.0, 0.0), current_time=1711618313, stored_event_row_ids=[4]
+    ) == [
+        2,
+        1,
+        75,
+        1,
+        73,
+        2,
+        5.0,
+        1705098944,
+        (
+            '{"attacking_entity_ids": [], "stolen_resources": [{"resource_type": 8, "amount": 50}], "winner": 0,'
+            ' "damage": 0}'
+        ),
+        (0.0, 0.0),
+        (0.0, 2000.0),
+    ]
+
+    assert db.fetch_most_relevant_event(
+        realm_position=(0.0, 0.0), current_time=1711618313, stored_event_row_ids=[4, 2]
+    ) == [
+        1,
+        1,
+        75,
+        1,
+        73,
+        2,
+        1.0,
+        1705098944,
+        (
+            '{"attacking_entity_ids": [], "stolen_resources": [{"resource_type": 8, "amount": 10}], "winner": 0,'
+            ' "damage": 0}'
+        ),
+        (0.0, 0.0),
+        (0.0, 2000.0),
+    ]
+
+    assert db.fetch_most_relevant_event(
+        realm_position=(0.0, 0.0), current_time=1711618313, stored_event_row_ids=[4, 2, 1]
+    ) == [
+        3,
+        1,
+        75,
+        1,
+        73,
+        2,
+        1.0,
+        1705098944,
+        '{"attacking_entity_ids": [], "stolen_resources": [], "winner": 0, "damage": 100}',
+        (0.0, 0.0),
+        (0.0, 2000.0),
+    ]
+
+    assert (
+        db.fetch_most_relevant_event(
+            realm_position=(0.0, 0.0), current_time=1711618313, stored_event_row_ids=[4, 2, 1, 3]
+        )
+        is None
+    )

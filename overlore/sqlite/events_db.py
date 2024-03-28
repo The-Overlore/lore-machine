@@ -153,10 +153,15 @@ class EventsDatabase(BaseDatabase):
 
         return self.format_records(records=records)
 
-    def fetch_most_relevant_event(self, realm_position: RealmPosition, current_time: int) -> StoredEvent | None:
+    def fetch_most_relevant_event(
+        self, realm_position: RealmPosition, current_time: int, stored_event_row_ids: list[int]
+    ) -> StoredEvent | None:
+        where_clauses = " AND ".join([f"rowid != {event_row_id}" for event_row_id in stored_event_row_ids])
+        where_clauses = "WHERE " + where_clauses if where_clauses != "" else ""
+
         """Attributes an importance score depending on the distance in kilometers, the recency
         and general importance score of an event, then gets the event that scored the highest"""
-        query = """SELECT
+        query = f"""SELECT
                     rowid,
                     event_type,
                     active_realm_entity_id,
@@ -194,6 +199,7 @@ class EventsDatabase(BaseDatabase):
                                 importance
                             ) as score
                         FROM events
+                        {where_clauses}
                     )
                     ORDER BY score DESC LIMIT 1"""
         params = (
@@ -205,5 +211,6 @@ class EventsDatabase(BaseDatabase):
             A_TIME,
             current_time,
         )
+
         records = self.execute_query(query=query, params=params)
         return self.format_records(records=records)[0] if len(records) > 0 else None

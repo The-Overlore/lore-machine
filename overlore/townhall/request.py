@@ -2,10 +2,11 @@ import logging
 from typing import cast
 
 from overlore.config import BootConfig
-from overlore.eternum.constants import Realms
+from overlore.eternum.constants import DAY_IN_SECONDS, Realms
 from overlore.graphql.query import get_npcs_by_realm_entity_id
 from overlore.llm.constants import COSINE_SIMILARITY_THRESHOLD, GenerationError
 from overlore.llm.llm import Llm
+from overlore.sqlite.errors import CosineSimilarityNotFoundError
 from overlore.sqlite.events_db import EventsDatabase
 from overlore.sqlite.townhall_db import TownhallDatabase
 from overlore.sqlite.types import StoredEvent
@@ -28,34 +29,54 @@ def handle_townhall_request(data: TownhallRequestMsgData, config: BootConfig) ->
     townhall_db = TownhallDatabase.instance()
 
     realm_id = int(cast(str, data.get("realm_id")))
-    realm_name = realms.name_by_id(realm_id)
+    realm_entity_id = int(cast(str, data.get("realm_entity_id")))
+    townhall_input = cast(str, data.get("townhall_input")).strip()
 
-    realm_npcs = get_npcs_by_realm_entity_id(config.env["TORII_GRAPHQL"], int(cast(str, data.get("realm_entity_id"))))
-    if len(realm_npcs) < 2:
+    realm_name = realms.name_by_id(i=realm_id)
+    plotline = townhall_db.fetch_plotline_by_realm_id(realm_id=realm_id)
+
+    npcs = get_npcs_by_realm_entity_id(torii_endpoint=config.env["TORII_GRAPHQL"], realm_entity_id=realm_entity_id)
+    if len(npcs) < 2:
         raise RuntimeError(GenerationError.LACK_OF_NPCS.value)
 
-    townhall_input: str = cast(str, data.get("townhall_input")).strip()
-
-    plotline: str = townhall_input if townhall_input != "" else townhall_db.fetch_plotline_by_realm_id(realm_id)
+    last_ts = townhall_db.fetch_last_townhall_ts_by_realm_id(realm_id=realm_id)
+    if last_ts + DAY_IN_SECONDS < get_katana_timestamp(config.env["KATANA_URL"]):
+        townhall_db.delete_daily_townhall_tracker(realm_id=realm_id)
 
     relevant_event = get_relevant_event(realm_id=realm_id, config=config)
 
-    relevant_thoughts = get_npc_thoughts(realm_npcs, relevant_event, plotline)
+    if relevant_event:
+        townhall_db.insert_or_update_daily_townhall_tracker(
+            realm_id=realm_id, event_row_id=cast(int, relevant_event[0])
+        )
 
-    townhall = llm.generate_townhall_discussion(realm_name, realm_npcs, relevant_event, plotline, relevant_thoughts)
+    relevant_thoughts = get_npc_thoughts(npcs=npcs, event=relevant_event, plotline=plotline)
 
-    row_id = store_townhall_information(townhall, realm_id, realm_npcs, townhall_input, plotline)
+    townhall = llm.generate_townhall_discussion(
+        realm_name=realm_name,
+        npcs=npcs,
+        relevant_event=relevant_event,
+        plotline=plotline,
+        relevant_thoughts=relevant_thoughts,
+    )
+
+    row_id = store_townhall_information(
+        townhall=townhall, realm_id=realm_id, npcs=npcs, townhall_input=townhall_input, plotline=plotline, config=config
+    )
 
     return WsTownhallResponse(townhall_id=row_id, dialogue=townhall["dialogue"])  # type: ignore[index]
 
 
 def get_relevant_event(realm_id: int, config: BootConfig) -> StoredEvent | None:
     events_db = EventsDatabase.instance()
+    townhall_db = TownhallDatabase.instance()
     realms = Realms.instance()
 
     ts = get_katana_timestamp(config.env["KATANA_URL"])
 
-    return events_db.fetch_most_relevant_event(realms.position_by_id(realm_id), ts)
+    stored_event_row_ids = townhall_db.fetch_daily_townhall_tracker(realm_id=realm_id)
+
+    return events_db.fetch_most_relevant_event(realms.position_by_id(realm_id), ts, stored_event_row_ids)
 
 
 def convert_dialogue_to_str(dialogue: list[DialogueSegment]) -> str:
@@ -65,63 +86,58 @@ def convert_dialogue_to_str(dialogue: list[DialogueSegment]) -> str:
 
 
 def get_npc_thoughts(
-    npc_list: list[NpcEntity],
-    relevant_event: StoredEvent | None,
-    plotline: str | None,
+    npcs: list[NpcEntity],
+    event: StoredEvent | None,
+    plotline: str,
 ) -> list[str]:
     townhall_db = TownhallDatabase.instance()
     llm = Llm()
 
     thoughts = []
-    query = ""
+    embedding_source = plotline
 
-    if relevant_event is not None:
-        query += llm.nl_formatter.event_to_nl(relevant_event)
+    if event is not None:
+        embedding_source += llm.nl_formatter.event_to_nl(event)
 
-    if plotline is not None:
-        query += plotline
+    if embedding_source != "":
+        query_embedding = llm.request_embedding(embedding_source)
 
-    if query != "":
-        query_embedding = llm.request_embedding(query)
-
-        for npc in npc_list:
-            res = townhall_db.query_cosine_similarity(query_embedding, npc["entity_id"])
-
-            if res is not None:
-                row_id = res[0]
-                similarity = res[1]
+        for npc in npcs:
+            try:
+                row_id, similarity = townhall_db.query_cosine_similarity(query_embedding, npc["entity_id"])
 
                 if similarity >= COSINE_SIMILARITY_THRESHOLD:
                     thoughts.append(npc["full_name"] + ":" + townhall_db.fetch_npc_thought_by_row_id(row_id))
 
+            except CosineSimilarityNotFoundError:
+                pass
+
     return thoughts
 
 
-def get_entity_id_from_name(full_name: str, realm_npcs: list[NpcEntity]) -> int:
-    for npc in realm_npcs:
+def get_entity_id_from_name(full_name: str, npcs: list[NpcEntity]) -> int:
+    for npc in npcs:
         if full_name == npc["full_name"]:
             return cast(int, npc["entity_id"])
     raise RuntimeError(GenerationError.NPC_ENTITY_ID_NOT_FOUND.value)
 
 
 def store_townhall_information(
-    townhall: Townhall,
-    realm_id: int,
-    realm_npcs: list[NpcEntity],
-    townhall_input: str,
-    plotline: str,
+    townhall: Townhall, realm_id: int, npcs: list[NpcEntity], townhall_input: str, plotline: str, config: BootConfig
 ) -> int:
     townhall_db = TownhallDatabase.instance()
     llm = Llm()
 
-    dialogue: str = convert_dialogue_to_str(townhall["dialogue"])  # type: ignore[index]
-    row_id = townhall_db.insert_townhall_discussion(realm_id, dialogue, townhall_input)
+    ts = get_katana_timestamp(config.env["KATANA_URL"])
+
+    dialogue = convert_dialogue_to_str(townhall["dialogue"])  # type: ignore[index]
+    row_id = townhall_db.insert_townhall_discussion(realm_id, dialogue, townhall_input, ts)
 
     for thought in townhall["thoughts"]:  # type: ignore[index]
         thought_embedding = llm.request_embedding(thought["value"])
 
         try:
-            npc_entity_id = get_entity_id_from_name(thought["full_name"], realm_npcs)
+            npc_entity_id = get_entity_id_from_name(thought["full_name"], npcs)
             townhall_db.insert_npc_thought(npc_entity_id, thought["value"], thought_embedding)
         except KeyError:
             logger.exception(f"Failed to find npc_entity_id for npc named {thought['full_name']}")

@@ -1,6 +1,6 @@
 import pytest
 
-from overlore.sqlite.errors import NpcDescriptionNotFoundError, NpcProfileNotFoundError
+from overlore.sqlite.errors import NpcDescriptionNotFoundError
 from overlore.sqlite.npc_db import NpcDatabase
 from tests.utils.npc_db_test_utils import prepare_data, test_data
 
@@ -40,13 +40,11 @@ def test_delete_npc_profile(db):
     for item in test_data:
         db.delete_npc_profile_by_realm_entity_id(item["realm_entity_id"])
 
-        with pytest.raises(NpcProfileNotFoundError):
-            db.fetch_npc_profile_by_realm_entity_id(item["realm_entity_id"])
+        assert None is db.fetch_npc_profile_by_realm_entity_id(item["realm_entity_id"])
 
 
 def test_fetch_npc_profile_not_found_error(db):
-    with pytest.raises(NpcProfileNotFoundError):
-        db.fetch_npc_profile_by_realm_entity_id(999)
+    assert None is db.fetch_npc_profile_by_realm_entity_id(999)
 
 
 def test_fetch_npc_description_not_found_error(db):

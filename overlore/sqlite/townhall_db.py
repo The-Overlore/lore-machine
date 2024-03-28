@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import datetime
 from sqlite3 import Connection
-from typing import Any, cast
+from typing import cast
 
 import sqlite_vss
 
@@ -24,7 +23,7 @@ class TownhallDatabase(BaseDatabase):
                 discussion TEXT,
                 townhall_input TEXT,
                 realm_id INTEGER NOT NULL,
-                ts TEXT
+                ts INTEGER NOT NULL
             );
         """,
         """
@@ -89,9 +88,8 @@ class TownhallDatabase(BaseDatabase):
             raise CosineSimilarityNotFoundError(f"No similar thought found for npc entity {npc_entity_id}")
         return cast(StoredVector, res[0])
 
-    def insert_townhall_discussion(self, realm_id: int, discussion: str, townhall_input: str) -> int:
+    def insert_townhall_discussion(self, realm_id: int, discussion: str, townhall_input: str, ts: int) -> int:
         discussion = discussion.strip()
-        ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         return self._insert(
             "INSERT INTO townhall (discussion, townhall_input, realm_id, ts) VALUES (?, ?, ?, ?);",
@@ -103,6 +101,16 @@ class TownhallDatabase(BaseDatabase):
             "SELECT discussion, townhall_input FROM townhall WHERE realm_id = ? ORDER BY ts DESC;",
             (realm_id,),
         )
+
+    def fetch_last_townhall_ts_by_realm_id(self, realm_id: int) -> int:
+        last_ts = self.execute_query(
+            "SELECT ts FROM townhall WHERE realm_id = ? ORDER BY ts DESC LIMIT 1;",
+            (realm_id,),
+        )
+
+        if last_ts:
+            return cast(int, last_ts[0][0])
+        return -1
 
     def insert_plotline(self, realm_id: int, plotline: str) -> int:
         return self._insert("INSERT INTO realm_plotline (plotline, realm_id) VALUES (?, ?);", (plotline, realm_id))
@@ -138,32 +146,34 @@ class TownhallDatabase(BaseDatabase):
     def fetch_npc_thought_by_row_id(self, row_id: int) -> str:
         return cast(str, self.execute_query("SELECT thought FROM npc_thought WHERE rowid = ?;", (row_id,))[0][0])
 
-    def fetch_daily_townhall_tracker(self, realm_id: int) -> Any | None:
+    def fetch_daily_townhall_tracker(self, realm_id: int) -> list[int]:
         result = self.execute_query("SELECT event_row_id FROM daily_townhall_tracker WHERE realm_id = ?;", (realm_id,))
         if result:
             stored_event_row_ids = json.loads(result[0][0])
-            return stored_event_row_ids
-        return None
+            return cast(list[int], stored_event_row_ids)
+        return []
 
     def insert_or_update_daily_townhall_tracker(self, realm_id: int, event_row_id: int) -> int:
         stored_event_row_ids = self.fetch_daily_townhall_tracker(realm_id)
 
-        if stored_event_row_ids is None:
+        if len(stored_event_row_ids) == 0:
             query = """
                 INSERT INTO daily_townhall_tracker(realm_id, event_row_id)
                 VALUES (?, json_array(?));
             """
-            values = (json.dumps(realm_id), event_row_id)
-            return self._insert(query, values)
+            insert_values = (realm_id, event_row_id)
+            return self._insert(query, insert_values)
         else:
             stored_event_row_ids.append(event_row_id)
-            query = """
+            event_row_ids_count = ",".join(["?" for _ in stored_event_row_ids])
+
+            query = f"""
                 UPDATE daily_townhall_tracker
-                SET event_row_id = json_array(?)
+                SET event_row_id = json_array({event_row_ids_count})
                 WHERE realm_id = ?;
             """
-            values = (json.dumps(stored_event_row_ids), realm_id)
-            return self._update(query, values)
+            update_values = (*stored_event_row_ids, realm_id)
+            return self._update(query, update_values)
 
     def delete_daily_townhall_tracker(self, realm_id: int) -> None:
         query = """

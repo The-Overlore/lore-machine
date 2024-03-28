@@ -6,7 +6,7 @@ from typing import cast
 
 from overlore.sqlite.base_db import BaseDatabase
 from overlore.sqlite.constants import Profile
-from overlore.sqlite.errors import NpcDescriptionNotFoundError, NpcProfileNotDeleted, NpcProfileNotFoundError
+from overlore.sqlite.errors import NpcDescriptionNotFoundError, NpcProfileNotDeleted
 from overlore.types import NpcProfile
 
 logger = logging.getLogger("overlore")
@@ -75,12 +75,11 @@ class NpcDatabase(BaseDatabase):
         )
         return added_row_id
 
-    def fetch_npc_profile_by_realm_entity_id(self, realm_entity_id: int) -> NpcProfile:
+    def fetch_npc_profile_by_realm_entity_id(self, realm_entity_id: int) -> NpcProfile | None:
         profile = self.execute_query("SELECT * FROM npc_profile WHERE realm_entity_id = ?;", (realm_entity_id,))
 
         if not profile:
-            raise NpcProfileNotFoundError(f"No NPC found at realm_entity_id {realm_entity_id}")
-
+            return None
         else:
             profile = profile[0]
 

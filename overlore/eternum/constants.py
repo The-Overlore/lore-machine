@@ -7,6 +7,8 @@ from typing import TypedDict, cast
 from overlore.eternum.types import RealmPosition
 from overlore.utils import open_json_file
 
+DAY_IN_SECONDS: int = 86400
+
 
 class RealmGeodata(TypedDict):
     xy: list[float]
