@@ -57,6 +57,7 @@ def handle_townhall_request(data: TownhallRequestMsgData, config: BootConfig) ->
         npcs=npcs,
         relevant_event=relevant_event,
         plotline=plotline,
+        townhall_input=townhall_input,
         relevant_thoughts=relevant_thoughts,
     )
 

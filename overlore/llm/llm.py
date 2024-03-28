@@ -14,6 +14,7 @@ from overlore.llm.constants import (
     NPC_PROFILE_USER,
     RELEVANT_EVENT,
     RELEVANT_THOUGHTS,
+    TOWNHALL_INPUT,
     TOWNHALL_SYSTEM,
     TOWNHALL_USER,
     ChatCompletionModel,
@@ -50,6 +51,7 @@ class Llm:
         npcs: list[NpcEntity],
         relevant_event: StoredEvent | None,
         plotline: str | None,
+        townhall_input: str,
         relevant_thoughts: list[str],
     ) -> Townhall:
         relevant_event_string = (
@@ -58,9 +60,11 @@ class Llm:
             else ""
         )
 
-        current_plotline_string = CURRENT_PLOTLINE.format(plotline=plotline) if plotline else ""
+        plotline_str = CURRENT_PLOTLINE.format(plotline=plotline) if plotline else ""
 
-        thoughts_string = RELEVANT_THOUGHTS.format(thoughts=relevant_thoughts) if relevant_thoughts else ""
+        townhall_input = TOWNHALL_INPUT.format(townhall_input=townhall_input) if townhall_input else ""
+
+        thoughts_str = RELEVANT_THOUGHTS.format(thoughts=relevant_thoughts) if relevant_thoughts else ""
 
         npcs_nl = self.nl_formatter.npcs_to_nl(npcs)
 
@@ -71,8 +75,9 @@ class Llm:
             prompt=TOWNHALL_USER.format(
                 realm_name=realm_name,
                 relevant_event=relevant_event_string,
-                plotline=current_plotline_string,
-                thoughts=thoughts_string,
+                plotline=plotline_str,
+                townhall_input=townhall_input,
+                thoughts=thoughts_str,
                 npcs=npcs_nl,
             ),
         )

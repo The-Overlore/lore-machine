@@ -94,7 +94,12 @@ class Townhall(BaseModel):
         description="""Collection of NPCs' thoughts post-discussion, highlighting their reflective sentiments and emotional
             responses to the topics covered."""
     )
-    plotline: str = Field(description="The central theme or main storyline that unfolds throughout the dialogue.")
+    plotline: str = Field(
+        description=(
+            "The central theme or main storyline that unfolds throughout the dialogue. Make it evolve from the plot"
+            " given as input"
+        )
+    )
 
 
 class MsgType(Enum):
