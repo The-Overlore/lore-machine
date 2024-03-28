@@ -5,9 +5,10 @@ from overlore.eternum.types import ResourceAmounts
 from overlore.llm.constants import (
     AGENT_TEMPLATE,
 )
+from overlore.npcs.constants import ROLES, SEX
 from overlore.sqlite.constants import EventType
 from overlore.sqlite.types import StoredEvent
-from overlore.types import Npc
+from overlore.types import NpcEntity
 from overlore.utils import get_enum_name_by_value, str_to_json
 
 
@@ -68,16 +69,23 @@ class LlmFormatter:
         nl += f"{passive_realm_name} will get {resources_maker}. "
         return nl
 
-    def _npc_to_nl(self, npc: Npc) -> str:
-        characteristics = npc["characteristics"]  # type: ignore[index]
+    def _npc_to_nl(self, npc: NpcEntity) -> str:
+        realms = Realms.instance()
 
-        age: int = cast(int, characteristics["age"])
-        role: str = cast(str, characteristics["role"])
-        sex: str = cast(str, characteristics["sex"])
+        characteristics = npc["characteristics"]
 
-        character_trait: str = cast(str, npc["character_trait"])  # type: ignore[index]
-        name: str = cast(str, npc["full_name"])  # type: ignore[index]
-        return AGENT_TEMPLATE.format(name=name, sex=sex, role=role, character_trait=character_trait, age=age)
+        age: int = cast(int, characteristics["age"])  # type: ignore[index]
+        role: str = cast(str, ROLES[characteristics["role"]])  # type: ignore[index]
+        sex: str = cast(str, SEX[characteristics["sex"]])  # type: ignore[index]
+
+        character_trait: str = cast(str, npc["character_trait"])
+        name: str = cast(str, npc["full_name"])
+
+        origin_realm: str = realms.name_by_id(npc["origin_realm_id"])
+
+        return AGENT_TEMPLATE.format(
+            name=name, sex=sex, role=role, character_trait=character_trait, age=age, origin_realm=origin_realm
+        )
 
     def event_to_nl(self, event: StoredEvent) -> str:
         #  event
@@ -91,5 +99,5 @@ class LlmFormatter:
         else:
             raise RuntimeError("Unknown event type")
 
-    def npcs_to_nl(self, villagers: list[Npc]) -> str:
+    def npcs_to_nl(self, villagers: list[NpcEntity]) -> str:
         return "\n".join(self._npc_to_nl(npc) for npc in villagers)

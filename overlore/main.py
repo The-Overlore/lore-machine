@@ -16,14 +16,14 @@ from overlore.graphql.boot_sync import torii_boot_sync
 from overlore.graphql.subscriptions import (
     OnEventCallbackType,
     Subscriptions,
-    delete_npc_from_db,
     process_received_event,
+    process_received_spawn_npc_event,
     use_torii_subscription,
 )
 from overlore.llm.constants import GUARD_RAILS_HUB_URL
 from overlore.sqlite.events_db import EventsDatabase
 from overlore.sqlite.npc_db import NpcDatabase
-from overlore.sqlite.vector_db import VectorDatabase
+from overlore.sqlite.townhall_db import TownhallDatabase
 from overlore.townhall.mocks import MOCK_KATANA_RESPONSE, MOCK_VILLAGERS, with_mock_responses
 from overlore.townhall.request import handle_townhall_request
 from overlore.types import WsTownhallResponse
@@ -32,7 +32,7 @@ from overlore.ws import handle_client_connection
 SUBSCRIPTIONS_WITH_CALLBACKS: list[tuple[Subscriptions, OnEventCallbackType]] = [
     (Subscriptions.COMBAT_OUTCOME, process_received_event),
     (Subscriptions.ORDER_ACCEPTED, process_received_event),
-    (Subscriptions.NPC_SPAWNED, delete_npc_from_db),
+    (Subscriptions.NPC_SPAWNED, process_received_spawn_npc_event),
 ]
 
 logger = logging.getLogger("overlore")
@@ -72,11 +72,11 @@ def setup() -> BootConfig:
 
     if config.mock is True:
         EventsDatabase.instance().init(":memory:")
-        VectorDatabase.instance().init(":memory:")
+        TownhallDatabase.instance().init(":memory:")
         NpcDatabase.instance().init(":memory:")
     else:
         EventsDatabase.instance().init()
-        VectorDatabase.instance().init()
+        TownhallDatabase.instance().init()
         NpcDatabase.instance().init()
 
     os.environ["GUARDRAILS_PROCESS_COUNT"] = "30"

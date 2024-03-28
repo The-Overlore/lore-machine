@@ -13,7 +13,7 @@ CustomFunction = tuple[str, int, FunctionCallable]
 THREADSAFE = "THREADSAFE=1"
 
 
-class Database:
+class BaseDatabase:
     db: Connection
 
     def __init__(self) -> None:
@@ -29,6 +29,18 @@ class Database:
         self.db.commit()
         added_id = cursor.lastrowid if cursor.lastrowid else 0
         return added_id
+
+    def _update(self, query: str, values: tuple[Any, ...]) -> int:
+        cursor = self.db.cursor()
+        cursor.execute(query, values)
+        self.db.commit()
+        updated_entries_count = cursor.rowcount
+        return updated_entries_count
+
+    def _delete(self, query: str, values: tuple[Any, ...]) -> None:
+        cursor = self.db.cursor()
+        cursor.execute(query, values)
+        self.db.commit()
 
     def _use_first_boot_queries(self, queries: list[str]) -> None:
         for query in queries:
