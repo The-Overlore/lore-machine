@@ -86,8 +86,9 @@ class NpcProfileBuilder:
             model=ChatCompletionModel.GPT_3_5_TURBO.value,
             temperature=1.8,
         )
+
         print(self.guard.history.last.tree)
-        print(validated_response)
+
         return cast(NpcProfile, validated_response)
 
     async def create_signature_for_response(
