@@ -9,10 +9,10 @@ from backoff._typing import Details
 from gql import Client, gql
 from gql.transport.websockets import WebsocketsTransport
 
-from overlore.graphql.constants import EventType
-from overlore.graphql.parsing import parse_event, parse_npc_spawn_event
 from overlore.sqlite.events_db import EventsDatabase
 from overlore.sqlite.npc_db import NpcDatabase
+from overlore.torii.constants import EventType
+from overlore.torii.parsing import parse_event, parse_npc_spawn_event
 from overlore.types import ToriiEmittedEvent
 
 logger = logging.getLogger("overlore")

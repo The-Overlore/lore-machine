@@ -2,7 +2,6 @@ import json
 import logging
 from typing import Any, Sequence, cast
 
-import aiohttp
 from starknet_py.cairo.felt import encode_shortstring
 from starknet_py.hash.utils import ECSignature, message_signature
 from starknet_py.hash.utils import compute_hash_on_elements as pedersen
@@ -35,23 +34,6 @@ def get_enum_name_by_value(enum: Any, val: Any) -> str:
         if enum_entry.value == val:
             return str(enum_entry.name)
     raise RuntimeError(f"No value for val {val} in enum")
-
-
-async def get_katana_timestamp(katana_url: str) -> int:
-    data = {"jsonrpc": "2.0", "method": "starknet_getBlockWithTxs", "params": {"block_id": "latest"}, "id": 1}
-    ret = await query_katana_node(katana_url, data)
-    return cast(int, ret.get("result").get("timestamp"))
-
-
-async def query_katana_node(katana_url: str, data: dict[str, Any]) -> Any:
-    # Define the URL and the header
-    headers = {"Content-Type": "application/json"}
-
-    # Make the POST request
-    async with aiohttp.ClientSession() as session:
-        async with session.post(url=katana_url, headers=headers, data=json.dumps(data), timeout=1000) as response:
-            response = await response.json()
-    return response
 
 
 def sign_parameters(msg: Sequence, priv_key: str) -> ECSignature:

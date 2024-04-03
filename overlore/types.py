@@ -6,8 +6,8 @@ from typing import Any, Optional, TypedDict
 from guardrails.validators import TwoWords, ValidChoices, ValidLength, ValidRange
 from pydantic import BaseModel, Field
 
+from overlore.constants import ROLES
 from overlore.eternum.types import RealmPosition
-from overlore.npcs.constants import ROLES
 from overlore.sqlite.constants import EventType
 
 roles_str = ", ".join([f"{index} for {role}" for index, role in enumerate(ROLES)])

@@ -3,8 +3,8 @@ from typing import cast
 
 from overlore.eternum.constants import Realms
 from overlore.eternum.types import AttackingEntityIds, ResourceAmount, ResourceAmounts
-from overlore.graphql.constants import EventType as EventKeyHash
 from overlore.sqlite.constants import EventType as SqLiteEventType
+from overlore.torii.constants import EventType as EventKeyHash
 from overlore.types import EventData, EventKeys, ParsedEvent, ParsedSpawnEvent, ToriiDataNode
 
 # A is calculated by setting a max amount of resources, any value equal to or higher than MAX will get attributed a score of 10.

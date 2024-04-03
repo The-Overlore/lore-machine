@@ -1,25 +1,40 @@
+from abc import ABC, abstractmethod
+from typing import Any, cast
+
 import openai
 
+from overlore.errors import ErrorCodes
 
-class LlmClient:
+
+class LlmClient(ABC):
     """Interface used to define how an LLM client should behave"""
 
-    def request_embedding(self, _input: str) -> list[float]:
+    @abstractmethod
+    async def request_embedding(self, input_str: str, *args: Any, **kwargs: Any) -> list[float]:
         """Request an embedding of the input string"""
         pass
 
-    def request_prompt_completion(_input: str) -> str:
+    @abstractmethod
+    async def request_prompt_completion(self, input_str: str, instructions: str, *args: Any, **kwargs: Any) -> str:
         """Request the completion of an input to a LLM"""
         pass
 
 
-class AsyncOpenAiClient:
+class AsyncOpenAiClient(LlmClient):
     client: openai.AsyncOpenAI
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.client = openai.AsyncClient()
 
-    async def request_prompt_completion(self, input_str: str, instructions: str, *args, **kwargs) -> str:
+    async def request_embedding(self, input_str: str, *args: Any, **kwargs: Any) -> list[float]:
+        response = await self.client.embeddings.create(input=input_str, **kwargs)
+        return response.data[0].embedding
+
+    async def request_prompt_completion(self, input_str: str, *args: Any, **kwargs: Any) -> str:
+        if "instructions" not in kwargs:
+            raise RuntimeError(ErrorCodes.LLM_VALIDATOR_ERROR)
+        instructions = kwargs["instructions"]
+        del kwargs["instructions"]
         response = await self.client.chat.completions.create(
             *args,
             messages=[
@@ -31,9 +46,5 @@ class AsyncOpenAiClient:
             ],
             **kwargs,
         )
-        msg = response.choices[0].message.content
+        msg = cast(str, response.choices[0].message.content)
         return msg
-
-    async def request_embedding(self, input_str, **kwargs) -> list[float]:
-        response = await self.client.embeddings.create(input=input_str, **kwargs)
-        return response.data[0].embedding

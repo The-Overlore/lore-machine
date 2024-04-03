@@ -1,10 +1,9 @@
 import logging
 from typing import cast
 
-from overlore.config import BootConfig
+from overlore.errors import ErrorCodes
 from overlore.eternum.constants import Realms
-from overlore.jsonrpc.constants import ErrorCodes
-from overlore.llm.client import AsyncOpenAiClient
+from overlore.llm.client import LlmClient
 from overlore.llm.constants import COSINE_SIMILARITY_THRESHOLD, EmbeddingsModel
 from overlore.llm.natural_language_formatter import LlmFormatter
 from overlore.sqlite.errors import CosineSimilarityNotFoundError
@@ -16,21 +15,18 @@ from overlore.types import (
     NpcEntity,
     Townhall,
 )
-from overlore.utils import get_katana_timestamp
 
 logger = logging.getLogger("overlore")
 
 
-async def get_most_important_event(realm_id: int, config: BootConfig) -> StoredEvent | None:
+def get_most_important_event(realm_id: int, katana_time: int) -> StoredEvent | None:
     events_db = EventsDatabase.instance()
     townhall_db = TownhallDatabase.instance()
     realms = Realms.instance()
 
-    ts = await get_katana_timestamp(config.env["KATANA_URL"])
-
     stored_event_row_ids = townhall_db.fetch_daily_townhall_tracker(realm_id=realm_id)
 
-    return events_db.fetch_most_relevant_event(realms.position_by_id(realm_id), ts, stored_event_row_ids)
+    return events_db.fetch_most_relevant_event(realms.position_by_id(realm_id), katana_time, stored_event_row_ids)
 
 
 def convert_dialogue_to_str(dialogue: list[DialogueSegment]) -> str:
@@ -42,9 +38,9 @@ def convert_dialogue_to_str(dialogue: list[DialogueSegment]) -> str:
 async def get_npcs_thoughts(
     realm_npcs: list[NpcEntity],
     most_important_event: StoredEvent | None,
-    embedding_source: str | None,
+    embedding_source: str,
     nl_formatter: LlmFormatter,
-    client: AsyncOpenAiClient,
+    client: LlmClient,
     townhall_db: TownhallDatabase,
 ) -> list[str]:
     thoughts = []
@@ -80,13 +76,11 @@ async def store_townhall_information(
     user_input: str,
     plotline: str,
     townhall_db: TownhallDatabase,
-    llm_client: AsyncOpenAiClient,
-    config: BootConfig,
+    llm_client: LlmClient,
+    katana_time: int,
 ) -> int:
-    ts = await get_katana_timestamp(config.env["KATANA_URL"])
-
     dialogue = convert_dialogue_to_str(townhall["dialogue"])  # type: ignore[index]
-    row_id = townhall_db.insert_townhall_discussion(realm_id, dialogue, user_input, ts)
+    row_id = townhall_db.insert_townhall_discussion(realm_id, dialogue, user_input, katana_time)
 
     for thought in townhall["thoughts"]:  # type: ignore[index]
         thought_embedding = await llm_client.request_embedding(

@@ -5,10 +5,10 @@ from typing import Any, cast
 import aiohttp
 from starknet_py.cairo.felt import decode_shortstring
 
-from overlore.graphql.parsing import parse_event
-from overlore.graphql.query import Queries
-from overlore.jsonrpc.constants import ErrorCodes
+from overlore.errors import ErrorCodes
 from overlore.sqlite.events_db import EventsDatabase
+from overlore.torii.parsing import parse_event
+from overlore.torii.query import Queries
 from overlore.types import NpcEntity, ToriiDataNode
 from overlore.utils import unpack_characteristics
 
@@ -16,8 +16,8 @@ logger = logging.getLogger("overlore")
 
 
 class ToriiClient:
-    def __init__(self, torii_url: str, events_db: EventsDatabase) -> None:
-        self.torii_url = torii_url
+    def __init__(self, url: str, events_db: EventsDatabase) -> None:
+        self.url = url
         self.events_db = events_db
 
     async def boot_sync(self) -> None:
@@ -75,7 +75,7 @@ class ToriiClient:
 
         return int(query_result["realmModels"]["edges"][0]["node"]["realm_id"], base=16)
 
-    async def get_realm_owner_wallet_address(self, realm_entity_id: int):
+    async def get_realm_owner_wallet_address(self, realm_entity_id: int) -> str:
         data = await self.run_torii_query(Queries.OWNER.value.format(entity_id=realm_entity_id))
 
         if len(data["ownerModels"]["edges"]) == 0:
@@ -83,20 +83,20 @@ class ToriiClient:
 
         realm_owner_address = data["ownerModels"]["edges"][0]["node"]["address"]
 
-        return realm_owner_address
+        return cast(str, realm_owner_address)
 
     async def run_torii_query(self, query: str) -> Any:
-        data = None
         try:
             headers = {"Content-Type": "application/json"}
             async with aiohttp.ClientSession() as session:
                 async with session.post(
-                    url=self.torii_url, headers=headers, data=json.dumps({"query": query}), timeout=1000
+                    url=self.url, headers=headers, data=json.dumps({"query": query}), timeout=1000
                 ) as response:
-                    response = await response.json()
-            data = response["data"]
+                    json_response = cast(dict[str, Any], await response.json())
+            data = json_response["data"]
         except KeyError as e:
             logger.exception("KeyError accessing %s in JSON response: %s", e, response)
-        if data is None:
-            raise RuntimeError(f"Failed to run query {response['errors']}")
-        return data
+        except aiohttp.ClientConnectorError as err:
+            raise RuntimeError(ErrorCodes.TORII_UNAVAILABLE) from err
+        else:
+            return data

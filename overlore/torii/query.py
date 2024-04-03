@@ -1,7 +1,7 @@
 import logging
 from enum import Enum
 
-from overlore.graphql.constants import EventType
+from overlore.torii.constants import EventType
 
 logger = logging.getLogger("overlore")
 

@@ -109,7 +109,7 @@ class TownhallDatabase(BaseDatabase):
         )
 
         if last_ts:
-            return last_ts[0][0]
+            return cast(int, last_ts[0][0])
         return -1
 
     def insert_plotline(self, realm_id: int, plotline: str) -> int:

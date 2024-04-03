@@ -6,23 +6,22 @@ import signal
 from types import FrameType
 
 import responses
-from jsonrpcserver import Success
 
 from overlore.config import BootConfig, global_config
-from overlore.graphql.client import ToriiClient
-from overlore.graphql.subscriptions import (
-    OnEventCallbackType,
-    Subscriptions,
-    process_received_event,
-    process_received_spawn_npc_event,
-    use_torii_subscription,
-)
 from overlore.jsonrpc.methods.generate_town_hall.generate_town_hall import generate_town_hall
 from overlore.jsonrpc.setup import launch_json_rpc_server
 from overlore.llm.constants import GUARD_RAILS_HUB_URL
 from overlore.sqlite.events_db import EventsDatabase
 from overlore.sqlite.npc_db import NpcDatabase
 from overlore.sqlite.townhall_db import TownhallDatabase
+from overlore.torii.client import ToriiClient
+from overlore.torii.subscriptions import (
+    OnEventCallbackType,
+    Subscriptions,
+    process_received_event,
+    process_received_spawn_npc_event,
+    use_torii_subscription,
+)
 from overlore.townhall.mocks import MOCK_KATANA_RESPONSE, MOCK_VILLAGERS, with_mock_responses
 
 SUBSCRIPTIONS_WITH_CALLBACKS: list[tuple[Subscriptions, OnEventCallbackType]] = [
@@ -43,7 +42,7 @@ async def use_prompt_loop(config: BootConfig) -> None:
             txt = input("hit enter to generate townhall with realm_id 73 or enter realm_id\n")
             realm_id = 73 if len(txt) == 0 else int(txt)
             msg = f'{{"realm_id": {realm_id}, "order_id": 1, "npcs" : {json.dumps(MOCK_VILLAGERS)}}}'
-            res: Success = generate_town_hall(json.loads(msg), config=config)
+            res = await generate_town_hall(json.loads(msg), config=config)
             logger.debug(res)
 
 
@@ -61,7 +60,7 @@ def handle_sigint(_signum: int, _frame: FrameType | None) -> None:
     asyncio.run_coroutine_threadsafe(cancel_all_tasks(), loop=asyncio.get_running_loop())
 
 
-def setup(config: BootConfig):
+def setup(config: BootConfig) -> BootConfig:
     signal.signal(signal.SIGINT, handle_sigint)
 
     if config.mock is True:
@@ -89,7 +88,7 @@ async def launch_services(config: BootConfig) -> None:
 
 
 async def start(config: BootConfig) -> None:
-    setup(config=config)
+    config = setup(config=config)
 
     if config.prompt:
         global SUBSCRIPTIONS_WITH_CALLBACKS
@@ -98,7 +97,7 @@ async def start(config: BootConfig) -> None:
         await asyncio.wait_for(task, None)
         return
 
-    torii_client = ToriiClient(torii_url=config.env["TORII_GRAPHQL"], events_db=EventsDatabase.instance())
+    torii_client = ToriiClient(url=config.env["TORII_GRAPHQL"], events_db=EventsDatabase.instance())
     await torii_client.boot_sync()
 
     if config.mock is True:

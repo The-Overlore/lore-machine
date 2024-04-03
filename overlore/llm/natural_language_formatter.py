@@ -1,11 +1,11 @@
 from typing import Any, cast
 
+from overlore.constants import ROLES, SEX
 from overlore.eternum.constants import Realms, ResourceIds, Winner
 from overlore.eternum.types import ResourceAmounts
 from overlore.llm.constants import (
     AGENT_TEMPLATE,
 )
-from overlore.npcs.constants import ROLES, SEX
 from overlore.sqlite.constants import EventType
 from overlore.sqlite.types import StoredEvent
 from overlore.types import NpcEntity
