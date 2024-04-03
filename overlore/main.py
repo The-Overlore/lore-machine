@@ -97,7 +97,7 @@ async def start(config: BootConfig) -> None:
         await asyncio.wait_for(task, None)
         return
 
-    torii_client = ToriiClient(url=config.env["TORII_GRAPHQL"], events_db=EventsDatabase.instance())
+    torii_client = ToriiClient(url=config.env["TORII_GRAPHQL"])
     await torii_client.boot_sync()
 
     if config.mock is True:

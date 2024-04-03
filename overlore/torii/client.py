@@ -16,9 +16,9 @@ logger = logging.getLogger("overlore")
 
 
 class ToriiClient:
-    def __init__(self, url: str, events_db: EventsDatabase) -> None:
+    def __init__(self, url: str) -> None:
+        self.events_db = EventsDatabase.instance()
         self.url = url
-        self.events_db = events_db
 
     async def boot_sync(self) -> None:
         self.store_synced_events(

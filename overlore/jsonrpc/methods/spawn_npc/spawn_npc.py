@@ -8,7 +8,6 @@ from overlore.config import global_config
 from overlore.jsonrpc.methods.spawn_npc.response import MethodParams, NpcProfileBuilder
 from overlore.katana.client import KatanaClient
 from overlore.llm.client import AsyncOpenAiClient
-from overlore.sqlite.events_db import EventsDatabase
 from overlore.torii.client import ToriiClient
 from overlore.types import NpcProfile
 
@@ -33,7 +32,7 @@ async def spawn_npc(params: MethodParams) -> Result:
 async def handle_regular_flow(params: MethodParams) -> Result:
     guard = Guard.from_pydantic(output_class=NpcProfile, num_reasks=1)
     llm_client = AsyncOpenAiClient()
-    torii_client = ToriiClient(url=global_config.env["TORII_GRAPHQL"], events_db=EventsDatabase.instance())
+    torii_client = ToriiClient(url=global_config.env["TORII_GRAPHQL"])
     katana_client = KatanaClient(url=global_config.env["KATANA_URL"])
     npc_profile_builder = NpcProfileBuilder(
         llm_client=llm_client,
