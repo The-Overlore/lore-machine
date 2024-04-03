@@ -1,11 +1,11 @@
 from typing import Any, cast
 
+from overlore.constants import ROLES, SEX
 from overlore.eternum.constants import Realms, ResourceIds, Winner
 from overlore.eternum.types import ResourceAmounts
 from overlore.llm.constants import (
     AGENT_TEMPLATE,
 )
-from overlore.npcs.constants import ROLES, SEX
 from overlore.sqlite.constants import EventType
 from overlore.sqlite.types import StoredEvent
 from overlore.types import NpcEntity
@@ -64,7 +64,7 @@ class LlmFormatter:
         type_specific_data: dict[Any, Any] = str_to_json(str(event[8]))
         resources_taker = self._resources_to_nl(type_specific_data["resources_taker"])
         resources_maker = self._resources_to_nl(type_specific_data["resources_maker"])
-        nl = f"Trade happened: between {active_realm_name} and {passive_realm_name} realms. "
+        nl = f"Trade happened: between the realms of {active_realm_name} and {passive_realm_name}. "
         nl += f"{active_realm_name} will get {resources_taker}. "
         nl += f"{passive_realm_name} will get {resources_maker}. "
         return nl

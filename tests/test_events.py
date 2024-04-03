@@ -1,7 +1,7 @@
 import pytest
 
-from overlore.graphql.subscriptions import process_received_event
 from overlore.sqlite.events_db import EventsDatabase
+from overlore.torii.subscriptions import process_received_event
 
 
 def init_db() -> EventsDatabase:

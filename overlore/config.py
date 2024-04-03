@@ -81,8 +81,6 @@ class BootConfig:
         self.prompt = args.prompt
 
     def _load_env_variables(self) -> None:
-        self._get_args()
-
         dotenv_path = ".env.production" if self.prod is True else ".env.development"
         load_dotenv(dotenv_path=dotenv_path)
         keys = EnvVariables.__annotations__.keys()
@@ -90,3 +88,6 @@ class BootConfig:
             self.env = cast(EnvVariables, {var: os.environ[var] for var in keys})
         except KeyError as e:
             raise RuntimeError("Failed to gather env variables from .env: ", e) from e
+
+
+global_config = BootConfig()
