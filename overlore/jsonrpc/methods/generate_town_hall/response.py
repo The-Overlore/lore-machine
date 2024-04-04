@@ -62,6 +62,8 @@ class TownHallBuilder:
         user_input = params["user_input"].strip()  # type: ignore[index]
         plotline = townhall_db.fetch_plotline_by_realm_id(realm_id=realm_id)
 
+        realms.order_by_order_id(params["order_id"]) + ":" + realms.order_statement_by_order_id(params["order_id"])  # type: ignore[index]
+
         realm_npcs = await self.torii_client.get_npcs_by_realm_entity_id(realm_entity_id)
         if len(realm_npcs) < 2:
             raise RuntimeError(ErrorCodes.LACK_OF_NPCS)
@@ -124,21 +126,19 @@ class TownHallBuilder:
             else ""
         )
 
+        user_input_string = USER_INPUT_STRING.format(user_input=realm["user_input"]) if realm["user_input"] else ""
+
         current_plotline_string = (
             CURRENT_PLOTLINE_STRING.format(plotline=realm["plotline"]) if realm["plotline"] else ""
         )
 
-        user_input_string = USER_INPUT_STRING.format(user_input=realm["user_input"]) if realm["user_input"] else ""
-
-        (
+        thoughts_string = (
             RELEVANT_THOUGHTS_STRING.format(thoughts=realm["npcs_thoughts_on_context"])
             if realm["npcs_thoughts_on_context"]
             else ""
         )
 
         npcs_nl = self.formater.npcs_to_nl(realm["realm_npcs"])
-
-        thoughts_string = RELEVANT_THOUGHTS_STRING.format(thoughts=realm["npcs_thoughts_on_context"])
 
         prompt = TOWNHALL_USER_STRING.format(
             realm_name=realm["realm_name"],

@@ -15,4 +15,4 @@ class ChatCompletionModel(Enum):
 
 GUARD_RAILS_HUB_URL = "https://hty0gc1ok3.execute-api.us-east-1.amazonaws.com/v1/traces"
 
-AGENT_TEMPLATE = """{name} is a {age} year old {sex} {role}. He/she is considered {character_trait}."""
+AGENT_TEMPLATE = """{name} is a {age} year old {sex} {role}. He/she is considered {character_trait}. Realm of origin: {origin_realm}"""

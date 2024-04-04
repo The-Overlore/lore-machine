@@ -72,7 +72,7 @@ class NpcProfile(BaseModel):
 
     full_name: str = Field(
         description="Name of the NPC. Don't use common words in the name such as Wood",
-        json_schema_extra={"validators": [ValidLength(min=5, max=31), TwoWords(on_fail="reask")]},
+        json_schema_extra={"validators": [ValidLength(max=31), TwoWords(on_fail="reask")]},
     )
 
     description: str = Field(
@@ -99,7 +99,7 @@ class Townhall(BaseModel):
         description="""Discussion held by the NPCs, structured to ensure each NPC speaks twice, revealing their viewpoints and emotional reactions to the discussion topics."""
     )
     thoughts: list[Thought] = Field(
-        description="""Collection of NPCs' thoughts post-discussion, highlighting their reflective sentiments and emotional responses to the topics covered."""
+        description="""Collection of NPCs' thoughts post-discussion, highlighting their inner sentiments and opinions about the topics covered."""
     )
     plotline: str = Field(
         description=(
