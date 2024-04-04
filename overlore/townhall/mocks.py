@@ -159,7 +159,6 @@ async def with_mock_responses(func: Callable, config: BootConfig, *args: Any) ->
             rsps.add(rsps.POST, config.env["KATANA_URL"], body=json.dumps(MOCK_KATANA_RESPONSE), status=200)
             rsps.add_passthru(GUARD_RAILS_HUB_URL)
             await func(*args)
-    except AssertionError as e:
-        print(e)
+    except AssertionError:
         # if we don't do all requests to the added urls, responses lib throws an error
         pass

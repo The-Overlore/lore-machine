@@ -117,3 +117,10 @@ def process_received_spawn_npc_event(event: ToriiEmittedEvent) -> int:
         logger.info(f"Failed to delete npc_profile entry for realm_entity_id {realm_entity_id}")
 
     return row_id
+
+
+TORII_SUBSCRIPTIONS: list[tuple[Subscriptions, OnEventCallbackType]] = [
+    (Subscriptions.COMBAT_OUTCOME, process_received_event),
+    (Subscriptions.ORDER_ACCEPTED, process_received_event),
+    (Subscriptions.NPC_SPAWNED, process_received_spawn_npc_event),
+]

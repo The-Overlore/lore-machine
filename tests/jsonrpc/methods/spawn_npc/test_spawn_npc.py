@@ -1,4 +1,5 @@
 import json
+import threading
 
 import pytest
 from guardrails import Guard
@@ -7,11 +8,15 @@ from starknet_py.hash.utils import compute_hash_on_elements, verify_message_sign
 
 from overlore.errors import ErrorCodes
 from overlore.jsonrpc.methods.spawn_npc.response import NpcProfileBuilder
+from overlore.jsonrpc.methods.spawn_npc.spawn_npc import Context, spawn_npc
+from overlore.jsonrpc.setup import launch_json_rpc_server
+from overlore.jsonrpc.types import JsonRpcMethod
 from overlore.sqlite.events_db import EventsDatabase
 from overlore.sqlite.npc_db import NpcDatabase
 from overlore.sqlite.townhall_db import TownhallDatabase
 from overlore.types import NpcProfile
-from tests.jsonrpc.types import MockKatanaClient, MockLlmClient, MockToriiClient
+from tests.jsonrpc.types import MockBootConfig, MockKatanaClient, MockLlmClient, MockToriiClient
+from tests.jsonrpc.utils import call_json_rpc_server, run_async_function
 
 
 @pytest.mark.asyncio
@@ -47,6 +52,39 @@ async def test_spawn_npc_valid_signature(init_npc_profile_builder):
     signature = [int(elem) for elem in response["signature"]]
     msg_hash = compute_hash_on_elements(msg)
     assert verify_message_signature(msg_hash=msg_hash, signature=signature, public_key=int(TEST_PUBLIC_KEY, base=16))
+
+
+@pytest.mark.asyncio
+async def test_spawn_npc_load(init_load_tester_config):
+    [boot_config, json_rpc_method] = init_load_tester_config
+
+    launch_json_rpc_server(config=boot_config, methods=[json_rpc_method])
+
+    NUM_THREADS = 20
+
+    threads = []
+    results = []
+    url = f"http://{boot_config.env['HOST_ADDRESS']}:{boot_config.env['HOST_PORT']}"
+    for _i in range(NUM_THREADS):
+        thread = threading.Thread(
+            target=run_async_function,
+            args=(
+                call_json_rpc_server,
+                url,
+                "spawn_npc",
+                {"realm_entity_id": 1},
+                results,
+            ),
+        )
+        threads.append(thread)
+        thread.start()
+
+    for thread in threads:
+        thread.join()
+
+    for result in results:
+        npc_profile = json.loads(result["result"])["npc"]
+        assert npc_profile == valid_npc_profile
 
 
 @pytest.mark.asyncio
@@ -99,6 +137,39 @@ def init_npc_profile_builder():
     )
 
     yield npc_profile_builder
+    npc_db.close_conn()
+    events_db.close_conn()
+    townhall_db.close_conn()
+
+
+@pytest.fixture
+def init_load_tester_config():
+    npc_db = NpcDatabase.instance().init(":memory:")
+    events_db = EventsDatabase.instance().init(":memory:")
+    townhall_db = TownhallDatabase.instance().init(":memory:")
+
+    mock_llm_client = MockLlmClient(
+        embedding_return=valid_embedding, promp_completion_return=json.dumps(valid_npc_profile)
+    )
+    mock_torii_client = MockToriiClient()
+    mock_katana_client = MockKatanaClient()
+    guard = Guard.from_pydantic(output_class=NpcProfile, num_reasks=0)
+
+    config = MockBootConfig()
+
+    json_rpc_method = JsonRpcMethod(
+        method=spawn_npc,
+        context=Context(
+            guard=guard,
+            llm_client=mock_llm_client,
+            torii_client=mock_torii_client,
+            katana_client=mock_katana_client,
+            lore_machine_pk=TEST_PRIVATE_KEY,
+        ),
+    )
+
+    yield [config, json_rpc_method]
+
     npc_db.close_conn()
     events_db.close_conn()
     townhall_db.close_conn()

@@ -42,7 +42,6 @@ class BootConfig:
     world_db: str
     prod: bool
     mock: bool
-    prompt: bool
 
     # .env variables
     env: EnvVariables
@@ -61,11 +60,6 @@ class BootConfig:
             help="Use mock data for GPT response instead of querying the API. (saves API calls)",
         )
         parser.add_argument(
-            "--prompt",
-            action="store_true",
-            help="Run lore-machine in a prompt testing loop.",
-        )
-        parser.add_argument(
             "--prod",
             action="store_true",
             help="Run lore-machine in production mode.",
@@ -78,7 +72,6 @@ class BootConfig:
         self.world_db = args.world_db
         self.prod = args.prod
         self.mock = args.mock
-        self.prompt = args.prompt
 
     def _load_env_variables(self) -> None:
         dotenv_path = ".env.production" if self.prod is True else ".env.development"
@@ -88,6 +81,3 @@ class BootConfig:
             self.env = cast(EnvVariables, {var: os.environ[var] for var in keys})
         except KeyError as e:
             raise RuntimeError("Failed to gather env variables from .env: ", e) from e
-
-
-global_config = BootConfig()
