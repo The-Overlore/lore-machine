@@ -1,53 +1,24 @@
 import asyncio
-import json
 import logging
 import os
 import signal
 from types import FrameType
 
-import responses
-
-from overlore.config import BootConfig, global_config
-from overlore.jsonrpc.methods.generate_town_hall.generate_town_hall import generate_town_hall
+from overlore.config import BootConfig
+from overlore.jsonrpc.constants import setup_json_rpc_methods
 from overlore.jsonrpc.setup import launch_json_rpc_server
-from overlore.llm.constants import GUARD_RAILS_HUB_URL
 from overlore.sqlite.events_db import EventsDatabase
 from overlore.sqlite.npc_db import NpcDatabase
 from overlore.sqlite.townhall_db import TownhallDatabase
 from overlore.torii.client import ToriiClient
-from overlore.torii.subscriptions import (
-    OnEventCallbackType,
-    Subscriptions,
-    process_received_event,
-    process_received_spawn_npc_event,
-    use_torii_subscription,
-)
-from overlore.townhall.mocks import MOCK_KATANA_RESPONSE, MOCK_VILLAGERS, with_mock_responses
-
-SUBSCRIPTIONS_WITH_CALLBACKS: list[tuple[Subscriptions, OnEventCallbackType]] = [
-    (Subscriptions.COMBAT_OUTCOME, process_received_event),
-    (Subscriptions.ORDER_ACCEPTED, process_received_event),
-    (Subscriptions.NPC_SPAWNED, process_received_spawn_npc_event),
-]
+from overlore.torii.subscriptions import TORII_SUBSCRIPTIONS, use_torii_subscription
+from overlore.townhall.mocks import with_mock_responses
 
 logger = logging.getLogger("overlore")
 
 
-async def use_prompt_loop(config: BootConfig) -> None:
-    mock_response = json.dumps(MOCK_KATANA_RESPONSE)
-    with responses.RequestsMock() as rsps:
-        rsps.add(rsps.POST, config.env["KATANA_URL"], body=mock_response, status=200)
-        rsps.add_passthru(GUARD_RAILS_HUB_URL)
-        while True:
-            txt = input("hit enter to generate townhall with realm_id 73 or enter realm_id\n")
-            realm_id = 73 if len(txt) == 0 else int(txt)
-            msg = f'{{"realm_id": {realm_id}, "order_id": 1, "npcs" : {json.dumps(MOCK_VILLAGERS)}}}'
-            res = await generate_town_hall(json.loads(msg), config=config)
-            logger.debug(res)
-
-
 async def cancel_all_tasks() -> None:
-    subscriptions_names = [sub.name for (sub, _) in SUBSCRIPTIONS_WITH_CALLBACKS]
+    subscriptions_names = [sub.name for (sub, _) in TORII_SUBSCRIPTIONS]
     tasks = [task for task in asyncio.all_tasks() if task.get_name() in subscriptions_names]
     for task in tasks:
         logger.info(f"Cancelling task: {task.get_name()}")
@@ -60,8 +31,10 @@ def handle_sigint(_signum: int, _frame: FrameType | None) -> None:
     asyncio.run_coroutine_threadsafe(cancel_all_tasks(), loop=asyncio.get_running_loop())
 
 
-def setup(config: BootConfig) -> BootConfig:
+def setup() -> BootConfig:
     signal.signal(signal.SIGINT, handle_sigint)
+
+    config = BootConfig()
 
     if config.mock is True:
         EventsDatabase.instance().init(":memory:")
@@ -78,24 +51,16 @@ def setup(config: BootConfig) -> BootConfig:
 
 
 async def launch_services(config: BootConfig) -> None:
-    launch_json_rpc_server(config=config)
+    json_rpc_methods = setup_json_rpc_methods(config=config)
+    launch_json_rpc_server(methods=json_rpc_methods, config=config)
 
     logger.info(f"Starting JSON-RPC server on {config.env['HOST_ADDRESS']}:{config.env['HOST_PORT']}")
 
-    await use_torii_subscription(
-        torii_service_endpoint=config.env["TORII_WS"], callback_and_subs=SUBSCRIPTIONS_WITH_CALLBACKS
-    )
+    await use_torii_subscription(torii_service_endpoint=config.env["TORII_WS"], callback_and_subs=TORII_SUBSCRIPTIONS)
 
 
-async def start(config: BootConfig) -> None:
-    config = setup(config=config)
-
-    if config.prompt:
-        global SUBSCRIPTIONS_WITH_CALLBACKS
-        SUBSCRIPTIONS_WITH_CALLBACKS = [(Subscriptions.NONE, use_prompt_loop)]  # type: ignore[list-item]
-        task = asyncio.create_task(use_prompt_loop(config=config))
-        await asyncio.wait_for(task, None)
-        return
+async def start() -> None:
+    config = setup()
 
     torii_client = ToriiClient(url=config.env["TORII_GRAPHQL"])
     await torii_client.boot_sync()
@@ -107,7 +72,7 @@ async def start(config: BootConfig) -> None:
 
 
 def main() -> None:
-    asyncio.run(start(config=global_config))
+    asyncio.run(start())
 
 
 if __name__ == "__main__":

@@ -67,3 +67,9 @@ class MockToriiClient:
         if self.force_fail:
             raise RuntimeError(ErrorCodes.TORII_UNAVAILABLE)
         return "0xDEADBEEF"
+
+
+class MockBootConfig:
+    def __init__(self) -> None:
+        self.env = {"HOST_ADDRESS": "localhost", "HOST_PORT": "8766"}
+        pass

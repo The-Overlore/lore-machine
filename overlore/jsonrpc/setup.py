@@ -7,18 +7,61 @@ from aiohttp_cors import setup as cors_setup
 from jsonrpcserver import async_dispatch
 
 from overlore.config import BootConfig
-from overlore.jsonrpc.methods.generate_town_hall.generate_town_hall import generate_town_hall
-from overlore.jsonrpc.methods.spawn_npc.spawn_npc import spawn_npc
+from overlore.jsonrpc.types import JsonRpcMethod
+
+methods_key: web.AppKey = web.AppKey(name="methods", t=JsonRpcMethod)
 
 
-async def handle(request: web.Request) -> web.Response:
-    return web.Response(text=await async_dispatch(await request.text()), content_type="application/json")
+async def handle_http_request(request: web.Request) -> web.Response:
+    methods = request.app[methods_key]
+
+    dispatch_methods = {f"{method['method'].__name__}": method["method"] for method in methods}
+
+    request_as_json = await request.json()
+
+    method_called = next(filter(lambda method: method["method"].__name__ == request_as_json["method"], methods), None)
+
+    if method_called is None:
+        return web.Response(status=404)
+
+    return web.Response(
+        text=await async_dispatch(
+            await request.text(),
+            methods=dispatch_methods,
+            context=method_called["context"],
+        ),
+        content_type="application/json",
+    )
 
 
-def create_aiohttp_server() -> web.AppRunner:
+def launch_json_rpc_server(methods: list[JsonRpcMethod], config: BootConfig) -> None:
+    json_rpc_thread = threading.Thread(
+        target=launch_json_rpc_server_loop,
+        args=(
+            create_aiohttp_server(methods=methods),
+            config,
+        ),
+    )
+    json_rpc_thread.daemon = True
+
+    json_rpc_thread.start()
+
+
+def launch_json_rpc_server_loop(runner: web.AppRunner, config: BootConfig) -> None:
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(runner.setup())
+    site = web.TCPSite(runner, config.env["HOST_ADDRESS"], int(config.env["HOST_PORT"]))
+    loop.run_until_complete(site.start())
+    loop.run_forever()
+
+
+def create_aiohttp_server(methods: list[JsonRpcMethod]) -> web.AppRunner:
     app = web.Application()
 
-    routes = [web.post("/", handle)]
+    app[methods_key] = methods
+
+    routes = [web.post("/", handle_http_request)]
     app.router.add_routes(routes)
     cors = cors_setup(
         app,
@@ -36,29 +79,3 @@ def create_aiohttp_server() -> web.AppRunner:
 
     runner = web.AppRunner(app)
     return runner
-
-
-def launch_json_rpc_server_loop(runner: web.AppRunner, config: BootConfig) -> None:
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    loop.run_until_complete(runner.setup())
-    site = web.TCPSite(runner, config.env["HOST_ADDRESS"], int(config.env["HOST_PORT"]))
-    loop.run_until_complete(site.start())
-    loop.run_forever()
-
-
-def launch_json_rpc_server(config: BootConfig) -> None:
-    json_rpc_thread = threading.Thread(
-        target=launch_json_rpc_server_loop,
-        args=(
-            create_aiohttp_server(),
-            config,
-        ),
-    )
-    json_rpc_thread.daemon = True
-
-    json_rpc_thread.start()
-
-
-generate_town_hall
-spawn_npc

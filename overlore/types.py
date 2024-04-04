@@ -1,14 +1,16 @@
 # mypy: disable-error-code="call-arg"
+import warnings
 from enum import Enum
 from json.encoder import JSONEncoder
 from typing import Any, Optional, TypedDict
 
-from guardrails.validators import TwoWords, ValidChoices, ValidLength, ValidRange
-from pydantic import BaseModel, Field
+warnings.simplefilter(action="ignore", category=FutureWarning)
+from guardrails.validators import TwoWords, ValidChoices, ValidLength, ValidRange  # noqa: E402
+from pydantic import BaseModel, Field  # noqa: E402
 
-from overlore.constants import ROLES
-from overlore.eternum.types import RealmPosition
-from overlore.sqlite.constants import EventType
+from overlore.constants import ROLES  # noqa: E402
+from overlore.eternum.types import RealmPosition  # noqa: E402
+from overlore.sqlite.constants import EventType  # noqa: E402
 
 roles_str = ", ".join([f"{index} for {role}" for index, role in enumerate(ROLES)])
 
@@ -42,28 +44,35 @@ class ParsedEvent(TypedDict):
 
 
 class Characteristics(BaseModel):
-    age: int = Field(description="Age of the character, between 15 and 65", validators=ValidRange(min=15, max=65))
+    age: int = Field(
+        description="Age of the character, between 15 and 65",
+        json_schema_extra={"validators": ValidRange(min=15, max=65)},
+    )
     role: int = Field(
         description=f"Job of the NPC. {roles_str}",
-        validators=[ValidChoices(choices=[index for index, role in enumerate(ROLES)], on_fail="reask")],
+        json_schema_extra={
+            "validators": [ValidChoices(choices=[index for index, role in enumerate(ROLES)], on_fail="reask")]
+        },
     )
     sex: int = Field(
         description="Sex of the NPC. (0 for male, 1 for female)",
-        validators=[ValidChoices(choices=[0, 1], on_fail="reask")],
+        json_schema_extra={"validators": [ValidChoices(choices=[0, 1], on_fail="reask")]},
     )
 
 
 class NpcProfile(BaseModel):
     character_trait: str = Field(
         description="Trait of character that defines the NPC. One word max.",
-        validators=[
-            ValidLength(max=31, on_fail="fix"),
-        ],
+        json_schema_extra={
+            "validators": [
+                ValidLength(max=31, on_fail="fix"),
+            ]
+        },
     )
 
     full_name: str = Field(
-        description='Name of the NPC. Don\'t use common words in the name such as "Wood"',
-        validators=[ValidLength(min=5, max=31), TwoWords(on_fail="reask")],
+        description="Name of the NPC. Don't use common words in the name such as Wood",
+        json_schema_extra={"validators": [ValidLength(min=5, max=31), TwoWords(on_fail="reask")]},
     )
 
     description: str = Field(
