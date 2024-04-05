@@ -4,7 +4,7 @@ import logging
 from sqlite3 import Connection
 from typing import Any, cast
 
-from overlore.eternum.constants import Realms
+from overlore.eternum.realms import Realms
 from overlore.eternum.types import RealmPosition
 from overlore.sqlite.base_db import A_DISTANCE, A_TIME, BaseDatabase, average, decay_function
 from overlore.sqlite.types import StoredEvent

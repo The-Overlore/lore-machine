@@ -2,15 +2,15 @@ import json
 from typing import Any, cast
 
 from overlore.constants import ROLES, SEX
-from overlore.eternum.constants import Realms, ResourceIds, Winner
-from overlore.eternum.types import ResourceAmounts
+from overlore.eternum.realms import Realms
+from overlore.eternum.types import ResourceAmounts, Winner
 from overlore.llm.constants import (
     AGENT_TEMPLATE,
 )
 from overlore.sqlite.constants import EventType
 from overlore.sqlite.types import StoredEvent
 from overlore.types import NpcEntity
-from overlore.utils import get_enum_name_by_value
+from overlore.utils import get_ressource_name_by_id, str_to_json
 
 
 class LlmFormatter:
@@ -18,7 +18,7 @@ class LlmFormatter:
         resources_strings: list[str] = []
         for resource in resources:
             resource_str = str(resource["amount"])
-            resource_str += " " + get_enum_name_by_value(ResourceIds, resource["resource_type"])
+            resource_str += " " + get_ressource_name_by_id(resource["resource_type"])
             resources_strings.append(resource_str)
         return ", ".join(resources_strings)
 

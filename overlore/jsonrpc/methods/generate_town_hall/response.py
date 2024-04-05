@@ -6,7 +6,8 @@ from typing import TypedDict, cast
 from openai import BaseModel
 
 from overlore.errors import ErrorCodes
-from overlore.eternum.constants import DAY_IN_SECONDS, Realms
+from overlore.eternum.constants import DAY_IN_SECONDS
+from overlore.eternum.realms import Realms
 from overlore.jsonrpc.methods.generate_town_hall.constant import (
     THOUGHTS_SYSTEM_STRING,
     TOWNHALL_SYSTEM_STRING,
@@ -55,7 +56,7 @@ class TownHallBuilder:
         town_hall_guard: AsyncGuard,
         dialogue_thoughts_guard: AsyncGuard,
     ):
-        self.formater: LlmFormatter = LlmFormatter()
+        self.formatter: LlmFormatter = LlmFormatter()
         self.llm_client = llm_client
         self.torii_client = torii_client
         self.katana_client = katana_client
@@ -154,7 +155,7 @@ class TownHallBuilder:
 
         npc_memories = "\n".join(realm["npcs_thoughts_on_context"])
 
-        npcs_nl = self.formater.npcs_to_nl(realm["realm_npcs"])
+        npcs_nl = self.formatter.npcs_to_nl(realm["realm_npcs"])
 
         date_time = datetime.fromtimestamp(katana_ts)
 
