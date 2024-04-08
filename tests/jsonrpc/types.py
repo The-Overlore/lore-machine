@@ -6,16 +6,20 @@ from overlore.types import NpcEntity
 
 
 class MockLlmClient(LlmClient):
-    def __init__(self, embedding_return: list[float], promp_completion_return: str) -> MockLlmClient:
+    def __init__(
+        self, embedding_return: list[float], prompt_completion_return: str, thoughts_completion_return: str = ""
+    ) -> MockLlmClient:
         self.embedding_return = embedding_return
-        self.promp_completion_return = promp_completion_return
-        pass
+        self.prompt_completion_return = prompt_completion_return
+        self.thoughts_completion_return = thoughts_completion_return
 
     async def request_embedding(self, input_str: str, *args, **kwargs) -> list[float]:
         return self.embedding_return
 
     async def request_prompt_completion(self, *args, **kwargs) -> str:
-        return self.promp_completion_return
+        if "response_format" in kwargs:
+            return self.thoughts_completion_return
+        return self.prompt_completion_return
 
 
 class MockKatanaClient:

@@ -1,11 +1,11 @@
 from __future__ import annotations
 
+import json
 import logging
 from enum import Enum
 from typing import TypedDict, cast
 
 from overlore.eternum.types import RealmPosition
-from overlore.utils import open_json_file
 
 DAY_IN_SECONDS: int = 24 * 60 * 60
 
@@ -185,9 +185,10 @@ class Realms:
         raise RuntimeError("Call instance() instead")
 
     def load_geodata(self, path: str) -> list[RealmGeodata]:
-        geodata_file = open_json_file(path)
-        features: list[RealmGeodata] = geodata_file["features"]
-        return features
+        with open(path) as file:
+            geodata_file = json.load(file)
+            features: list[RealmGeodata] = geodata_file["features"]
+            return features
 
     def init(self, path: str = "./data/realms_geodata.json") -> Realms:
         self.geodata = self.load_geodata(path)

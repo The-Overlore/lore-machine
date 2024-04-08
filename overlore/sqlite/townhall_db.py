@@ -33,12 +33,6 @@ class TownhallDatabase(BaseDatabase):
             );
         """,
         """
-            CREATE TABLE IF NOT EXISTS realm_plotline (
-                plotline TEXT,
-                realm_id INTEGER NOT NULL
-            );
-        """,
-        """
             CREATE TABLE IF NOT EXISTS npc_thought (
                 npc_entity_id INTEGER NOT NULL,
                 thought TEXT
@@ -68,25 +62,26 @@ class TownhallDatabase(BaseDatabase):
         self._init(path, self.EXTENSIONS, self.FIRST_BOOT_QUERIES, [], self._preload)
         return self
 
-    def query_cosine_similarity(self, query_embedding: list[float], npc_entity_id: int, limit: int = 1) -> StoredVector:
+    def query_cosine_similarity(
+        self, query_embedding: list[float], npc_entity_id: int, limit: int = 1
+    ) -> list[StoredVector]:
         if limit <= 0:
             raise ValueError("Limit must be higher than 0")
 
         query = """
-            SELECT vss.rowid, vss_cosine_similarity(?, embedding) AS similarity
-            FROM vss_npc_thought vss
-            INNER JOIN npc_thought t ON vss.rowid = t.rowid
-            WHERE t.npc_entity_id = ?
-            ORDER BY similarity DESC
+            SELECT vectorized_thought.rowid, vss_cosine_similarity(?, embedding) AS cos_similarity
+            FROM vss_npc_thought vectorized_thought
+            INNER JOIN npc_thought thought ON vectorized_thought.rowid = thought.rowid
+            WHERE thought.npc_entity_id = ?
+            ORDER BY cos_similarity DESC
             LIMIT ?;
         """
 
         values = (json.dumps(query_embedding), npc_entity_id, limit)
-
         res = self.execute_query(query, values)
         if not res:
             raise CosineSimilarityNotFoundError(f"No similar thought found for npc entity {npc_entity_id}")
-        return cast(StoredVector, res[0])
+        return cast(list[StoredVector], res)
 
     def insert_townhall_discussion(self, realm_id: int, discussion: str, townhall_input: str, ts: int) -> int:
         discussion = discussion.strip()
@@ -111,27 +106,6 @@ class TownhallDatabase(BaseDatabase):
         if last_ts:
             return cast(int, last_ts[0][0])
         return -1
-
-    def insert_plotline(self, realm_id: int, plotline: str) -> int:
-        return self._insert("INSERT INTO realm_plotline (plotline, realm_id) VALUES (?, ?);", (plotline, realm_id))
-
-    def fetch_plotline_by_realm_id(self, realm_id: int) -> str:
-        query = """
-            SELECT plotline FROM realm_plotline
-            WHERE realm_id = ?;
-        """
-        values = (realm_id,)
-
-        res = self.execute_query(query, values)
-        if len(res) == 0:
-            return ""
-        return cast(str, res[0][0])
-
-    def update_plotline(self, realm_id: int, new_plotline: str) -> int:
-        return self._update("UPDATE realm_plotline SET plotline = ? WHERE realm_id = ?;", (new_plotline, realm_id))
-
-    def delete_plotline_by_realm_id(self, realm_id: int) -> None:
-        self._delete("DELETE FROM realm_plotline WHERE realm_id = ?", (realm_id,))
 
     def insert_npc_thought(self, npc_entity_id: int, thought: str, thought_embedding: list[float]) -> int:
         added_row_id = self._insert(

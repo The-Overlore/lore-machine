@@ -81,13 +81,20 @@ def init_town_hall_builder():
     events_db = EventsDatabase.instance().init(":memory:")
     town_hall_db = TownhallDatabase.instance().init(":memory:")
 
-    mock_llm_client = MockLlmClient(embedding_return=valid_embedding, promp_completion_return=valid_dialogue)
+    mock_llm_client = MockLlmClient(
+        embedding_return=valid_embedding,
+        prompt_completion_return=valid_dialogue,
+        thoughts_completion_return=json.dumps(valid_thought, ensure_ascii=False),
+    )
     mock_torii_client = MockToriiClient()
     mock_katana_client = MockKatanaClient()
-    guard = Guard.from_pydantic(output_class=Townhall, num_reasks=0)
+    town_hall_guard = Guard.from_pydantic(output_class=Townhall, num_reasks=0)
 
     town_hall_builder = TownHallBuilder(
-        llm_client=mock_llm_client, torii_client=mock_torii_client, katana_client=mock_katana_client, guard=guard
+        llm_client=mock_llm_client,
+        torii_client=mock_torii_client,
+        katana_client=mock_katana_client,
+        town_hall_guard=town_hall_guard,
     )
 
     yield town_hall_builder
@@ -101,6 +108,13 @@ dialogue = [
     {"dialogue_segment": "Blabla", "full_name": "Julien Doré"},
 ]
 
-valid_dialogue = f"""{{"dialogue": {json.dumps(dialogue, ensure_ascii=False)},"thoughts": [{{"full_name": "Johny Bravo","value": "Thoughts about HooHaa"}},{{"full_name": "Julien Doré","value": "Thought about blabla"}}],"plotline": "Intriguing"}}"""
+valid_dialogue = f"""{{"dialogue": {json.dumps(dialogue, ensure_ascii=False)}}}"""
+
+valid_thought = {
+    "npcs": [
+        {"full_name": "Johny Bravo", "thoughts": ["Thoughts about HooHaa", "Second thought about HooHaa"]},
+        {"full_name": "Julien Doré", "thoughts": ["Thought about blabla", "Second thought about HooHaa"]},
+    ]
+}
 
 valid_embedding = [0.0, 0.1, 0.2]

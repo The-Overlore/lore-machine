@@ -31,10 +31,16 @@ class AsyncOpenAiClient(LlmClient):
         return response.data[0].embedding
 
     async def request_prompt_completion(self, input_str: str, *args: Any, **kwargs: Any) -> str:
-        if "instructions" not in kwargs:
+        print(args)
+        print(kwargs)
+        if "instructions" not in kwargs and "instructions" not in args:
             raise RuntimeError(ErrorCodes.LLM_VALIDATOR_ERROR)
-        instructions = kwargs["instructions"]
-        del kwargs["instructions"]
+        if "instructions" in kwargs:
+            instructions = kwargs["instructions"]
+            del kwargs["instructions"]
+        else:
+            instructions = args["instructions"]  # type: ignore[call-overload]
+            del args["instructions"]  # type: ignore[attr-defined]
         response = await self.client.chat.completions.create(
             *args,
             messages=[

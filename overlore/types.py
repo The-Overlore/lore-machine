@@ -75,8 +75,11 @@ class NpcProfile(BaseModel):
         json_schema_extra={"validators": [ValidLength(max=31), TwoWords(on_fail="reask")]},
     )
 
-    description: str = Field(
-        description="Description of the NPC",
+    backstory: str = Field(
+        description=(
+            "Backstory of the NPC. Gives information about his past and his personality. Make it 5 sentences long"
+            " minimum."
+        ),
     )
 
     characteristics: Characteristics = Field(description="Various characteristics")
@@ -87,26 +90,19 @@ class DialogueSegment(BaseModel):
     dialogue_segment: str = Field(description="The dialogue spoken by the NPC.")
 
 
-class Thought(BaseModel):
-    full_name: str = Field(description="Full name of the NPC expressing the thought.")
-    value: str = Field(
-        description="""The NPC's thoughts and feelings about the discussion, including nuanced emotional responses and sentiments towards the topics being discussed."""
-    )
-
-
 class Townhall(BaseModel):
     dialogue: list[DialogueSegment] = Field(
-        description="""Discussion held by the NPCs, structured to ensure each NPC speaks twice, revealing their viewpoints and emotional reactions to the discussion topics."""
+        description="""Discussion held by the NPCs. Do at least 10 exchanges between all the villagers."""
     )
-    thoughts: list[Thought] = Field(
-        description="""Collection of NPCs' thoughts post-discussion, highlighting their inner sentiments and opinions about the topics covered."""
-    )
-    plotline: str = Field(
-        description=(
-            "The central theme or main storyline that unfolds throughout the dialogue. Make it evolve from the plot"
-            " given as input"
-        )
-    )
+
+
+class NpcsAndThoughts(TypedDict):
+    thoughts: list[str]
+    full_name: str
+
+
+class DialogueThoughts(TypedDict):
+    npcs: list[NpcsAndThoughts]
 
 
 # Custom JSON Encoder that handles Enum types

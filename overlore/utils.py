@@ -1,4 +1,3 @@
-import json
 import logging
 from typing import Any, Sequence, cast
 
@@ -12,21 +11,6 @@ logger = logging.getLogger("overlore")
 
 U2_MASK: int = 0x3
 U8_MASK: int = 0xFF
-
-
-def str_to_json(message: str) -> Any:
-    try:
-        return json.loads(message)
-    except Exception as error:
-        logger.exception(f"invalid string: {error}")
-        raise
-
-
-def open_json_file(path: str) -> Any:
-    # Read the JSON data from the file
-    with open(path) as file:
-        file_contents = json.load(file)
-        return file_contents
 
 
 def get_enum_name_by_value(enum: Any, val: Any) -> str:

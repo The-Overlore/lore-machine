@@ -30,11 +30,6 @@ def generate_townhalls_for_realmid(db, realm_id, townhalls):
         db.insert_townhall_discussion(realm_id, item["discussion"], item["input"], item["ts"])
 
 
-def generate_plotlines(db):
-    for item in given_plots:
-        db.insert_plotline(item["realm_id"], "plot")
-
-
 def format_townhalls(townhalls) -> list:
     res = []
     for item in townhalls:

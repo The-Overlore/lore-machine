@@ -8,6 +8,5 @@ class RealmForPrompt(TypedDict):
     realm_name: str
     realm_npcs: list[NpcEntity]
     most_important_event: StoredEvent | None
-    plotline: str
     npcs_thoughts_on_context: list[str]
     user_input: str

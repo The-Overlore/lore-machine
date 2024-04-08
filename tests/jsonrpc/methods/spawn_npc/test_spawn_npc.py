@@ -122,7 +122,7 @@ def init_npc_profile_builder():
     townhall_db = TownhallDatabase.instance().init(":memory:")
 
     mock_llm_client = MockLlmClient(
-        embedding_return=valid_embedding, promp_completion_return=json.dumps(valid_npc_profile)
+        embedding_return=valid_embedding, prompt_completion_return=json.dumps(valid_npc_profile)
     )
     mock_torii_client = MockToriiClient()
     mock_katana_client = MockKatanaClient()
@@ -149,7 +149,7 @@ def init_load_tester_config():
     townhall_db = TownhallDatabase.instance().init(":memory:")
 
     mock_llm_client = MockLlmClient(
-        embedding_return=valid_embedding, promp_completion_return=json.dumps(valid_npc_profile)
+        embedding_return=valid_embedding, prompt_completion_return=json.dumps(valid_npc_profile)
     )
     mock_torii_client = MockToriiClient()
     mock_katana_client = MockKatanaClient()
@@ -182,9 +182,13 @@ valid_embedding = [0.0, 0.1, 0.2]
 valid_npc_profile = {
     "character_trait": "Generous",
     "full_name": "Seraphina Rivertree",
-    "description": (
+    "backstory": (
         "Seraphina Rivertree is known for her unwavering generosity, always willing to help those in need without"
-        " expecting anything in return."
+        " expecting anything in return. She's very pretty and young and she doesn't care about other people LOL. She's"
+        " just doing her own thang brah. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor"
+        " incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco"
+        " laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit"
+        " esse cillum"
     ),
     "characteristics": {"age": 27, "role": 3, "sex": 1},
 }

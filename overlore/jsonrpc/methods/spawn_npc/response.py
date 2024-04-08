@@ -79,12 +79,12 @@ class NpcProfileBuilder:
         return prompt
 
     async def request_npc_profile_generation_with_guard(self, prompt: str) -> NpcProfile:
-        _, validated_response, *_ = await self.guard(
+        non_valid, validated_response, *_ = await self.guard(
             llm_api=self.llm_client.request_prompt_completion,
             instructions=NPC_PROFILE_SYSTEM_STRING,
             prompt=prompt,
             model=ChatCompletionModel.GPT_3_5_TURBO.value,
-            temperature=1.8,
+            temperature=1.6,
         )
 
         print(self.guard.history.last.tree)

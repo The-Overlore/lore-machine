@@ -13,7 +13,7 @@ def init_db() -> EventsDatabase:
 @pytest.mark.asyncio
 async def test_trade_event():
     db = init_db()
-    db_id = process_received_event(
+    db_id = await process_received_event(
         {
             "eventEmitted": {
                 "id": "0x00000000000000000000000000000000000000000000000000000000000001cf:0x0000:0x0023",
@@ -50,7 +50,7 @@ async def test_trade_event():
 @pytest.mark.asyncio
 async def test_combat_damage_success():
     db = init_db()
-    db_id = process_received_event(
+    db_id = await process_received_event(
         {
             "eventEmitted": {
                 "id": "0x00000000000000000000000000000000000000000000000000000000000001c8:0x0000:0x0002",
@@ -82,7 +82,7 @@ async def test_combat_damage_success():
             (0.0, 2000.0),
         ]
     ]
-    db_id = process_received_event(
+    db_id = await process_received_event(
         {
             "eventEmitted": {
                 "id": "0x00000000000000000000000000000000000000000000000000000000000001c8:0x0000:0x0003",
@@ -120,7 +120,7 @@ async def test_combat_damage_success():
 async def test_combat_steal():
     db = init_db()
 
-    db_id = process_received_event(
+    db_id = await process_received_event(
         {
             "eventEmitted": {
                 "id": "0x00000000000000000000000000000000000000000000000000000000000001c8:0x0000:0x0002",
@@ -156,7 +156,7 @@ async def test_combat_steal():
         ]
     ]
 
-    db_id = process_received_event(
+    db_id = await process_received_event(
         {
             "eventEmitted": {
                 "id": "0x00000000000000000000000000000000000000000000000000000000000001c8:0x0000:0x0003",
@@ -198,7 +198,7 @@ async def test_combat_damage_stolen_resources_set():
     init_db()
 
     with pytest.raises(RuntimeError):
-        process_received_event(
+        await process_received_event(
             {
                 "eventEmitted": {
                     "id": "0x00000000000000000000000000000000000000000000000000000000000001c8:0x0000:0x0002",
@@ -220,7 +220,7 @@ async def test_combat_damage_stolen_resources_set():
 @pytest.mark.asyncio
 async def test_get_all():
     db = init_db()
-    process_received_event(
+    await process_received_event(
         {
             "eventEmitted": {
                 "id": "0x00000000000000000000000000000000000000000000000000000000000001c8:0x0000:0x0002",
@@ -237,7 +237,7 @@ async def test_get_all():
             }
         }
     )
-    process_received_event(
+    await process_received_event(
         {
             "eventEmitted": {
                 "id": "0x00000000000000000000000000000000000000000000000000000000000001c8:0x0000:0x0003",
@@ -255,7 +255,7 @@ async def test_get_all():
         }
     )
 
-    process_received_event(
+    await process_received_event(
         {
             "eventEmitted": {
                 "id": "0x00000000000000000000000000000000000000000000000000000000000001c8:0x0000:0x0004",
@@ -273,7 +273,7 @@ async def test_get_all():
         }
     )
 
-    process_received_event(
+    await process_received_event(
         {
             "eventEmitted": {
                 "id": "0x00000000000000000000000000000000000000000000000000000000000001c8:0x0000:0x0005",
@@ -370,7 +370,7 @@ async def test_fetch_relevant_events_decay_time():
     }
     # store 7 events that are one day appart
     for i in range(0, 5):
-        process_received_event(test_message)
+        await process_received_event(test_message)
         test_message["eventEmitted"]["id"] = str(i)
         ts = int(test_message["eventEmitted"]["data"][8], base=16)
         ts -= 86400
@@ -400,7 +400,7 @@ async def test_fetch_relevant_events_decay_time():
 async def test_fetch_relevant_events_decay_distance():
     db = init_db()
 
-    process_received_event(
+    await process_received_event(
         {
             "eventEmitted": {
                 "id": "0x00000000000000000000000000000000000000000000000000000000000001ad:0x0000:0x0023",
@@ -414,7 +414,7 @@ async def test_fetch_relevant_events_decay_distance():
             }
         }
     )
-    process_received_event(
+    await process_received_event(
         {
             "eventEmitted": {
                 "id": "0x00000000000000000000000000000000000000000000000000000000000001ad:0x0000:0x0024",
@@ -428,7 +428,7 @@ async def test_fetch_relevant_events_decay_distance():
             }
         }
     )
-    process_received_event(
+    await process_received_event(
         {
             "eventEmitted": {
                 "id": "0x00000000000000000000000000000000000000000000000000000000000001ad:0x0000:0x0025",
@@ -442,7 +442,7 @@ async def test_fetch_relevant_events_decay_distance():
             }
         }
     )
-    process_received_event(
+    await process_received_event(
         {
             "eventEmitted": {
                 "id": "0x00000000000000000000000000000000000000000000000000000000000001ad:0x0000:0x0026",
@@ -456,7 +456,7 @@ async def test_fetch_relevant_events_decay_distance():
             }
         }
     )
-    process_received_event(
+    await process_received_event(
         {
             "eventEmitted": {
                 "id": "0x00000000000000000000000000000000000000000000000000000000000001ad:0x0000:0x0027",
@@ -501,7 +501,7 @@ async def test_fetch_relevant_events_empty_db():
 @pytest.mark.asyncio
 async def test_fetch_most_relevant_event_something():
     db = init_db()
-    process_received_event(
+    await process_received_event(
         {
             "eventEmitted": {
                 "id": "0x00000000000000000000000000000000000000000000000000000000000001c8:0x0000:0x0002",
@@ -518,7 +518,7 @@ async def test_fetch_most_relevant_event_something():
             }
         }
     )
-    process_received_event(
+    await process_received_event(
         {
             "eventEmitted": {
                 "id": "0x00000000000000000000000000000000000000000000000000000000000001c8:0x0000:0x0003",
@@ -536,7 +536,7 @@ async def test_fetch_most_relevant_event_something():
         }
     )
 
-    process_received_event(
+    await process_received_event(
         {
             "eventEmitted": {
                 "id": "0x00000000000000000000000000000000000000000000000000000000000001c8:0x0000:0x0004",
@@ -554,7 +554,7 @@ async def test_fetch_most_relevant_event_something():
         }
     )
 
-    process_received_event(
+    await process_received_event(
         {
             "eventEmitted": {
                 "id": "0x00000000000000000000000000000000000000000000000000000000000001c8:0x0000:0x0005",

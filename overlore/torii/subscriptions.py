@@ -2,22 +2,25 @@ import asyncio
 import logging
 import sys
 from enum import Enum
-from typing import Callable, cast
+from typing import Any, Callable, Coroutine, cast
 
 import backoff
 from backoff._typing import Details
 from gql import Client, gql
 from gql.transport.websockets import WebsocketsTransport
 
+from overlore.llm.client import AsyncOpenAiClient
+from overlore.llm.constants import EmbeddingsModel
 from overlore.sqlite.events_db import EventsDatabase
 from overlore.sqlite.npc_db import NpcDatabase
+from overlore.sqlite.townhall_db import TownhallDatabase
 from overlore.torii.constants import EventType
 from overlore.torii.parsing import parse_event, parse_npc_spawn_event
 from overlore.types import ToriiEmittedEvent
 
 logger = logging.getLogger("overlore")
 
-OnEventCallbackType = Callable[[ToriiEmittedEvent], int]
+OnEventCallbackType = Callable[[ToriiEmittedEvent], Coroutine[Any, Any, int]]
 
 
 class Subscriptions(Enum):
@@ -70,7 +73,7 @@ async def torii_event_sub(
     logger.debug("subscribing to %s", gql_subscription)
     async for result in session.subscribe(gql(gql_subscription.value)):  # type: ignore[attr-defined]
         try:
-            on_event_callback(result)
+            await on_event_callback(result)
         except RuntimeError:
             logger.error("Unable to process event %s in %s", result, gql_subscription)
 
@@ -90,7 +93,7 @@ async def use_torii_subscription(
         await asyncio.gather(*tasks)
 
 
-def process_received_event(event: ToriiEmittedEvent) -> int:
+async def process_received_event(event: ToriiEmittedEvent) -> int:
     events_db = EventsDatabase.instance()
 
     parsed_event = parse_event(event=event["eventEmitted"])
@@ -98,15 +101,25 @@ def process_received_event(event: ToriiEmittedEvent) -> int:
     return added_id
 
 
-def process_received_spawn_npc_event(event: ToriiEmittedEvent) -> int:
+async def process_received_spawn_npc_event(event: ToriiEmittedEvent) -> int:
     npc_db = NpcDatabase.instance()
+    town_hall_db = TownhallDatabase.instance()
+    llm_client = AsyncOpenAiClient()
 
     parsed_event = parse_npc_spawn_event(event=event["eventEmitted"])
 
     npc_entity_id = cast(int, parsed_event["npc_entity_id"])
     realm_entity_id = cast(int, parsed_event["realm_entity_id"])
 
-    row_id = npc_db.insert_npc_description(npc_entity_id, realm_entity_id)
+    row_id = npc_db.insert_npc_backstory(npc_entity_id, realm_entity_id)
+
+    backstory = npc_db.fetch_npc_backstory(npc_entity_id=npc_entity_id)
+
+    embedding = await llm_client.request_embedding(backstory, model=EmbeddingsModel.TEXT_EMBEDDING_SMALL.value)
+
+    row_id = town_hall_db.insert_npc_thought(
+        npc_entity_id=npc_entity_id, thought=backstory, thought_embedding=embedding
+    )
 
     npc_db.delete_npc_profile_by_realm_entity_id(realm_entity_id)
 

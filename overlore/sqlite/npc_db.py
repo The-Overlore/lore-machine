@@ -25,13 +25,13 @@ class NpcDatabase(BaseDatabase):
                 role INTEGER,
                 sex INTEGER,
                 character_trait TEXT,
-                description TEXT
+                backstory TEXT
             );
         """,
         """
-            CREATE TABLE IF NOT EXISTS npc_description (
+            CREATE TABLE IF NOT EXISTS npc_backstory (
                 npc_entity_id INTEGER NOT NULL,
-                description TEXT
+                backstory TEXT
             );
         """,
     ]
@@ -61,7 +61,7 @@ class NpcDatabase(BaseDatabase):
 
     def insert_npc_profile(self, realm_entity_id: int, npc: NpcProfile) -> int:
         added_row_id = self._insert(
-            "INSERT INTO npc_profile(realm_entity_id, full_name, age, role, sex, character_trait, description) VALUES"
+            "INSERT INTO npc_profile(realm_entity_id, full_name, age, role, sex, character_trait, backstory) VALUES"
             " (?, ?, ?, ?, ?, ?, ?);",
             (
                 realm_entity_id,
@@ -70,7 +70,7 @@ class NpcDatabase(BaseDatabase):
                 npc["characteristics"]["role"],  # type: ignore[index]
                 npc["characteristics"]["sex"],  # type: ignore[index]
                 npc["character_trait"],  # type: ignore[index]
-                npc["description"],  # type: ignore[index]
+                npc["backstory"],  # type: ignore[index]
             ),
         )
         return added_row_id
@@ -93,30 +93,28 @@ class NpcDatabase(BaseDatabase):
                         "sex": cast(int, profile[Profile.SEX.value]),
                     },
                     "full_name": profile[Profile.FULL_NAME.value],
-                    "description": profile[Profile.DESCRIPTION.value],
+                    "backstory": profile[Profile.DESCRIPTION.value],
                 },
             )
 
-    def fetch_npc_description(self, npc_entity_id: int) -> str:
-        description = self.execute_query(
-            "SELECT description FROM npc_description WHERE npc_entity_id = ?;", (npc_entity_id,)
+    def fetch_npc_backstory(self, npc_entity_id: int) -> str:
+        backstory = self.execute_query("SELECT backstory FROM npc_backstory WHERE npc_entity_id = ?;", (npc_entity_id,))
+
+        if not backstory:
+            raise NpcDescriptionNotFoundError(f"No NPC backstory found at npc_entity_id {npc_entity_id}")
+        return str(backstory[0][0])
+
+    def insert_npc_backstory(self, npc_entity_id: int, realm_entity_id: int) -> int:
+        backstory = self.execute_query(
+            "SELECT backstory FROM npc_profile WHERE realm_entity_id = ?;", (realm_entity_id,)
         )
 
-        if not description:
-            raise NpcDescriptionNotFoundError(f"No NPC description found at npc_entity_id {npc_entity_id}")
-        return str(description[0][0])
-
-    def insert_npc_description(self, npc_entity_id: int, realm_entity_id: int) -> int:
-        description = self.execute_query(
-            "SELECT description FROM npc_profile WHERE realm_entity_id = ?;", (realm_entity_id,)
-        )
-
-        if not description:
-            raise NpcDescriptionNotFoundError(f"No NPC description found at npc_entity_id {npc_entity_id}")
+        if not backstory:
+            raise NpcDescriptionNotFoundError(f"No NPC backstory found at npc_entity_id {npc_entity_id}")
 
         row_id = self._insert(
-            "INSERT INTO npc_description (npc_entity_id, description) VALUES (?, ?);",
-            (npc_entity_id, description[0][0]),
+            "INSERT INTO npc_backstory (npc_entity_id, backstory) VALUES (?, ?);",
+            (npc_entity_id, backstory[0][0]),
         )
         return row_id
 

@@ -4,16 +4,15 @@ from typing import cast
 from overlore.errors import ErrorCodes
 from overlore.eternum.constants import Realms
 from overlore.llm.client import LlmClient
-from overlore.llm.constants import COSINE_SIMILARITY_THRESHOLD, EmbeddingsModel
-from overlore.llm.natural_language_formatter import LlmFormatter
+from overlore.llm.constants import EmbeddingsModel
 from overlore.sqlite.errors import CosineSimilarityNotFoundError
 from overlore.sqlite.events_db import EventsDatabase
 from overlore.sqlite.townhall_db import TownhallDatabase
 from overlore.sqlite.types import StoredEvent
 from overlore.types import (
     DialogueSegment,
+    DialogueThoughts,
     NpcEntity,
-    Townhall,
 )
 
 logger = logging.getLogger("overlore")
@@ -37,28 +36,31 @@ def convert_dialogue_to_str(dialogue: list[DialogueSegment]) -> str:
 
 async def get_npcs_thoughts(
     realm_npcs: list[NpcEntity],
-    most_important_event: StoredEvent | None,
-    embedding_source: str,
-    nl_formatter: LlmFormatter,
+    user_input: str,
     client: LlmClient,
     townhall_db: TownhallDatabase,
 ) -> list[str]:
     thoughts = []
 
-    if most_important_event is not None:
-        embedding_source += nl_formatter.event_to_nl(most_important_event)
-    if embedding_source != "":
-        query_embedding = await client.request_embedding(
-            embedding_source, model=EmbeddingsModel.TEXT_EMBEDDING_SMALL.value
-        )
-        for npc in realm_npcs:
-            try:
-                row_id, similarity = townhall_db.query_cosine_similarity(query_embedding, npc["entity_id"])
-                if similarity >= COSINE_SIMILARITY_THRESHOLD:
-                    thoughts.append(npc["full_name"] + ":" + townhall_db.fetch_npc_thought_by_row_id(row_id))
+    embedding_question = (
+        f'Here\'s what your Lord has to say to you and the other villagers: "{user_input}". What do you think about'
+        " that?"
+    )
+    query_embedding = await client.request_embedding(
+        input_str=embedding_question, model=EmbeddingsModel.TEXT_EMBEDDING_SMALL.value
+    )
 
-            except CosineSimilarityNotFoundError:
-                pass
+    for npc in realm_npcs:
+        try:
+            results = townhall_db.query_cosine_similarity(query_embedding, npc["entity_id"])
+            (row_id, similarity) = results[0]
+
+            logger.info(f"Similarity of vector {similarity}")
+
+            thoughts.append(npc["full_name"] + ": " + townhall_db.fetch_npc_thought_by_row_id(row_id))
+
+        except CosineSimilarityNotFoundError:
+            pass
     return thoughts
 
 
@@ -69,33 +71,25 @@ def get_entity_id_from_name(full_name: str, npcs: list[NpcEntity]) -> int:
     raise RuntimeError(ErrorCodes.NPC_ENTITY_ID_NOT_FOUND.value)
 
 
-async def store_townhall_information(
-    townhall: Townhall,
-    realm_id: int,
+async def store_thoughts(
+    dialogue_thoughts: DialogueThoughts,
     realm_npcs: list[NpcEntity],
-    user_input: str,
-    plotline: str,
     townhall_db: TownhallDatabase,
     llm_client: LlmClient,
-    katana_time: int,
-) -> int:
-    dialogue = convert_dialogue_to_str(townhall["dialogue"])  # type: ignore[index]
-    row_id = townhall_db.insert_townhall_discussion(realm_id, dialogue, user_input, katana_time)
+) -> None:
+    for npc in dialogue_thoughts["npcs"]:
+        first_thought = npc["thoughts"][0]
+        second_thought = npc["thoughts"][1]
 
-    for thought in townhall["thoughts"]:  # type: ignore[index]
-        thought_embedding = await llm_client.request_embedding(
-            input_str=thought["value"], model=EmbeddingsModel.TEXT_EMBEDDING_SMALL.value
+        first_thought_embedding = await llm_client.request_embedding(
+            input_str=first_thought, model=EmbeddingsModel.TEXT_EMBEDDING_SMALL.value
+        )
+        second_thought_embedding = await llm_client.request_embedding(
+            input_str=second_thought, model=EmbeddingsModel.TEXT_EMBEDDING_SMALL.value
         )
         try:
-            npc_entity_id = get_entity_id_from_name(thought["full_name"], realm_npcs)
-            townhall_db.insert_npc_thought(npc_entity_id, thought["value"], thought_embedding)
+            npc_entity_id = get_entity_id_from_name(npc["full_name"], realm_npcs)
+            townhall_db.insert_npc_thought(npc_entity_id, first_thought, first_thought_embedding)
+            townhall_db.insert_npc_thought(npc_entity_id, second_thought, second_thought_embedding)
         except KeyError:
-            logger.exception(f"Failed to find npc_entity_id for npc named {thought['full_name']}")
-
-    if user_input == "":
-        if plotline == "":
-            townhall_db.insert_plotline(realm_id, townhall["plotline"])  # type: ignore[index]
-        else:
-            townhall_db.update_plotline(realm_id, townhall["plotline"])  # type: ignore[index]
-
-    return row_id
+            logger.exception(f"Failed to find npc_entity_id for npc named {npc['full_name']}")

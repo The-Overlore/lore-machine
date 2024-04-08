@@ -6,7 +6,7 @@ test_data = [
             "full_name": f"fullname {i}",
             "characteristics": {"age": i, "sex": i, "role": i},
             "character_trait": f"trait {i}",
-            "description": f"description {i}",
+            "backstory": f"backstory {i}",
         },
         "rowid": i,
     }
