@@ -20,7 +20,7 @@ ORDERS = [
 ]
 
 
-ResourceNamesById = {
+Resources = {
     1: "wood",
     2: "stone",
     3: "coal",

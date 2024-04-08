@@ -5,7 +5,7 @@ from starknet_py.cairo.felt import encode_shortstring
 from starknet_py.hash.utils import ECSignature, message_signature
 from starknet_py.hash.utils import compute_hash_on_elements as pedersen
 
-from overlore.eternum.constants import ResourceNamesById
+from overlore.eternum.constants import Resources
 from overlore.types import Characteristics
 
 logger = logging.getLogger("overlore")
@@ -14,9 +14,9 @@ U2_MASK: int = 0x3
 U8_MASK: int = 0xFF
 
 
-def get_ressource_name_by_id(resource_id: Any) -> str:
-    if resource_id in ResourceNamesById:
-        return ResourceNamesById[resource_id]
+def get_resource_name_by_id(resource_id: Any) -> str:
+    if resource_id in Resources:
+        return Resources[resource_id]
     else:
         raise RuntimeError(f"No resource found for ID {resource_id}")
 

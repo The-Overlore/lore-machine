@@ -10,7 +10,7 @@ from overlore.llm.constants import (
 from overlore.sqlite.constants import EventType
 from overlore.sqlite.types import StoredEvent
 from overlore.types import NpcEntity
-from overlore.utils import get_ressource_name_by_id, str_to_json
+from overlore.utils import get_resource_name_by_id, str_to_json
 
 
 class LlmFormatter:
@@ -18,7 +18,7 @@ class LlmFormatter:
         resources_strings: list[str] = []
         for resource in resources:
             resource_str = str(resource["amount"])
-            resource_str += " " + get_ressource_name_by_id(resource["resource_type"])
+            resource_str += " " + get_resource_name_by_id(resource["resource_type"])
             resources_strings.append(resource_str)
         return ", ".join(resources_strings)
 
