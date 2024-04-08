@@ -9,7 +9,6 @@ import sqlite_vss
 
 from overlore.errors import ErrorCodes
 from overlore.sqlite.base_db import A_TIME, BaseDatabase, average, decay_function
-from overlore.sqlite.errors import CosineSimilarityNotFoundError
 from overlore.sqlite.types import StorableDiscussion
 
 logger = logging.getLogger("overlore")
@@ -98,7 +97,7 @@ class DiscussionDatabase(BaseDatabase):
         res = self.execute_query(query, values)
 
         if not res:
-            raise CosineSimilarityNotFoundError(f"No similar thought found for npc entity {npc_entity_id}")
+            raise RuntimeError(ErrorCodes.COSINE_SIMILARITY_NOT_FOUND.value)
 
         return cast(Tuple[str, int, float, float], res[0])
 

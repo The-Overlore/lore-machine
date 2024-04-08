@@ -20,7 +20,7 @@ from overlore.types import (
     Discussion,
     NpcAndThoughts,
     NpcEntity,
-    NpcProfile,
+    NpcIdentity,
     Thought,
 )
 
@@ -127,7 +127,7 @@ def generate_npc_profile_json_rpc_method() -> JsonRpcMethod:
 
     mock_torii_client = MockToriiClient()
     mock_katana_client = MockKatanaClient()
-    guard = AsyncGuard(output_type=NpcProfile)
+    guard = AsyncGuard(output_type=NpcIdentity)
     context = SpawnNpcContext(
         guard=guard,
         llm_client=mock_llm_client,  # type: ignore[typeddict-item]
@@ -196,14 +196,14 @@ npcs = [
 
 valid_embedding = [0.1] * 1536
 
-valid_npc_profile = NpcProfile(
+valid_npc_profile = NpcIdentity(
     character_trait="Generous",
     full_name="Seraphina Rivertree",
     backstory=Backstory(
         backstory="""Seraphina Rivertree is known for her unwavering generosity, always willing to help those in need without expecting anything in return. She's very pretty and young and she doesn't care about other people LOL. She's just doing her own thang brah. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum""",
         poignancy=0,
     ),
-    characteristics=Characteristics(age=27, role=3, sex=1),
 )
+
 TEST_PUBLIC_KEY = "0x141A26313BD3355FE4C4F3DDA7E40DFB77CE54AEA5F62578B4EC5AAD8DD63B1"
 TEST_PRIVATE_KEY = "0x38A8B43F18016C22F685A41728046DEC4B3E6829A17A2A83D75F1D840E82ED5"

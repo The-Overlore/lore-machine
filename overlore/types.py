@@ -42,16 +42,10 @@ class ParsedEvent(TypedDict):
     type_specific_data: str
 
 
-class Characteristics(BaseModel):
-    age: int = Field(
-        description="Age of the character, between 15 and 65",
-    )
-    role: int = Field(
-        description=f"Job of the villager. {roles_str}",
-    )
-    sex: int = Field(
-        description="Sex of the villager. (0 for male, 1 for female)",
-    )
+class Characteristics(TypedDict):
+    age: int
+    role: int
+    sex: int
 
 
 class Backstory(BaseModel):
@@ -69,20 +63,25 @@ class Backstory(BaseModel):
     )
 
 
-class NpcProfile(BaseModel):
-    character_trait: str = Field(
-        description="Trait of character that defines the villager. One word max.",
-    )
-
+class NpcIdentity(BaseModel):
     full_name: str = Field(
         description="Name of the villager. Don't use common words in the name such as Wood",
     )
 
-    backstory: Backstory = Field(
-        description="Backstory of the villager",
+    character_trait: str = Field(
+        description="Trait of character that defines the NPC. One word max.",
     )
 
-    characteristics: Characteristics = Field(description="Various characteristics")
+    backstory: Backstory = Field(
+        description="Background of the NPC",
+    )
+
+
+class NpcProfile(TypedDict):
+    character_trait: str
+    full_name: str
+    backstory: Backstory
+    characteristics: Characteristics
 
 
 class DialogueSegment(BaseModel):

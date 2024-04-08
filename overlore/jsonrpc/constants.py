@@ -16,7 +16,7 @@ from overlore.katana.client import KatanaClient
 from overlore.llm.client import AsyncOpenAiClient
 from overlore.llm.guard import AsyncGuard
 from overlore.torii.client import ToriiClient
-from overlore.types import DialogueThoughts, Discussion, NpcProfile
+from overlore.types import DialogueThoughts, Discussion, NpcIdentity
 
 
 def setup_json_rpc_methods(config: BootConfig) -> list[JsonRpcMethod]:
@@ -48,7 +48,7 @@ def create_generate_discussion_method(config: BootConfig) -> JsonRpcMethod:
 def create_spawn_npc_method(config: BootConfig) -> JsonRpcMethod:
     return JsonRpcMethod(
         context=SpawnNpcContext(
-            guard=AsyncGuard(output_type=NpcProfile),
+            guard=AsyncGuard(output_type=NpcIdentity),
             llm_client=AsyncOpenAiClient(),
             torii_client=ToriiClient(url=config.env["TORII_GRAPHQL"]),
             katana_client=KatanaClient(url=config.env["KATANA_URL"]),

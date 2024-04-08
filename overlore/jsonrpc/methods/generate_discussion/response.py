@@ -25,7 +25,6 @@ from overlore.llm.constants import ChatCompletionModel, EmbeddingsModel
 from overlore.llm.guard import AsyncGuard
 from overlore.llm.natural_language_formatter import LlmFormatter
 from overlore.sqlite.discussion_db import DiscussionDatabase
-from overlore.sqlite.errors import CosineSimilarityNotFoundError
 from overlore.sqlite.types import StorableDiscussion
 from overlore.torii.client import ToriiClient
 from overlore.types import DialogueThoughts, Discussion, NpcAndThoughts, NpcEntity, Thought
@@ -151,7 +150,7 @@ class DiscussionBuilder:
 
                 thoughts.append(f"Thought was had on {date_time} - {npc['full_name']} : {thought}")
 
-            except CosineSimilarityNotFoundError as e:
+            except RuntimeError as e:
                 logger.error(
                     f"Failure to fetch thoughts. NPC entity id: {npc['entity_id']}. Embedding question"
                     f" {embedding_question}. Katana ts {self.katana_ts}"

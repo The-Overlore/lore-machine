@@ -4,9 +4,9 @@ import logging
 from sqlite3 import Connection
 from typing import cast
 
+from overlore.errors import ErrorCodes
 from overlore.sqlite.base_db import BaseDatabase
 from overlore.sqlite.constants import Profile
-from overlore.sqlite.errors import NpcDescriptionNotFoundError, NpcProfileNotDeleted
 from overlore.types import Backstory, Characteristics, NpcProfile
 
 logger = logging.getLogger("overlore")
@@ -67,13 +67,13 @@ class NpcDatabase(BaseDatabase):
             " backstory_poignancy) VALUES (?, ?, ?, ?, ?, ?, ?, ?);",
             (
                 realm_entity_id,
-                npc.full_name,
-                npc.characteristics.age,
-                npc.characteristics.role,
-                npc.characteristics.sex,
-                npc.character_trait,
-                npc.backstory.backstory,
-                npc.backstory.poignancy,
+                npc["full_name"],
+                npc["characteristics"]["age"],
+                npc["characteristics"]["role"],
+                npc["characteristics"]["sex"],
+                npc["character_trait"],
+                npc["backstory"].backstory,
+                npc["backstory"].poignancy,
             ),
         )
         return added_row_id
@@ -105,7 +105,7 @@ class NpcDatabase(BaseDatabase):
         )
 
         if not backstory:
-            raise NpcDescriptionNotFoundError(f"No villager backstory found at npc_entity_id {npc_entity_id}")
+            raise RuntimeError(ErrorCodes.NPC_BACKSTORY_NOT_FOUND.value)
         return Backstory(backstory=backstory[0][0], poignancy=backstory[0][1])
 
     def fetch_npcs_backstories(self, npc_entity_ids: list[int]) -> list[tuple[int, str]]:
@@ -123,7 +123,7 @@ class NpcDatabase(BaseDatabase):
         )
 
         if not backstory:
-            raise NpcDescriptionNotFoundError(f"No villager backstory found at npc_entity_id {npc_entity_id}")
+            raise RuntimeError(ErrorCodes.NPC_BACKSTORY_NOT_FOUND.value)
 
         back_story: str = backstory[0][0]
         poignancy: int = backstory[0][1]
@@ -141,4 +141,4 @@ class NpcDatabase(BaseDatabase):
         profile = self.execute_query("SELECT * FROM npc_profile WHERE realm_entity_id = ?;", (realm_entity_id,))
 
         if profile:
-            raise NpcProfileNotDeleted(f"Found npc profile for realm_entity_id {realm_entity_id}")
+            raise RuntimeError(ErrorCodes.NPC_PROFILE_NOT_DELETED)

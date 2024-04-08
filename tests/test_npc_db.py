@@ -1,6 +1,5 @@
 import pytest
 
-from overlore.sqlite.errors import NpcDescriptionNotFoundError
 from overlore.sqlite.npc_db import NpcDatabase
 from tests.utils.npc_db_test_utils import prepare_data, test_data
 
@@ -31,8 +30,8 @@ def test_insert_and_fetch_npc_backstory(db):
         assert added_row_id == item["rowid"], f"Expected rowid {item['rowid']}, got {added_row_id}"
 
         assert (
-            retrieved_entry == item["profile"].backstory
-        ), f"Expected backstory '{item['profile'].backstory}', got '{retrieved_entry}'"
+            retrieved_entry == item["profile"]["backstory"]
+        ), f"Expected backstory '{item['profile']['backstory']}', got '{retrieved_entry}'"
 
 
 def test_delete_npc_profile(db):
@@ -49,7 +48,7 @@ def test_fetch_npc_profile_not_found_error(db):
 
 
 def test_fetch_npc_backstory_not_found_error(db):
-    with pytest.raises(NpcDescriptionNotFoundError):
+    with pytest.raises(RuntimeError):
         db.fetch_npc_backstory(INVALID_NPC_ENTITY_ID)
 
 
