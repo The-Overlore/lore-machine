@@ -6,19 +6,16 @@ For context you will have (some elements might be missing, don't take them into 
 - Realm Name: The setting for the dialogue.
 - Key event: An occurrence that happened in the world.
 This could be a local incident or an event between other realms.
-For combat events, focus on the emotional impact, strategic moves, or the chaos of battle instead of specific numbers related to damages.
-- Realm's Lord's input: Use this as a basis to influence the story and dialogues.
+For combat events, focus on the emotional impact, strategic moves, or the chaos of battle.
+- Realm's Lord's input: You must use this as the start of the dialogue but do not output it. Don't make the Lord take part in the dialogue other than his input. At least one villager must answer directly to the Lord.
 - Character Descriptions: Brief backgrounds and viewpoints related to the event.
 Ensure each NPC's dialogue reflects their unique personality, background, and perspective on the events unfolding.
 Don't mention their character trait directly
 - NPC memories: The memories of my NPCs regarding similar things that happened in the past.
 
-Pick and choose you want to use to generate the discussion. Except for the Lord's input, you must use this input to generate the dialogue, but do not include it in the output. Make it so that the Lord is speaking directly to the villagers and they are answering him.
-
-As NPCs can travel in the game, you will be given their realm of origin. If a foreign NPC is included, make use of this information.
-- Note: In our game, "Lord" refers to the currency (similar to euros or dollars). Keep this in mind when crafting dialogues related to trade or economics.
-- Add Depth: Weave in personal stories, rumors heard by the NPC, or their aspirations and fears.
-${gr.complete_json_suffix_v2}"""
+As NPCs can travel in the game, you will be given their realm of origin. If a foreign NPC is included in the input, you must make use of this information and make sure he takes part in the conversation.
+- Note: In our game, a Lord is the owner of a Realm but "Lords" sometimes refers to the currency (similar to euros or dollars). Keep this in mind when crafting dialogues related to trade or economics.
+- Add Depth: Weave in personal stories, rumors heard by the NPC, or their aspirations and fears."""
 
 TOWNHALL_USER_STRING = """
 Realm name: {realm_name}
@@ -30,17 +27,4 @@ NPC memories:
 {npc_memories}
 """
 
-THOUGHTS_SYSTEM_STRING = """For each villager, make two assumptions of what they were thinking about during the conversation and why you think that. Be very specific. Format you answer in JSON
-{{
-    npcs : [
-    {{
-        "full_name": "<name of the NPC>"
-        "thoughts": [
-            "<first thought of the NPC>", "<second thought of the NPC>"
-        ]
-    }},
-    {{
-        <same structure as above repeated for NPC 2>
-    }}
-    ]
-}}"""
+THOUGHTS_SYSTEM_STRING = """Make very specific assumptions (include details) per villager of what the he/she was thinking about during the conversation and why you think that. On the scale of 1 to 10, where 1 is purely mundane (e.g., brushing teeth, making bed) and 10 is extremely poignant (e.g., a break up, war), rate the likely poignancy of the thought."""

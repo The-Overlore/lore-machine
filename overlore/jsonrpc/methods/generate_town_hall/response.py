@@ -1,10 +1,7 @@
-import json
 import logging
 from typing import TypedDict, cast
 
-from guardrails import Guard
 from openai import BaseModel
-from rich import print
 
 from overlore.errors import ErrorCodes
 from overlore.eternum.constants import DAY_IN_SECONDS, Realms
@@ -23,6 +20,7 @@ from overlore.jsonrpc.methods.generate_town_hall.utils import (
 from overlore.katana.client import KatanaClient
 from overlore.llm.client import LlmClient
 from overlore.llm.constants import ChatCompletionModel
+from overlore.llm.guard import AsyncGuard
 from overlore.llm.natural_language_formatter import LlmFormatter
 from overlore.sqlite.townhall_db import TownhallDatabase
 from overlore.torii.client import ToriiClient
@@ -49,21 +47,22 @@ class TownHallBuilder:
         llm_client: LlmClient,
         torii_client: ToriiClient,
         katana_client: KatanaClient,
-        town_hall_guard: Guard,
+        town_hall_guard: AsyncGuard,
+        dialogue_thoughts_guard: AsyncGuard,
     ):
         self.formater: LlmFormatter = LlmFormatter()
         self.llm_client = llm_client
         self.torii_client = torii_client
         self.katana_client = katana_client
         self.town_hall_guard = town_hall_guard
+        self.dialogue_thoughts_guard = dialogue_thoughts_guard
 
     async def build_from_request_params(self, params: MethodParams) -> SuccessResponse:
-        realms = Realms.instance()
         townhall_db = TownhallDatabase.instance()
 
         realm_id = params["realm_id"]  # type: ignore[index]
         realm_entity_id = params["realm_entity_id"]  # type: ignore[index]
-        realm_name = realms.name_by_id(params["realm_id"])  # type: ignore[index]
+        realm_name = Realms.instance().name_by_id(params["realm_id"])  # type: ignore[index]
         user_input = params["user_input"].strip()  # type: ignore[index]
 
         realm_npcs = await self.torii_client.get_npcs_by_realm_entity_id(realm_entity_id)
@@ -95,19 +94,19 @@ class TownHallBuilder:
             )
         )
 
-        townhall: Townhall = await self.request_town_hall_generation_with_guard(
+        townhall: Townhall = await self.request_town_hall_with_guard(
             prompt=prompt_for_llm_call,
         )
 
-        dialogue = convert_dialogue_to_str(townhall["dialogue"])  # type: ignore[index]
+        dialogue = convert_dialogue_to_str(townhall.dialogue)
         row_id = townhall_db.insert_townhall_discussion(realm_id, dialogue, user_input, katana_time)
 
-        dialogue_thoughts: DialogueThoughts = await self.request_thoughts_generation(prompt=dialogue)
+        dialogue_thoughts: DialogueThoughts = await self.request_thoughts_with_guard(prompt=dialogue)
 
         await store_thoughts(
+            realm_name=realm_name,
             dialogue_thoughts=dialogue_thoughts,
             realm_npcs=realm_npcs,
-            townhall_db=townhall_db,
             llm_client=self.llm_client,
         )
 
@@ -116,7 +115,10 @@ class TownHallBuilder:
                 realm_id=realm_id, event_row_id=cast(int, most_important_event[0])
             )
 
-        return SuccessResponse(townhall_id=row_id, dialogue=townhall["dialogue"])  # type: ignore[index]
+        return SuccessResponse(
+            townhall_id=row_id,
+            dialogue=[cast(DialogueSegment, dialogue_segment.model_dump()) for dialogue_segment in townhall.dialogue],
+        )
 
     def prepare_prompt_for_llm_call(
         self,
@@ -139,33 +141,29 @@ class TownHallBuilder:
         )
         return prompt
 
-    async def request_town_hall_generation_with_guard(
+    async def request_town_hall_with_guard(
         self,
         prompt: str,
     ) -> Townhall:
-        _, validated_response, *_ = await self.town_hall_guard(
-            llm_api=self.llm_client.request_prompt_completion,
+        response = await self.town_hall_guard.call_llm_with_guard(
+            api_function=self.llm_client.request_prompt_completion,
             instructions=TOWNHALL_SYSTEM_STRING,
             prompt=prompt,
             model=ChatCompletionModel.GPT_4_PREVIEW.value,
-            temperature=1,
+            temperature=1.2,
         )
-        print(self.town_hall_guard.history.last.tree)
+        return response  # type: ignore[no-any-return]
 
-        return cast(Townhall, validated_response)
-
-    async def request_thoughts_generation(
+    async def request_thoughts_with_guard(
         self,
         prompt: str,
     ) -> DialogueThoughts:
-        response = await self.llm_client.request_prompt_completion(
-            input_str=prompt,
+        response = await self.dialogue_thoughts_guard.call_llm_with_guard(
+            api_function=self.llm_client.request_prompt_completion,
             instructions=THOUGHTS_SYSTEM_STRING,
+            prompt=prompt,
             model=ChatCompletionModel.GPT_3_5_TURBO.value,
             temperature=1,
-            response_format={"type": "json_object"},
         )
 
-        print(response)
-
-        return cast(DialogueThoughts, json.loads(response))
+        return response  # type: ignore[no-any-return]

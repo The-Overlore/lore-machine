@@ -21,7 +21,6 @@ responses = "^0.25.0"
 starknet-py = "^0.20.0"
 respx = "^0.20.2"
 openai = "^1.13.3"
-guardrails-ai = { git = "https://github.com/guardrails-ai/guardrails.git" }
 jsonrpcserver = "^5.0.9"
 aiohttp = "^3.9.3"
 aiohttp-cors = "^0.7.0"

@@ -3,8 +3,6 @@ from typing import Any, cast
 
 import openai
 
-from overlore.errors import ErrorCodes
-
 
 class LlmClient(ABC):
     """Interface used to define how an LLM client should behave"""
@@ -15,7 +13,7 @@ class LlmClient(ABC):
         pass
 
     @abstractmethod
-    async def request_prompt_completion(self, input_str: str, instructions: str, *args: Any, **kwargs: Any) -> str:
+    async def request_prompt_completion(self, prompt: str, instructions: str, *args: Any, **kwargs: Any) -> str:
         """Request the completion of an input to a LLM"""
         pass
 
@@ -30,23 +28,13 @@ class AsyncOpenAiClient(LlmClient):
         response = await self.client.embeddings.create(input=input_str, **kwargs)
         return response.data[0].embedding
 
-    async def request_prompt_completion(self, input_str: str, *args: Any, **kwargs: Any) -> str:
-        print(args)
-        print(kwargs)
-        if "instructions" not in kwargs and "instructions" not in args:
-            raise RuntimeError(ErrorCodes.LLM_VALIDATOR_ERROR)
-        if "instructions" in kwargs:
-            instructions = kwargs["instructions"]
-            del kwargs["instructions"]
-        else:
-            instructions = args["instructions"]  # type: ignore[call-overload]
-            del args["instructions"]  # type: ignore[attr-defined]
+    async def request_prompt_completion(self, prompt: str, instructions: str, *args: Any, **kwargs: Any) -> str:
         response = await self.client.chat.completions.create(
             *args,
             messages=[
                 {
                     "role": "user",
-                    "content": input_str,
+                    "content": prompt,
                 },
                 {"role": "system", "content": instructions},
             ],

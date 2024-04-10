@@ -35,7 +35,8 @@ class TownhallDatabase(BaseDatabase):
         """
             CREATE TABLE IF NOT EXISTS npc_thought (
                 npc_entity_id INTEGER NOT NULL,
-                thought TEXT
+                thought TEXT,
+                poignancy INTEGER
             );
         """,
         """
@@ -107,9 +108,12 @@ class TownhallDatabase(BaseDatabase):
             return cast(int, last_ts[0][0])
         return -1
 
-    def insert_npc_thought(self, npc_entity_id: int, thought: str, thought_embedding: list[float]) -> int:
+    def insert_npc_thought(
+        self, npc_entity_id: int, thought: str, poignancy: int, thought_embedding: list[float]
+    ) -> int:
         added_row_id = self._insert(
-            "INSERT INTO npc_thought (npc_entity_id, thought) VALUES (?, ?);", (npc_entity_id, thought)
+            "INSERT INTO npc_thought (npc_entity_id, thought, poignancy) VALUES (?, ?, ?);",
+            (npc_entity_id, thought, poignancy),
         )
         self._insert(
             "INSERT INTO vss_npc_thought (rowid, embedding) VALUES (?, ?);",

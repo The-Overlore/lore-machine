@@ -1,14 +1,21 @@
 import json
 
 import pytest
-from guardrails import Guard
 
 from overlore.errors import ErrorCodes
 from overlore.jsonrpc.methods.generate_town_hall.response import TownHallBuilder
+from overlore.llm.guard import AsyncGuard
 from overlore.sqlite.events_db import EventsDatabase
 from overlore.sqlite.npc_db import NpcDatabase
 from overlore.sqlite.townhall_db import TownhallDatabase
-from overlore.types import Townhall
+from overlore.types import (
+    Characteristics,
+    DialogueThoughts,
+    NpcEntity,
+    NpcsAndThoughts,
+    Thought,
+    Townhall,
+)
 from tests.jsonrpc.types import MockKatanaClient, MockLlmClient, MockToriiClient
 
 
@@ -84,17 +91,22 @@ def init_town_hall_builder():
     mock_llm_client = MockLlmClient(
         embedding_return=valid_embedding,
         prompt_completion_return=valid_dialogue,
-        thoughts_completion_return=json.dumps(valid_thought, ensure_ascii=False),
+        thoughts_completion_return=valid_thought.model_dump_json(),
     )
-    mock_torii_client = MockToriiClient()
+    mock_torii_client = MockToriiClient(
+        npcs_return=npcs,
+    )
+
     mock_katana_client = MockKatanaClient()
-    town_hall_guard = Guard.from_pydantic(output_class=Townhall, num_reasks=0)
+    town_hall_guard = AsyncGuard(output_type=Townhall)
+    dialogue_thoughts_guard = AsyncGuard(output_type=DialogueThoughts)
 
     town_hall_builder = TownHallBuilder(
         llm_client=mock_llm_client,
         torii_client=mock_torii_client,
         katana_client=mock_katana_client,
         town_hall_guard=town_hall_guard,
+        dialogue_thoughts_guard=dialogue_thoughts_guard,
     )
 
     yield town_hall_builder
@@ -110,11 +122,42 @@ dialogue = [
 
 valid_dialogue = f"""{{"dialogue": {json.dumps(dialogue, ensure_ascii=False)}}}"""
 
-valid_thought = {
-    "npcs": [
-        {"full_name": "Johny Bravo", "thoughts": ["Thoughts about HooHaa", "Second thought about HooHaa"]},
-        {"full_name": "Julien Doré", "thoughts": ["Thought about blabla", "Second thought about HooHaa"]},
+valid_thought = DialogueThoughts(
+    npcs=[
+        NpcsAndThoughts(
+            full_name="Johny Bravo",
+            thoughts=[
+                Thought(thought="Thoughts about HooHaa", poignancy=10),
+                Thought(thought="Second thought about HooHaa", poignancy=10),
+            ],
+        ),
+        NpcsAndThoughts(
+            full_name="Julien Dort",
+            thoughts=[
+                Thought(thought="Thought about blabla", poignancy=10),
+                Thought(thought="Second thought about HooHaa", poignancy=10),
+            ],
+        ),
     ]
-}
+)
+
+npcs = [
+    NpcEntity(
+        character_trait="Generous",
+        full_name="Johny Bravo",
+        characteristics=Characteristics(age=27, role=3, sex=1).model_dump(),
+        entity_id=105,
+        current_realm_entity_id=1,
+        origin_realm_id=26,
+    ),
+    NpcEntity(
+        character_trait="compassionate",
+        full_name="Julien Dort",
+        characteristics=Characteristics(age=32, role=3, sex=1).model_dump(),
+        entity_id=104,
+        current_realm_entity_id=1,
+        origin_realm_id=26,
+    ),
+]
 
 valid_embedding = [0.0, 0.1, 0.2]

@@ -29,9 +29,10 @@ def test_insert_and_fetch_npc_backstory(db):
         retrieved_entry = db.fetch_npc_backstory(item["npc_entity_id"])
 
         assert added_row_id == item["rowid"], f"Expected rowid {item['rowid']}, got {added_row_id}"
+
         assert (
-            retrieved_entry == item["profile"]["backstory"]
-        ), f"Expected backstory '{item['profile']['backstory']}', got '{retrieved_entry}'"
+            retrieved_entry == item["profile"].backstory
+        ), f"Expected backstory '{item['profile'].backstory}', got '{retrieved_entry}'"
 
 
 def test_delete_npc_profile(db):

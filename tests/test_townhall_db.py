@@ -2,13 +2,13 @@ import pytest
 
 from overlore.sqlite.townhall_db import TownhallDatabase
 from tests.utils.townhall_db_test_utils import (
-    dtt_test_data,
+    daily_town_hall_tracker_data,
     format_townhalls,
     generate_townhalls_for_realmid,
     given_thoughts,
     given_townhall_values,
     given_townhall_values_for_single_realm,
-    prepare_data_dtt,
+    prepare_daily_town_hall_tracker_data,
 )
 
 
@@ -44,7 +44,9 @@ def test_fetch_multiple_townhalls(db):
 
 def test_insert_and_fetch_npc_thought(db):
     for item in given_thoughts:
-        added_row_id = db.insert_npc_thought(item["npc_entity_id"], item["thought"], item["embedding"])
+        added_row_id = db.insert_npc_thought(
+            item["npc_entity_id"], item["thought"], item["poignancy"], item["embedding"]
+        )
         retrieved_entry = db.fetch_npc_thought_by_row_id(added_row_id)
 
         assert added_row_id == item["rowid"], f"Expected rowid {item['rowid']}, got {added_row_id}"
@@ -52,7 +54,7 @@ def test_insert_and_fetch_npc_thought(db):
 
 
 def test_insert_and_fetch_daily_townhall_tracker(db):
-    for item in dtt_test_data:
+    for item in daily_town_hall_tracker_data:
         added_row_id = db.insert_or_update_daily_townhall_tracker(item["realm_id"], item["event_row_id"])
 
         assert item["row_id"] == added_row_id
@@ -61,7 +63,7 @@ def test_insert_and_fetch_daily_townhall_tracker(db):
 
 def test_update_daily_townhall_tracker(db):
     row_ids = []
-    for item in dtt_test_data:
+    for item in daily_town_hall_tracker_data:
         updated_count = db.insert_or_update_daily_townhall_tracker(1, item["event_row_id"])
         row_ids.append(item["event_row_id"])
 
@@ -70,9 +72,9 @@ def test_update_daily_townhall_tracker(db):
 
 
 def delete_daily_townhall_tracker(db):
-    prepare_data_dtt(db)
+    prepare_daily_town_hall_tracker_data(db)
 
-    for item in dtt_test_data:
+    for item in daily_town_hall_tracker_data:
         db.delete_daily_townhall_tracker(item["realm_id"])
 
         assert len(db.fetch_daily_townhall_tracker(item["realm_id"])) == 0

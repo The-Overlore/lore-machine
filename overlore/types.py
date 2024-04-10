@@ -5,7 +5,6 @@ from json.encoder import JSONEncoder
 from typing import Any, Optional, TypedDict
 
 warnings.simplefilter(action="ignore", category=FutureWarning)
-from guardrails.validators import TwoWords, ValidChoices, ValidLength, ValidRange  # noqa: E402
 from pydantic import BaseModel, Field  # noqa: E402
 
 from overlore.constants import ROLES  # noqa: E402
@@ -46,40 +45,41 @@ class ParsedEvent(TypedDict):
 class Characteristics(BaseModel):
     age: int = Field(
         description="Age of the character, between 15 and 65",
-        json_schema_extra={"validators": ValidRange(min=15, max=65)},
     )
     role: int = Field(
         description=f"Job of the NPC. {roles_str}",
-        json_schema_extra={
-            "validators": [ValidChoices(choices=[index for index, role in enumerate(ROLES)], on_fail="reask")]
-        },
     )
     sex: int = Field(
         description="Sex of the NPC. (0 for male, 1 for female)",
-        json_schema_extra={"validators": [ValidChoices(choices=[0, 1], on_fail="reask")]},
+    )
+
+
+class Backstory(BaseModel):
+    backstory: str = Field(
+        description=(
+            "Backstory of the NPC. Gives information about his past and his personality. Make it 5 sentences long"
+            " minimum."
+        ),
+    )
+    poignancy: int = Field(
+        description=(
+            "On the scale of 1 to 10, where 1 is purely mundane (e.g., brushing teeth, making bed) and 10 is extremely"
+            " poignant (e.g., a break up, war), rate the likely poignancy of the backstory."
+        )
     )
 
 
 class NpcProfile(BaseModel):
     character_trait: str = Field(
         description="Trait of character that defines the NPC. One word max.",
-        json_schema_extra={
-            "validators": [
-                ValidLength(max=31, on_fail="fix"),
-            ]
-        },
     )
 
     full_name: str = Field(
         description="Name of the NPC. Don't use common words in the name such as Wood",
-        json_schema_extra={"validators": [ValidLength(max=31), TwoWords(on_fail="reask")]},
     )
 
-    backstory: str = Field(
-        description=(
-            "Backstory of the NPC. Gives information about his past and his personality. Make it 5 sentences long"
-            " minimum."
-        ),
+    backstory: Backstory = Field(
+        description="Backstory of the NPC",
     )
 
     characteristics: Characteristics = Field(description="Various characteristics")
@@ -96,13 +96,18 @@ class Townhall(BaseModel):
     )
 
 
-class NpcsAndThoughts(TypedDict):
-    thoughts: list[str]
-    full_name: str
+class Thought(BaseModel):
+    thought: str = Field(description="""The thought""")
+    poignancy: int = Field(description="""Poignancy of the thought""")
 
 
-class DialogueThoughts(TypedDict):
-    npcs: list[NpcsAndThoughts]
+class NpcsAndThoughts(BaseModel):
+    thoughts: list[Thought] = Field(description="""Make two thought per villager""")
+    full_name: str = Field(description="Full name of the villager")
+
+
+class DialogueThoughts(BaseModel):
+    npcs: list[NpcsAndThoughts] = Field()
 
 
 # Custom JSON Encoder that handles Enum types

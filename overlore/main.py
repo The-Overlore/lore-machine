@@ -45,7 +45,7 @@ def setup() -> BootConfig:
         TownhallDatabase.instance().init()
         NpcDatabase.instance().init()
 
-    os.environ["GUARDRAILS_PROCESS_COUNT"] = "30"
+    os.environ["GUARDRAILS_PROCESS_COUNT"] = "100"
 
     return config
 

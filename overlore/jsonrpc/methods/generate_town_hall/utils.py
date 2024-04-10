@@ -30,7 +30,7 @@ def get_most_important_event(realm_id: int, katana_time: int) -> StoredEvent | N
 
 def convert_dialogue_to_str(dialogue: list[DialogueSegment]) -> str:
     return "\n".join(
-        [f"{dialogue_segment['full_name']}: {dialogue_segment['dialogue_segment']}" for dialogue_segment in dialogue]  # type: ignore[index]
+        [f"{dialogue_segment.full_name}: {dialogue_segment.dialogue_segment}" for dialogue_segment in dialogue]
     )
 
 
@@ -55,7 +55,8 @@ async def get_npcs_thoughts(
             results = townhall_db.query_cosine_similarity(query_embedding, npc["entity_id"])
             (row_id, similarity) = results[0]
 
-            logger.info(f"Similarity of vector {similarity}")
+            corresponding_thought = townhall_db.fetch_npc_thought_by_row_id(row_id)
+            logger.info(f"Similarity of vector {similarity} -> {corresponding_thought}")
 
             thoughts.append(npc["full_name"] + ": " + townhall_db.fetch_npc_thought_by_row_id(row_id))
 
@@ -72,14 +73,19 @@ def get_entity_id_from_name(full_name: str, npcs: list[NpcEntity]) -> int:
 
 
 async def store_thoughts(
+    realm_name: str,
     dialogue_thoughts: DialogueThoughts,
     realm_npcs: list[NpcEntity],
-    townhall_db: TownhallDatabase,
     llm_client: LlmClient,
 ) -> None:
-    for npc in dialogue_thoughts["npcs"]:
-        first_thought = npc["thoughts"][0]
-        second_thought = npc["thoughts"][1]
+    townhall_db = TownhallDatabase.instance()
+
+    for npc in dialogue_thoughts.npcs:
+        thought_0 = npc.thoughts[0]
+        thought_1 = npc.thoughts[1]
+
+        first_thought = f"Thought created in a conversation in {realm_name} - {thought_0.thought}"
+        second_thought = f"Thought created in a conversation in {realm_name} - {thought_1.thought}"
 
         first_thought_embedding = await llm_client.request_embedding(
             input_str=first_thought, model=EmbeddingsModel.TEXT_EMBEDDING_SMALL.value
@@ -88,8 +94,8 @@ async def store_thoughts(
             input_str=second_thought, model=EmbeddingsModel.TEXT_EMBEDDING_SMALL.value
         )
         try:
-            npc_entity_id = get_entity_id_from_name(npc["full_name"], realm_npcs)
-            townhall_db.insert_npc_thought(npc_entity_id, first_thought, first_thought_embedding)
-            townhall_db.insert_npc_thought(npc_entity_id, second_thought, second_thought_embedding)
+            npc_entity_id = get_entity_id_from_name(npc.full_name, realm_npcs)
+            townhall_db.insert_npc_thought(npc_entity_id, first_thought, thought_0.poignancy, first_thought_embedding)
+            townhall_db.insert_npc_thought(npc_entity_id, second_thought, thought_1.poignancy, second_thought_embedding)
         except KeyError:
-            logger.exception(f"Failed to find npc_entity_id for npc named {npc['full_name']}")
+            logger.exception(f"Failed to find npc_entity_id for npc named {npc.full_name}")

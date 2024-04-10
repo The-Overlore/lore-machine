@@ -115,10 +115,15 @@ async def process_received_spawn_npc_event(event: ToriiEmittedEvent) -> int:
 
     backstory = npc_db.fetch_npc_backstory(npc_entity_id=npc_entity_id)
 
-    embedding = await llm_client.request_embedding(backstory, model=EmbeddingsModel.TEXT_EMBEDDING_SMALL.value)
+    embedding = await llm_client.request_embedding(
+        backstory.backstory, model=EmbeddingsModel.TEXT_EMBEDDING_SMALL.value
+    )
 
     row_id = town_hall_db.insert_npc_thought(
-        npc_entity_id=npc_entity_id, thought=backstory, thought_embedding=embedding
+        npc_entity_id=npc_entity_id,
+        thought=backstory.backstory,
+        poignancy=backstory.poignancy,
+        thought_embedding=embedding,
     )
 
     npc_db.delete_npc_profile_by_realm_entity_id(realm_entity_id)

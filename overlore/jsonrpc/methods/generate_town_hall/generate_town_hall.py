@@ -2,20 +2,21 @@ import json
 import logging
 from typing import TypedDict
 
-from guardrails import Guard
 from jsonrpcserver import Error, InvalidParams, Result, Success
 
 from overlore.errors import ErrorCodes
 from overlore.jsonrpc.methods.generate_town_hall.response import MethodParams, TownHallBuilder
 from overlore.katana.client import KatanaClient
 from overlore.llm.client import AsyncOpenAiClient
+from overlore.llm.guard import AsyncGuard
 from overlore.torii.client import ToriiClient
 
 logger = logging.getLogger("overlore")
 
 
 class Context(TypedDict):
-    guard: Guard
+    town_hall_guard: AsyncGuard
+    dialogue_thoughts_guard: AsyncGuard
     llm_client: AsyncOpenAiClient
     torii_client: ToriiClient
     katana_client: KatanaClient
@@ -43,7 +44,8 @@ async def handle_regular_flow(context: Context, params: MethodParams) -> Result:
         llm_client=context["llm_client"],
         torii_client=context["torii_client"],
         katana_client=context["katana_client"],
-        town_hall_guard=context["guard"],
+        town_hall_guard=context["town_hall_guard"],
+        dialogue_thoughts_guard=context["dialogue_thoughts_guard"],
     )
 
     townhall_response = await town_hall_builder.build_from_request_params(params=params)
