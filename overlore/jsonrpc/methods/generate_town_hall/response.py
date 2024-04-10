@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from typing import TypedDict, cast
 
@@ -24,9 +25,11 @@ from overlore.llm.guard import AsyncGuard
 from overlore.llm.natural_language_formatter import LlmFormatter
 from overlore.sqlite.townhall_db import TownhallDatabase
 from overlore.torii.client import ToriiClient
-from overlore.types import DialogueSegment, DialogueThoughts, Townhall
+from overlore.types import DialogueSegment, DialogueThoughts, NpcEntity, Townhall
 
 logger = logging.getLogger("overlore")
+
+generate_and_store_thoughts_tasks = set()
 
 
 class MethodParams(BaseModel):
@@ -101,14 +104,14 @@ class TownHallBuilder:
         dialogue = convert_dialogue_to_str(townhall.dialogue)
         row_id = townhall_db.insert_townhall_discussion(realm_id, dialogue, user_input, katana_time)
 
-        dialogue_thoughts: DialogueThoughts = await self.request_thoughts_with_guard(prompt=dialogue)
-
-        await store_thoughts(
-            realm_name=realm_name,
-            dialogue_thoughts=dialogue_thoughts,
-            realm_npcs=realm_npcs,
-            llm_client=self.llm_client,
+        task = asyncio.create_task(
+            coro=self.generate_and_store_thoughts(dialogue=dialogue, realm_name=realm_name, realm_npcs=realm_npcs),
+            name="generate_and_store_thoughts",
         )
+
+        generate_and_store_thoughts_tasks.add(task)
+        task.add_done_callback(generate_and_store_thoughts_tasks.discard)
+        print(generate_and_store_thoughts_tasks)
 
         if most_important_event:
             townhall_db.insert_or_update_daily_townhall_tracker(
@@ -118,6 +121,16 @@ class TownHallBuilder:
         return SuccessResponse(
             townhall_id=row_id,
             dialogue=[cast(DialogueSegment, dialogue_segment.model_dump()) for dialogue_segment in townhall.dialogue],
+        )
+
+    async def generate_and_store_thoughts(self, dialogue: str, realm_name: str, realm_npcs: list[NpcEntity]) -> None:
+        dialogue_thoughts: DialogueThoughts = await self.request_thoughts_with_guard(prompt=dialogue)
+
+        await store_thoughts(
+            realm_name=realm_name,
+            dialogue_thoughts=dialogue_thoughts,
+            realm_npcs=realm_npcs,
+            llm_client=self.llm_client,
         )
 
     def prepare_prompt_for_llm_call(

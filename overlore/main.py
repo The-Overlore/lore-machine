@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import os
 import signal
 from types import FrameType
 
@@ -44,8 +43,6 @@ def setup() -> BootConfig:
         EventsDatabase.instance().init()
         TownhallDatabase.instance().init()
         NpcDatabase.instance().init()
-
-    os.environ["GUARDRAILS_PROCESS_COUNT"] = "100"
 
     return config
 

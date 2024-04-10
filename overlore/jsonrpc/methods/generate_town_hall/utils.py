@@ -84,8 +84,8 @@ async def store_thoughts(
         thought_0 = npc.thoughts[0]
         thought_1 = npc.thoughts[1]
 
-        first_thought = f"Thought created in a conversation in {realm_name} - {thought_0.thought}"
-        second_thought = f"Thought created in a conversation in {realm_name} - {thought_1.thought}"
+        first_thought = f"Thought created during a conversation in {realm_name} - {thought_0.thought}"
+        second_thought = f"Thought created during a conversation in {realm_name} - {thought_1.thought}"
 
         first_thought_embedding = await llm_client.request_embedding(
             input_str=first_thought, model=EmbeddingsModel.TEXT_EMBEDDING_SMALL.value
