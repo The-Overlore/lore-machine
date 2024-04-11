@@ -3,13 +3,13 @@ from __future__ import annotations
 import json
 import logging
 from sqlite3 import Connection
-from typing import cast
+from typing import Tuple, cast
 
 import sqlite_vss
 
-from overlore.sqlite.base_db import BaseDatabase
+from overlore.errors import ErrorCodes
+from overlore.sqlite.base_db import A_TIME, BaseDatabase, average, decay_function
 from overlore.sqlite.errors import CosineSimilarityNotFoundError
-from overlore.sqlite.types import StoredVector
 
 logger = logging.getLogger("overlore")
 
@@ -17,7 +17,7 @@ logger = logging.getLogger("overlore")
 class TownhallDatabase(BaseDatabase):
     _instance: TownhallDatabase | None = None
     EXTENSIONS: list[str] = []
-    FIRST_BOOT_QUERIES: list[str] = [
+    MIGRATIONS: list[str] = [
         """
             CREATE TABLE IF NOT EXISTS townhall (
                 discussion TEXT,
@@ -36,7 +36,8 @@ class TownhallDatabase(BaseDatabase):
             CREATE TABLE IF NOT EXISTS npc_thought (
                 npc_entity_id INTEGER NOT NULL,
                 thought TEXT,
-                poignancy INTEGER
+                poignancy INTEGER,
+                ts INTEGER
             );
         """,
         """
@@ -60,29 +61,43 @@ class TownhallDatabase(BaseDatabase):
         sqlite_vss.load(db)
 
     def init(self, path: str = "./databases/townhall.db") -> TownhallDatabase:
-        self._init(path, self.EXTENSIONS, self.FIRST_BOOT_QUERIES, [], self._preload)
+        self._init(
+            path=path,
+            extensions=self.EXTENSIONS,
+            migrations=self.MIGRATIONS,
+            functions=[("average", -1, average), ("decayFunction", 3, decay_function)],
+            preload=self._preload,
+        )
         return self
 
-    def query_cosine_similarity(
-        self, query_embedding: list[float], npc_entity_id: int, limit: int = 1
-    ) -> list[StoredVector]:
-        if limit <= 0:
-            raise ValueError("Limit must be higher than 0")
-
+    def get_highest_scoring_thought(
+        self, query_embedding: list[float], npc_entity_id: int, katana_ts: int
+    ) -> tuple[str, float, float]:
         query = """
-            SELECT vectorized_thought.rowid, vss_cosine_similarity(?, embedding) AS cos_similarity
-            FROM vss_npc_thought vectorized_thought
-            INNER JOIN npc_thought thought ON vectorized_thought.rowid = thought.rowid
-            WHERE thought.npc_entity_id = ?
-            ORDER BY cos_similarity DESC
-            LIMIT ?;
+            SELECT thought, cos_similarity, score FROM (
+                SELECT thought, average(cos_similarity, poignancy, decayFunction(?, 10, ? - ts)) as score, cos_similarity
+                FROM(
+                    SELECT vss_cosine_similarity(?, vss_npc_thought.embedding) * 10.0 AS cos_similarity, npc_thought.thought, npc_thought.poignancy, npc_thought.ts
+                    FROM vss_npc_thought
+                    INNER JOIN npc_thought ON vss_npc_thought.rowid = npc_thought.rowid
+                    WHERE npc_thought.npc_entity_id = ?
+                )
+                ORDER BY score DESC
+            )
         """
+        values = (
+            A_TIME,
+            katana_ts,
+            json.dumps(query_embedding),
+            npc_entity_id,
+        )
 
-        values = (json.dumps(query_embedding), npc_entity_id, limit)
         res = self.execute_query(query, values)
+
         if not res:
             raise CosineSimilarityNotFoundError(f"No similar thought found for npc entity {npc_entity_id}")
-        return cast(list[StoredVector], res)
+
+        return cast(Tuple[str, float, float], res[0])
 
     def insert_townhall_discussion(self, realm_id: int, discussion: str, townhall_input: str, ts: int) -> int:
         discussion = discussion.strip()
@@ -109,11 +124,14 @@ class TownhallDatabase(BaseDatabase):
         return -1
 
     def insert_npc_thought(
-        self, npc_entity_id: int, thought: str, poignancy: int, thought_embedding: list[float]
+        self, npc_entity_id: int, thought: str, poignancy: int, katana_ts: int, thought_embedding: list[float]
     ) -> int:
+        if len(thought_embedding) == 0:
+            raise RuntimeError(ErrorCodes.INSERTING_EMPTY_EMBEDDING)
+
         added_row_id = self._insert(
-            "INSERT INTO npc_thought (npc_entity_id, thought, poignancy) VALUES (?, ?, ?);",
-            (npc_entity_id, thought, poignancy),
+            "INSERT INTO npc_thought (npc_entity_id, thought, poignancy, ts) VALUES (?, ?, ?, ?);",
+            (npc_entity_id, thought, poignancy, katana_ts),
         )
         self._insert(
             "INSERT INTO vss_npc_thought (rowid, embedding) VALUES (?, ?);",
@@ -122,6 +140,7 @@ class TownhallDatabase(BaseDatabase):
         return added_row_id
 
     def fetch_npc_thought_by_row_id(self, row_id: int) -> str:
+        self.execute_query("SELECT thought FROM npc_thought WHERE rowid = ?;", (row_id,))
         return cast(str, self.execute_query("SELECT thought FROM npc_thought WHERE rowid = ?;", (row_id,))[0][0])
 
     def fetch_daily_townhall_tracker(self, realm_id: int) -> list[int]:

@@ -15,7 +15,7 @@ class KatanaClient:
         ret = await self._query_katana_node(method="starknet_getNonce", params=params)
         return int(ret.get("result"), base=16)
 
-    async def get_katana_timestamp(self) -> int:
+    async def get_katana_ts(self) -> int:
         params = {"block_id": "latest"}
 
         ret = await self._query_katana_node(method="starknet_getBlockWithTxs", params=params)

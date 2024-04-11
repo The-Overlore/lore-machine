@@ -38,7 +38,7 @@ class MockKatanaClient:
             raise RuntimeError(ErrorCodes.KATANA_UNAVAILABLE)
         return 1
 
-    async def get_katana_timestamp(self) -> int:
+    async def get_katana_ts(self) -> int:
         if self.force_fail:
             raise RuntimeError(ErrorCodes.KATANA_UNAVAILABLE)
         return 1000

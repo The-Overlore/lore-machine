@@ -47,17 +47,17 @@ class Characteristics(BaseModel):
         description="Age of the character, between 15 and 65",
     )
     role: int = Field(
-        description=f"Job of the NPC. {roles_str}",
+        description=f"Job of the villager. {roles_str}",
     )
     sex: int = Field(
-        description="Sex of the NPC. (0 for male, 1 for female)",
+        description="Sex of the villager. (0 for male, 1 for female)",
     )
 
 
 class Backstory(BaseModel):
     backstory: str = Field(
         description=(
-            "Backstory of the NPC. Gives information about his past and his personality. Make it 5 sentences long"
+            "Backstory of the villager. Gives information about his past and his personality. Make it 5 sentences long"
             " minimum."
         ),
     )
@@ -71,38 +71,36 @@ class Backstory(BaseModel):
 
 class NpcProfile(BaseModel):
     character_trait: str = Field(
-        description="Trait of character that defines the NPC. One word max.",
+        description="Trait of character that defines the villager. One word max.",
     )
 
     full_name: str = Field(
-        description="Name of the NPC. Don't use common words in the name such as Wood",
+        description="Name of the villager. Don't use common words in the name such as Wood",
     )
 
     backstory: Backstory = Field(
-        description="Backstory of the NPC",
+        description="Backstory of the villager",
     )
 
     characteristics: Characteristics = Field(description="Various characteristics")
 
 
 class DialogueSegment(BaseModel):
-    full_name: str = Field(description="Full name of the NPC speaking.")
-    dialogue_segment: str = Field(description="The dialogue spoken by the NPC.")
+    full_name: str = Field(description="Full name of the villager speaking.")
+    dialogue_segment: str = Field(description="The dialogue spoken by the villager.")
 
 
 class Townhall(BaseModel):
-    dialogue: list[DialogueSegment] = Field(
-        description="""Discussion held by the NPCs. Do at least 10 exchanges between all the villagers."""
-    )
+    dialogue: list[DialogueSegment] = Field(description="""Discussion held by the NPCs. Do at least 10 exchanges.""")
 
 
 class Thought(BaseModel):
     thought: str = Field(description="""The thought""")
-    poignancy: int = Field(description="""Poignancy of the thought""")
+    poignancy: int = Field(description="""Poignancy of the thought.""")
 
 
 class NpcsAndThoughts(BaseModel):
-    thoughts: list[Thought] = Field(description="""Make two thought per villager""")
+    thoughts: list[Thought] = Field(description="""Thoughts and villager's name""")
     full_name: str = Field(description="Full name of the villager")
 
 

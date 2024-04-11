@@ -16,7 +16,7 @@ class NpcDatabase(BaseDatabase):
     _instance: NpcDatabase | None = None
 
     EXTENSIONS: list[str] = []
-    FIRST_BOOT_QUERIES: list[str] = [
+    MIGRATIONS: list[str] = [
         """
             CREATE TABLE IF NOT EXISTS npc_profile (
                 realm_entity_id INTEGER NOT NULL,
@@ -55,7 +55,7 @@ class NpcDatabase(BaseDatabase):
         self._init(
             path,
             self.EXTENSIONS,
-            self.FIRST_BOOT_QUERIES,
+            self.MIGRATIONS,
             [],
             self._preload,
         )
@@ -105,7 +105,7 @@ class NpcDatabase(BaseDatabase):
         )
 
         if not backstory:
-            raise NpcDescriptionNotFoundError(f"No NPC backstory found at npc_entity_id {npc_entity_id}")
+            raise NpcDescriptionNotFoundError(f"No villager backstory found at npc_entity_id {npc_entity_id}")
         return Backstory(backstory=backstory[0][0], poignancy=backstory[0][1])
 
     def insert_npc_backstory(self, npc_entity_id: int, realm_entity_id: int) -> int:
@@ -114,7 +114,7 @@ class NpcDatabase(BaseDatabase):
         )
 
         if not backstory:
-            raise NpcDescriptionNotFoundError(f"No NPC backstory found at npc_entity_id {npc_entity_id}")
+            raise NpcDescriptionNotFoundError(f"No villager backstory found at npc_entity_id {npc_entity_id}")
 
         back_story: str = backstory[0][0]
         poignancy: int = backstory[0][1]

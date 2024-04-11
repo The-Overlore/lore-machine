@@ -1,7 +1,9 @@
 import pytest
 
+from overlore.errors import ErrorCodes
 from overlore.sqlite.townhall_db import TownhallDatabase
 from tests.utils.townhall_db_test_utils import (
+    ThoughtsDatabaseFiller,
     daily_town_hall_tracker_data,
     format_townhalls,
     generate_townhalls_for_realmid,
@@ -45,7 +47,7 @@ def test_fetch_multiple_townhalls(db):
 def test_insert_and_fetch_npc_thought(db):
     for item in given_thoughts:
         added_row_id = db.insert_npc_thought(
-            item["npc_entity_id"], item["thought"], item["poignancy"], item["embedding"]
+            item["npc_entity_id"], item["thought"], item["poignancy"], item["ts"], item["embedding"]
         )
         retrieved_entry = db.fetch_npc_thought_by_row_id(added_row_id)
 
@@ -83,8 +85,79 @@ def delete_daily_townhall_tracker(db):
 def test_fetch_last_townhall_ts(db):
     realm_id = 999
 
-    assert -1 == db.fetch_last_townhall_ts_by_realm_id(999)
+    assert -1 == db.fetch_last_townhall_ts_by_realm_id(realm_id)
 
     generate_townhalls_for_realmid(db, realm_id, given_townhall_values_for_single_realm)
 
-    assert db.fetch_last_townhall_ts_by_realm_id(999) == 3000
+    assert db.fetch_last_townhall_ts_by_realm_id(realm_id) == 3000
+
+
+def test_insert_empty_thought_embedding(db):
+    npc_entity_id = 1
+    embedding = []
+    thought = "thought"
+    with pytest.raises(RuntimeError) as error:
+        _ = db.insert_npc_thought(
+            npc_entity_id=npc_entity_id, thought=thought, poignancy=1, katana_ts=1, thought_embedding=embedding
+        )
+
+    assert error.value.args[0] == ErrorCodes.INSERTING_EMPTY_EMBEDDING
+
+
+def test_get_highest_scoring_thought_with_time_increase(db):
+    iterations = 100
+    thoughts_filler = ThoughtsDatabaseFiller(database=db)
+
+    last_inserted_id = thoughts_filler.populate_with_time_increase(iterations)
+
+    most_recent_thought = db.fetch_npc_thought_by_row_id(last_inserted_id)
+
+    (highest_scoring_though, _, _) = db.get_highest_scoring_thought(
+        query_embedding=[1.0] * 1536, npc_entity_id=1, katana_ts=iterations
+    )
+
+    assert most_recent_thought == highest_scoring_though
+
+    not_so_recent_thought = db.fetch_npc_thought_by_row_id(1)
+
+    assert not_so_recent_thought != highest_scoring_though
+
+
+def test_get_highest_scoring_thought_with_cosine_increase(db):
+    iterations = 100
+    thoughts_filler = ThoughtsDatabaseFiller(database=db)
+
+    last_inserted_id = thoughts_filler.populate_with_cosine_increase(iterations)
+
+    most_relevant_thought = db.fetch_npc_thought_by_row_id(last_inserted_id)
+
+    query_embedding = [float(last_inserted_id)] + ([float(100)] * 1535)
+
+    (highest_scoring_though, _, _) = db.get_highest_scoring_thought(
+        query_embedding=query_embedding, npc_entity_id=1, katana_ts=1
+    )
+
+    assert most_relevant_thought == highest_scoring_though
+
+    least_relevant_thought = db.fetch_npc_thought_by_row_id(1)
+
+    assert least_relevant_thought != highest_scoring_though
+
+
+def test_get_higest_scoring_thought_with_poignancy_increase(db):
+    iterations = 10
+    thoughts_filler = ThoughtsDatabaseFiller(database=db)
+
+    last_inserted_id = thoughts_filler.populate_with_cosine_increase(iterations)
+
+    most_similar_thought = db.fetch_npc_thought_by_row_id(last_inserted_id)
+
+    (highest_scoring_though, _, _) = db.get_highest_scoring_thought(
+        query_embedding=[1.0] * 1536, npc_entity_id=1, katana_ts=1
+    )
+
+    assert most_similar_thought == highest_scoring_though
+
+    least = db.fetch_npc_thought_by_row_id(1)
+
+    assert least != highest_scoring_though

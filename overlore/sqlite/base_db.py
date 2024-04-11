@@ -13,6 +13,28 @@ CustomFunction = tuple[str, int, FunctionCallable]
 THREADSAFE = "THREADSAFE=1"
 
 
+MAX_TIME_DAYS = 7
+MAX_TIME_S = MAX_TIME_DAYS * 24.0 * 60.0 * 60.0
+MAX_DISTANCE_M = 10000
+
+A_TIME = float(-10.0 / MAX_TIME_S)
+A_DISTANCE = float(-10.0 / MAX_DISTANCE_M)
+
+
+def decay_function(a: float, b: float, x: float) -> float:
+    y = (a * x) + b
+    if y < 0.0:
+        return 0.0
+    if y > 10.0:
+        return 10.0
+    else:
+        return y
+
+
+def average(*args: Any) -> float:
+    return float((sum(args)) / len(args))
+
+
 class BaseDatabase:
     db: Connection
 
@@ -63,7 +85,7 @@ class BaseDatabase:
         self,
         path: str,
         extensions: list[str],
-        first_boot_queries: list[str],
+        migrations: list[str],
         functions: list[CustomFunction],
         preload: PreloadFunction,
     ) -> None:
@@ -85,5 +107,5 @@ class BaseDatabase:
         self.db.enable_load_extension(False)
 
         if db_first_launch:
-            self._use_first_boot_queries(first_boot_queries)
+            self._use_first_boot_queries(migrations)
         self.create_db_functions(functions)

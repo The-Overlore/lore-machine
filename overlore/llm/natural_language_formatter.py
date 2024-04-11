@@ -45,13 +45,13 @@ class LlmFormatter:
             winner = type_specific_data["winner"]
             winner_name = active_realm_name if (winner == Winner.Attacker.value) else passive_realm_name
             loser_name = passive_realm_name if (winner == Winner.Attacker.value) else active_realm_name
-            nl += f"The winner was {winner_name} while {loser_name} lost the war."
+            nl += f"The winner was {winner_name} while {loser_name} lost the war. "
             if type_specific_data["damage"] < 100:
-                nl += "It was a small battle."
+                nl += "It was a small battle. "
             elif type_specific_data["damage"] < 200:
-                nl += "The battle was quite bloody."
+                nl += "The battle was quite bloody. "
             else:
-                nl += "The battle was a bloodshed."
+                nl += "The battle was a bloodshed. "
         return nl
 
     def _order_accepted_to_nl(self, event: StoredEvent) -> str:

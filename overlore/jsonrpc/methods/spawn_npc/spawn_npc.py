@@ -27,7 +27,7 @@ async def spawn_npc(context: Context, params: MethodParams) -> Result:
     except ValueError as e:
         return InvalidParams(str(e))
 
-    logger.info(f"Realm (entity_id: {params['realm_entity_id']}) requested spawn of NPC")  # type: ignore[index]
+    logger.info(f"Realm (entity_id: {params['realm_entity_id']}) requested spawn of villager")  # type: ignore[index]
     try:
         return await handle_regular_flow(context=context, params=params)
     except RuntimeError as e:

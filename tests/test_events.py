@@ -25,7 +25,7 @@ async def test_trade_event():
                 "data": ["0x4b", "0x2", "0x49", "0x1", "0x1", "0x8", "0x1388", "0x1", "0x1", "0x1388", "0x65a1dafd"],
                 "createdAt": "2024-01-02 14:36:14",
             }
-        }
+        },
     )
     assert db.get_by_ids([db_id,]) == [
         [

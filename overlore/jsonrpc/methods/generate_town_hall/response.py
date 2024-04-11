@@ -72,17 +72,18 @@ class TownHallBuilder:
         if len(realm_npcs) < 2:
             raise RuntimeError(ErrorCodes.LACK_OF_NPCS)
 
-        katana_time = await self.katana_client.get_katana_timestamp()
+        katana_ts = await self.katana_client.get_katana_ts()
 
         last_ts = townhall_db.fetch_last_townhall_ts_by_realm_id(realm_id=realm_id)
-        if last_ts + DAY_IN_SECONDS < katana_time:
+        if last_ts + DAY_IN_SECONDS < katana_ts:
             townhall_db.delete_daily_townhall_tracker(realm_id=realm_id)
 
-        most_important_event = get_most_important_event(realm_id=realm_id, katana_time=katana_time)
+        most_important_event = get_most_important_event(realm_id=realm_id, katana_ts=katana_ts)
 
         npcs_thoughts_on_context = await get_npcs_thoughts(
             realm_npcs=realm_npcs,
             user_input=user_input,
+            katana_ts=katana_ts,
             client=self.llm_client,
             townhall_db=townhall_db,
         )
@@ -102,34 +103,41 @@ class TownHallBuilder:
         )
 
         dialogue = convert_dialogue_to_str(townhall.dialogue)
-        row_id = townhall_db.insert_townhall_discussion(realm_id, dialogue, user_input, katana_time)
+        row_id = townhall_db.insert_townhall_discussion(realm_id, dialogue, user_input, katana_ts)
 
         task = asyncio.create_task(
-            coro=self.generate_and_store_thoughts(dialogue=dialogue, realm_name=realm_name, realm_npcs=realm_npcs),
+            coro=self.generate_and_store_thoughts(
+                dialogue=dialogue, realm_name=realm_name, realm_npcs=realm_npcs, katana_ts=katana_ts
+            ),
             name="generate_and_store_thoughts",
         )
 
         generate_and_store_thoughts_tasks.add(task)
         task.add_done_callback(generate_and_store_thoughts_tasks.discard)
-        print(generate_and_store_thoughts_tasks)
 
         if most_important_event:
             townhall_db.insert_or_update_daily_townhall_tracker(
                 realm_id=realm_id, event_row_id=cast(int, most_important_event[0])
             )
 
+        response_dialogue = [
+            cast(DialogueSegment, dialogue_segment.model_dump()) for dialogue_segment in townhall.dialogue
+        ]
         return SuccessResponse(
             townhall_id=row_id,
-            dialogue=[cast(DialogueSegment, dialogue_segment.model_dump()) for dialogue_segment in townhall.dialogue],
+            dialogue=response_dialogue,
         )
 
-    async def generate_and_store_thoughts(self, dialogue: str, realm_name: str, realm_npcs: list[NpcEntity]) -> None:
+    async def generate_and_store_thoughts(
+        self, dialogue: str, realm_name: str, realm_npcs: list[NpcEntity], katana_ts: int
+    ) -> None:
         dialogue_thoughts: DialogueThoughts = await self.request_thoughts_with_guard(prompt=dialogue)
 
         await store_thoughts(
             realm_name=realm_name,
             dialogue_thoughts=dialogue_thoughts,
             realm_npcs=realm_npcs,
+            katana_ts=katana_ts,
             llm_client=self.llm_client,
         )
 
@@ -163,7 +171,7 @@ class TownHallBuilder:
             instructions=TOWNHALL_SYSTEM_STRING,
             prompt=prompt,
             model=ChatCompletionModel.GPT_4_PREVIEW.value,
-            temperature=1.2,
+            temperature=1,
         )
         return response  # type: ignore[no-any-return]
 

@@ -18,14 +18,14 @@ from overlore.types import (
 logger = logging.getLogger("overlore")
 
 
-def get_most_important_event(realm_id: int, katana_time: int) -> StoredEvent | None:
+def get_most_important_event(realm_id: int, katana_ts: int) -> StoredEvent | None:
     events_db = EventsDatabase.instance()
     townhall_db = TownhallDatabase.instance()
     realms = Realms.instance()
 
     stored_event_row_ids = townhall_db.fetch_daily_townhall_tracker(realm_id=realm_id)
 
-    return events_db.fetch_most_relevant_event(realms.position_by_id(realm_id), katana_time, stored_event_row_ids)
+    return events_db.fetch_most_relevant_event(realms.position_by_id(realm_id), katana_ts, stored_event_row_ids)
 
 
 def convert_dialogue_to_str(dialogue: list[DialogueSegment]) -> str:
@@ -37,6 +37,7 @@ def convert_dialogue_to_str(dialogue: list[DialogueSegment]) -> str:
 async def get_npcs_thoughts(
     realm_npcs: list[NpcEntity],
     user_input: str,
+    katana_ts: int,
     client: LlmClient,
     townhall_db: TownhallDatabase,
 ) -> list[str]:
@@ -52,13 +53,13 @@ async def get_npcs_thoughts(
 
     for npc in realm_npcs:
         try:
-            results = townhall_db.query_cosine_similarity(query_embedding, npc["entity_id"])
-            (row_id, similarity) = results[0]
+            (thought, cosine_similarity, score) = townhall_db.get_highest_scoring_thought(
+                query_embedding=query_embedding, npc_entity_id=npc["entity_id"], katana_ts=katana_ts
+            )
 
-            corresponding_thought = townhall_db.fetch_npc_thought_by_row_id(row_id)
-            logger.info(f"Similarity of vector {similarity} -> {corresponding_thought}")
+            logger.info(f"Thought retrieved with a score of {score} (cos_sim: {cosine_similarity}) -> {thought}")
 
-            thoughts.append(npc["full_name"] + ": " + townhall_db.fetch_npc_thought_by_row_id(row_id))
+            thoughts.append(npc["full_name"] + ": " + thought)
 
         except CosineSimilarityNotFoundError:
             pass
@@ -77,6 +78,7 @@ async def store_thoughts(
     dialogue_thoughts: DialogueThoughts,
     realm_npcs: list[NpcEntity],
     llm_client: LlmClient,
+    katana_ts: int,
 ) -> None:
     townhall_db = TownhallDatabase.instance()
 
@@ -95,7 +97,19 @@ async def store_thoughts(
         )
         try:
             npc_entity_id = get_entity_id_from_name(npc.full_name, realm_npcs)
-            townhall_db.insert_npc_thought(npc_entity_id, first_thought, thought_0.poignancy, first_thought_embedding)
-            townhall_db.insert_npc_thought(npc_entity_id, second_thought, thought_1.poignancy, second_thought_embedding)
+            townhall_db.insert_npc_thought(
+                npc_entity_id=npc_entity_id,
+                thought=first_thought,
+                poignancy=thought_0.poignancy,
+                katana_ts=katana_ts,
+                thought_embedding=first_thought_embedding,
+            )
+            townhall_db.insert_npc_thought(
+                npc_entity_id=npc_entity_id,
+                thought=second_thought,
+                poignancy=thought_1.poignancy,
+                katana_ts=katana_ts,
+                thought_embedding=second_thought_embedding,
+            )
         except KeyError:
             logger.exception(f"Failed to find npc_entity_id for npc named {npc.full_name}")
