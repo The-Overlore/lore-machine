@@ -5,7 +5,6 @@ from json.encoder import JSONEncoder
 from typing import Any, Optional, TypedDict
 
 warnings.simplefilter(action="ignore", category=FutureWarning)
-from guardrails.validators import TwoWords, ValidChoices, ValidLength, ValidRange  # noqa: E402
 from pydantic import BaseModel, Field  # noqa: E402
 
 from overlore.constants import ROLES  # noqa: E402
@@ -46,67 +45,68 @@ class ParsedEvent(TypedDict):
 class Characteristics(BaseModel):
     age: int = Field(
         description="Age of the character, between 15 and 65",
-        json_schema_extra={"validators": ValidRange(min=15, max=65)},
     )
     role: int = Field(
-        description=f"Job of the NPC. {roles_str}",
-        json_schema_extra={
-            "validators": [ValidChoices(choices=[index for index, role in enumerate(ROLES)], on_fail="reask")]
-        },
+        description=f"Job of the villager. {roles_str}",
     )
     sex: int = Field(
-        description="Sex of the NPC. (0 for male, 1 for female)",
-        json_schema_extra={"validators": [ValidChoices(choices=[0, 1], on_fail="reask")]},
+        description="Sex of the villager. (0 for male, 1 for female)",
+    )
+
+
+class Backstory(BaseModel):
+    backstory: str = Field(
+        description=(
+            "Backstory of the villager. Gives information about his past and his personality. Make it 5 sentences long"
+            " minimum."
+        ),
+    )
+    poignancy: int = Field(
+        description=(
+            "On the scale of 1 to 10, where 1 is purely mundane (e.g., brushing teeth, making bed) and 10 is extremely"
+            " poignant (e.g., a break up, war), rate the likely poignancy of the backstory."
+        )
     )
 
 
 class NpcProfile(BaseModel):
     character_trait: str = Field(
-        description="Trait of character that defines the NPC. One word max.",
-        json_schema_extra={
-            "validators": [
-                ValidLength(max=31, on_fail="fix"),
-            ]
-        },
+        description="Trait of character that defines the villager. One word max.",
     )
 
     full_name: str = Field(
-        description="Name of the NPC. Don't use common words in the name such as Wood",
-        json_schema_extra={"validators": [ValidLength(min=5, max=31), TwoWords(on_fail="reask")]},
+        description="Name of the villager. Don't use common words in the name such as Wood",
     )
 
-    description: str = Field(
-        description="Description of the NPC",
+    backstory: Backstory = Field(
+        description="Backstory of the villager",
     )
 
     characteristics: Characteristics = Field(description="Various characteristics")
 
 
 class DialogueSegment(BaseModel):
-    full_name: str = Field(description="Full name of the NPC speaking.")
-    dialogue_segment: str = Field(description="The dialogue spoken by the NPC.")
-
-
-class Thought(BaseModel):
-    full_name: str = Field(description="Full name of the NPC expressing the thought.")
-    value: str = Field(
-        description="""The NPC's thoughts and feelings about the discussion, including nuanced emotional responses and sentiments towards the topics being discussed."""
-    )
+    full_name: str = Field(description="Full name of the villager speaking.")
+    dialogue_segment: str = Field(description="The dialogue spoken by the villager.")
 
 
 class Townhall(BaseModel):
-    dialogue: list[DialogueSegment] = Field(
-        description="""Discussion held by the NPCs, structured to ensure each NPC speaks twice, revealing their viewpoints and emotional reactions to the discussion topics."""
-    )
-    thoughts: list[Thought] = Field(
-        description="""Collection of NPCs' thoughts post-discussion, highlighting their reflective sentiments and emotional responses to the topics covered."""
-    )
-    plotline: str = Field(
-        description=(
-            "The central theme or main storyline that unfolds throughout the dialogue. Make it evolve from the plot"
-            " given as input"
-        )
-    )
+    dialogue: list[DialogueSegment] = Field(description="""Discussion held by the NPCs. Do at least 10 exchanges.""")
+    input_score: int = Field(description="Note of the lord's input.")
+
+
+class Thought(BaseModel):
+    thought: str = Field(description="""The thought""")
+    poignancy: int = Field(description="""Poignancy of the thought.""")
+
+
+class NpcsAndThoughts(BaseModel):
+    thoughts: list[Thought] = Field(description="""Thoughts and villager's name. Make two thoughts per villager""")
+    full_name: str = Field(description="Full name of the villager")
+
+
+class DialogueThoughts(BaseModel):
+    npcs: list[NpcsAndThoughts] = Field()
 
 
 # Custom JSON Encoder that handles Enum types

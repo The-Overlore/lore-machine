@@ -7,7 +7,7 @@ from typing import cast
 from overlore.sqlite.base_db import BaseDatabase
 from overlore.sqlite.constants import Profile
 from overlore.sqlite.errors import NpcDescriptionNotFoundError, NpcProfileNotDeleted
-from overlore.types import NpcProfile
+from overlore.types import Backstory, Characteristics, NpcProfile
 
 logger = logging.getLogger("overlore")
 
@@ -16,7 +16,7 @@ class NpcDatabase(BaseDatabase):
     _instance: NpcDatabase | None = None
 
     EXTENSIONS: list[str] = []
-    FIRST_BOOT_QUERIES: list[str] = [
+    MIGRATIONS: list[str] = [
         """
             CREATE TABLE IF NOT EXISTS npc_profile (
                 realm_entity_id INTEGER NOT NULL,
@@ -25,13 +25,15 @@ class NpcDatabase(BaseDatabase):
                 role INTEGER,
                 sex INTEGER,
                 character_trait TEXT,
-                description TEXT
+                backstory TEXT,
+                backstory_poignancy INT
             );
         """,
         """
-            CREATE TABLE IF NOT EXISTS npc_description (
+            CREATE TABLE IF NOT EXISTS npc_backstory (
                 npc_entity_id INTEGER NOT NULL,
-                description TEXT
+                backstory TEXT,
+                poignancy INT
             );
         """,
     ]
@@ -53,7 +55,7 @@ class NpcDatabase(BaseDatabase):
         self._init(
             path,
             self.EXTENSIONS,
-            self.FIRST_BOOT_QUERIES,
+            self.MIGRATIONS,
             [],
             self._preload,
         )
@@ -61,16 +63,17 @@ class NpcDatabase(BaseDatabase):
 
     def insert_npc_profile(self, realm_entity_id: int, npc: NpcProfile) -> int:
         added_row_id = self._insert(
-            "INSERT INTO npc_profile(realm_entity_id, full_name, age, role, sex, character_trait, description) VALUES"
-            " (?, ?, ?, ?, ?, ?, ?);",
+            "INSERT INTO npc_profile(realm_entity_id, full_name, age, role, sex, character_trait, backstory,"
+            " backstory_poignancy) VALUES (?, ?, ?, ?, ?, ?, ?, ?);",
             (
                 realm_entity_id,
-                npc["full_name"],  # type: ignore[index]
-                npc["characteristics"]["age"],  # type: ignore[index]
-                npc["characteristics"]["role"],  # type: ignore[index]
-                npc["characteristics"]["sex"],  # type: ignore[index]
-                npc["character_trait"],  # type: ignore[index]
-                npc["description"],  # type: ignore[index]
+                npc.full_name,
+                npc.characteristics.age,
+                npc.characteristics.role,
+                npc.characteristics.sex,
+                npc.character_trait,
+                npc.backstory.backstory,
+                npc.backstory.poignancy,
             ),
         )
         return added_row_id
@@ -83,40 +86,42 @@ class NpcDatabase(BaseDatabase):
         else:
             profile = profile[0]
 
-            return cast(
-                NpcProfile,
-                {
-                    "character_trait": profile[Profile.TRAIT.value],
-                    "characteristics": {
-                        "age": cast(int, profile[Profile.AGE.value]),
-                        "role": cast(int, profile[Profile.ROLE.value]),
-                        "sex": cast(int, profile[Profile.SEX.value]),
-                    },
-                    "full_name": profile[Profile.FULL_NAME.value],
-                    "description": profile[Profile.DESCRIPTION.value],
-                },
+            return NpcProfile(
+                character_trait=profile[Profile.TRAIT.value],
+                characteristics=Characteristics(
+                    age=cast(int, profile[Profile.AGE.value]),
+                    role=cast(int, profile[Profile.ROLE.value]),
+                    sex=cast(int, profile[Profile.SEX.value]),
+                ),
+                full_name=profile[Profile.FULL_NAME.value],
+                backstory=Backstory(
+                    backstory=profile[Profile.BACKSTORY.value], poignancy=profile[Profile.BACKSTORY_POIGNANCY.value]
+                ),
             )
 
-    def fetch_npc_description(self, npc_entity_id: int) -> str:
-        description = self.execute_query(
-            "SELECT description FROM npc_description WHERE npc_entity_id = ?;", (npc_entity_id,)
+    def fetch_npc_backstory(self, npc_entity_id: int) -> Backstory:
+        backstory = self.execute_query(
+            "SELECT backstory, poignancy FROM npc_backstory WHERE npc_entity_id = ?;", (npc_entity_id,)
         )
 
-        if not description:
-            raise NpcDescriptionNotFoundError(f"No NPC description found at npc_entity_id {npc_entity_id}")
-        return str(description[0][0])
+        if not backstory:
+            raise NpcDescriptionNotFoundError(f"No villager backstory found at npc_entity_id {npc_entity_id}")
+        return Backstory(backstory=backstory[0][0], poignancy=backstory[0][1])
 
-    def insert_npc_description(self, npc_entity_id: int, realm_entity_id: int) -> int:
-        description = self.execute_query(
-            "SELECT description FROM npc_profile WHERE realm_entity_id = ?;", (realm_entity_id,)
+    def insert_npc_backstory(self, npc_entity_id: int, realm_entity_id: int) -> int:
+        backstory = self.execute_query(
+            "SELECT backstory, backstory_poignancy FROM npc_profile WHERE realm_entity_id = ?;", (realm_entity_id,)
         )
 
-        if not description:
-            raise NpcDescriptionNotFoundError(f"No NPC description found at npc_entity_id {npc_entity_id}")
+        if not backstory:
+            raise NpcDescriptionNotFoundError(f"No villager backstory found at npc_entity_id {npc_entity_id}")
+
+        back_story: str = backstory[0][0]
+        poignancy: int = backstory[0][1]
 
         row_id = self._insert(
-            "INSERT INTO npc_description (npc_entity_id, description) VALUES (?, ?);",
-            (npc_entity_id, description[0][0]),
+            "INSERT INTO npc_backstory (npc_entity_id, backstory, poignancy) VALUES (?, ?, ?);",
+            (npc_entity_id, back_story, poignancy),
         )
         return row_id
 

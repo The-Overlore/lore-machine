@@ -2,19 +2,19 @@ import json
 import logging
 from typing import TypedDict
 
-from guardrails import Guard
 from jsonrpcserver import Error, InvalidParams, Result, Success
 
 from overlore.jsonrpc.methods.spawn_npc.response import MethodParams, NpcProfileBuilder
 from overlore.katana.client import KatanaClient
 from overlore.llm.client import AsyncOpenAiClient
+from overlore.llm.guard import AsyncGuard
 from overlore.torii.client import ToriiClient
 
 logger = logging.getLogger("overlore")
 
 
 class Context(TypedDict):
-    guard: Guard
+    guard: AsyncGuard
     llm_client: AsyncOpenAiClient
     torii_client: ToriiClient
     katana_client: KatanaClient
@@ -27,7 +27,7 @@ async def spawn_npc(context: Context, params: MethodParams) -> Result:
     except ValueError as e:
         return InvalidParams(str(e))
 
-    logger.info(f"Realm (entity_id: {params['realm_entity_id']}) requested spawn of NPC")  # type: ignore[index]
+    logger.info(f"Realm (entity_id: {params['realm_entity_id']}) requested spawn of villager")  # type: ignore[index]
     try:
         return await handle_regular_flow(context=context, params=params)
     except RuntimeError as e:

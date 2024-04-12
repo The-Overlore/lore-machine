@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import os
 import signal
 from types import FrameType
 
@@ -45,8 +44,6 @@ def setup() -> BootConfig:
         TownhallDatabase.instance().init()
         NpcDatabase.instance().init()
 
-    os.environ["GUARDRAILS_PROCESS_COUNT"] = "30"
-
     return config
 
 
@@ -56,7 +53,7 @@ async def launch_services(config: BootConfig) -> None:
 
     logger.info(f"Starting JSON-RPC server on {config.env['HOST_ADDRESS']}:{config.env['HOST_PORT']}")
 
-    await use_torii_subscription(torii_service_endpoint=config.env["TORII_WS"], callback_and_subs=TORII_SUBSCRIPTIONS)
+    await use_torii_subscription(config=config, callback_and_subs=TORII_SUBSCRIPTIONS)
 
 
 async def start() -> None:

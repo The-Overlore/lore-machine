@@ -94,6 +94,8 @@ class ToriiClient:
                 ) as response:
                     json_response = cast(dict[str, Any], await response.json())
             data = json_response["data"]
+            if data is None:
+                raise RuntimeError(ErrorCodes.NO_DATA_AVAILABLE)
         except KeyError as e:
             logger.exception("KeyError accessing %s in JSON response: %s", e, response)
         except aiohttp.ClientConnectorError as err:

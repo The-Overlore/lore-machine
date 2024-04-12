@@ -1,3 +1,4 @@
+import json
 from typing import Any, cast
 
 from overlore.constants import ROLES, SEX
@@ -9,7 +10,7 @@ from overlore.llm.constants import (
 from overlore.sqlite.constants import EventType
 from overlore.sqlite.types import StoredEvent
 from overlore.types import NpcEntity
-from overlore.utils import get_enum_name_by_value, str_to_json
+from overlore.utils import get_enum_name_by_value
 
 
 class LlmFormatter:
@@ -33,19 +34,24 @@ class LlmFormatter:
         active_realm_name = realms.name_by_id(active_realm_id)
         passive_realm_name = realms.name_by_id(passive_realm_id)
 
-        type_specific_data: dict[Any, Any] = str_to_json(str(event[8]))
+        type_specific_data: dict[Any, Any] = json.loads(str(event[8]))
 
         if type_specific_data["damage"] == 0:
             nl += f"Pillage of realm {passive_realm_name} by realm {active_realm_name}. "
             stolen_resources = self._resources_to_nl(type_specific_data["stolen_resources"])
             nl += f"Stolen resources are {stolen_resources}."
         else:
-            nl += f"War waged: by {active_realm_name} against {passive_realm_name}. "
+            nl += f"{active_realm_name} went to war against {passive_realm_name}. "
             winner = type_specific_data["winner"]
             winner_name = active_realm_name if (winner == Winner.Attacker.value) else passive_realm_name
             loser_name = passive_realm_name if (winner == Winner.Attacker.value) else active_realm_name
-            nl += f"Winner is {winner_name}. Loser is {loser_name}. "
-            nl += f"Damages taken by {loser_name}: {type_specific_data['damage']}. "
+            nl += f"The winner was {winner_name} while {loser_name} lost the war. "
+            if type_specific_data["damage"] < 100:
+                nl += "It was a small battle. "
+            elif type_specific_data["damage"] < 200:
+                nl += "The battle was quite bloody. "
+            else:
+                nl += "The battle was a bloodshed. "
         return nl
 
     def _order_accepted_to_nl(self, event: StoredEvent) -> str:
@@ -61,12 +67,13 @@ class LlmFormatter:
         active_realm_name = realms.name_by_id(active_realm_id)
         passive_realm_name = realms.name_by_id(passive_realm_id)
 
-        type_specific_data: dict[Any, Any] = str_to_json(str(event[8]))
+        type_specific_data: dict[Any, Any] = json.loads(str(event[8]))
         resources_taker = self._resources_to_nl(type_specific_data["resources_taker"])
         resources_maker = self._resources_to_nl(type_specific_data["resources_maker"])
         nl = f"Trade happened: between the realms of {active_realm_name} and {passive_realm_name}. "
         nl += f"{active_realm_name} will get {resources_taker}. "
         nl += f"{passive_realm_name} will get {resources_maker}. "
+
         return nl
 
     def _npc_to_nl(self, npc: NpcEntity) -> str:
@@ -78,14 +85,11 @@ class LlmFormatter:
         role: str = cast(str, ROLES[characteristics["role"]])  # type: ignore[index]
         sex: str = cast(str, SEX[characteristics["sex"]])  # type: ignore[index]
 
-        character_trait: str = cast(str, npc["character_trait"])
         name: str = cast(str, npc["full_name"])
 
         origin_realm: str = realms.name_by_id(npc["origin_realm_id"])
 
-        return AGENT_TEMPLATE.format(
-            name=name, sex=sex, role=role, character_trait=character_trait, age=age, origin_realm=origin_realm
-        )
+        return AGENT_TEMPLATE.format(name=name, sex=sex, role=role, age=age, origin_realm=origin_realm)
 
     def event_to_nl(self, event: StoredEvent) -> str:
         #  event

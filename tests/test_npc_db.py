@@ -21,17 +21,18 @@ def test_insert_and_fetch_npc_profile(db):
         assert retrieved_entry == item["profile"], f"Expected profile '{item['profile']}', got '{retrieved_entry}'"
 
 
-def test_insert_and_fetch_npc_description(db):
+def test_insert_and_fetch_npc_backstory(db):
     prepare_data(db)
 
     for item in test_data:
-        added_row_id = db.insert_npc_description(item["npc_entity_id"], item["realm_entity_id"])
-        retrieved_entry = db.fetch_npc_description(item["npc_entity_id"])
+        added_row_id = db.insert_npc_backstory(item["npc_entity_id"], item["realm_entity_id"])
+        retrieved_entry = db.fetch_npc_backstory(item["npc_entity_id"])
 
         assert added_row_id == item["rowid"], f"Expected rowid {item['rowid']}, got {added_row_id}"
+
         assert (
-            retrieved_entry == item["profile"]["description"]
-        ), f"Expected description '{item['profile']['description']}', got '{retrieved_entry}'"
+            retrieved_entry == item["profile"].backstory
+        ), f"Expected backstory '{item['profile'].backstory}', got '{retrieved_entry}'"
 
 
 def test_delete_npc_profile(db):
@@ -44,9 +45,12 @@ def test_delete_npc_profile(db):
 
 
 def test_fetch_npc_profile_not_found_error(db):
-    assert None is db.fetch_npc_profile_by_realm_entity_id(999)
+    assert None is db.fetch_npc_profile_by_realm_entity_id(INVALID_NPC_ENTITY_ID)
 
 
-def test_fetch_npc_description_not_found_error(db):
+def test_fetch_npc_backstory_not_found_error(db):
     with pytest.raises(NpcDescriptionNotFoundError):
-        db.fetch_npc_description(999)
+        db.fetch_npc_backstory(INVALID_NPC_ENTITY_ID)
+
+
+INVALID_NPC_ENTITY_ID = 999

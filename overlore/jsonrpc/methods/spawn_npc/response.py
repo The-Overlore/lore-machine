@@ -2,15 +2,14 @@ import logging
 import random
 from typing import TypedDict, cast
 
-from guardrails import Guard
 from openai import BaseModel
-from rich import print
 
 from overlore.constants import TRAIT_TYPE
 from overlore.jsonrpc.methods.spawn_npc.constants import NPC_PROFILE_SYSTEM_STRING, NPC_PROFILE_USER_STRING
 from overlore.katana.client import KatanaClient
 from overlore.llm.client import LlmClient
 from overlore.llm.constants import ChatCompletionModel
+from overlore.llm.guard import AsyncGuard
 from overlore.llm.natural_language_formatter import LlmFormatter
 from overlore.sqlite.npc_db import NpcDatabase
 from overlore.torii.client import ToriiClient
@@ -36,7 +35,7 @@ class NpcProfileBuilder:
         torii_client: ToriiClient,
         katana_client: KatanaClient,
         lore_machine_pk: str,
-        guard: Guard,
+        guard: AsyncGuard,
     ):
         self.formater: LlmFormatter = LlmFormatter()
         self.llm_client = llm_client
@@ -71,7 +70,8 @@ class NpcProfileBuilder:
         signature = await self.create_signature_for_response(
             realm_owner_wallet_address=realm_owner_wallet_address, npc_profile=npc_profile
         )
-        return SuccessResponse(npc=npc_profile, signature=signature)
+
+        return SuccessResponse(npc=cast(NpcProfile, npc_profile.model_dump()), signature=signature)
 
     def prepare_prompt_for_llm_call(self) -> str:
         trait_type = TRAIT_TYPE[random.randrange(2)]
@@ -79,17 +79,15 @@ class NpcProfileBuilder:
         return prompt
 
     async def request_npc_profile_generation_with_guard(self, prompt: str) -> NpcProfile:
-        _, validated_response, *_ = await self.guard(
-            llm_api=self.llm_client.request_prompt_completion,
+        response = await self.guard.call_llm_with_guard(
+            api_function=self.llm_client.request_prompt_completion,
             instructions=NPC_PROFILE_SYSTEM_STRING,
             prompt=prompt,
             model=ChatCompletionModel.GPT_3_5_TURBO.value,
-            temperature=1.8,
+            temperature=1.6,
         )
 
-        print(self.guard.history.last.tree)
-
-        return cast(NpcProfile, validated_response)
+        return response  # type: ignore[no-any-return]
 
     async def create_signature_for_response(
         self, realm_owner_wallet_address: str, npc_profile: NpcProfile
@@ -100,11 +98,11 @@ class NpcProfileBuilder:
 
         signature_params = [
             nonce,
-            npc_profile["characteristics"]["age"],  # type: ignore[index]
-            npc_profile["characteristics"]["role"],  # type: ignore[index]
-            npc_profile["characteristics"]["sex"],  # type: ignore[index]
-            npc_profile["character_trait"],  # type: ignore[index]
-            npc_profile["full_name"],  # type: ignore[index]
+            npc_profile.characteristics.age,
+            npc_profile.characteristics.role,
+            npc_profile.characteristics.sex,
+            npc_profile.character_trait,
+            npc_profile.full_name,
         ]
         signature = sign_parameters(signature_params, self.lore_machine_pk)
 

@@ -1,13 +1,15 @@
+from overlore.types import Backstory, Characteristics, NpcProfile
+
 test_data = [
     {
         "realm_entity_id": i,
         "npc_entity_id": i * 100,
-        "profile": {
-            "full_name": f"fullname {i}",
-            "characteristics": {"age": i, "sex": i, "role": i},
-            "character_trait": f"trait {i}",
-            "description": f"description {i}",
-        },
+        "profile": NpcProfile(
+            full_name=f"fullname {i}",
+            characteristics=Characteristics(age=i, sex=i, role=i),
+            character_trait=f"trait {i}",
+            backstory=Backstory(backstory=f"backstory {i}", poignancy=i),
+        ),
         "rowid": i,
     }
     for i in range(1, 4)

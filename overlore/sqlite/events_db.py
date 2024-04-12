@@ -6,38 +6,13 @@ from typing import Any, cast
 
 from overlore.eternum.constants import Realms
 from overlore.eternum.types import RealmPosition
-from overlore.sqlite.base_db import BaseDatabase
+from overlore.sqlite.base_db import A_DISTANCE, A_TIME, BaseDatabase, average, decay_function
 from overlore.sqlite.types import StoredEvent
 from overlore.types import ParsedEvent
 
 logger = logging.getLogger("overlore")
 
-MAX_TIME_DAYS = 7
-MAX_TIME_S = MAX_TIME_DAYS * 24.0 * 60.0 * 60.0
-MAX_DISTANCE_M = 10000
-
-A_TIME = float(-10.0 / MAX_TIME_S)
-A_DISTANCE = float(-10.0 / MAX_DISTANCE_M)
-
 QUERY_RES_POS_INDEX_START = 9
-
-
-def decayFunction(a: float, b: float, x: float) -> float:
-    y = (a * x) + b
-    if y < 0.0:
-        return 0.0
-    if y > 10.0:
-        return 10.0
-    else:
-        return y
-
-
-def minus(a: float, b: float) -> float:
-    return a - b
-
-
-def average(a: float, b: float, c: float) -> float:
-    return (a + b + c) / 3
 
 
 class EventsDatabase(BaseDatabase):
@@ -45,7 +20,7 @@ class EventsDatabase(BaseDatabase):
     realms: Realms
 
     EXTENSIONS = ["mod_spatialite"]
-    FIRST_BOOT_QUERIES = [
+    MIGRATIONS = [
         # this needs to be executed first
         """SELECT InitSpatialMetaData(1);""",
         """
@@ -85,8 +60,8 @@ class EventsDatabase(BaseDatabase):
         self._init(
             path,
             self.EXTENSIONS,
-            self.FIRST_BOOT_QUERIES,
-            [("decayFunction", 3, decayFunction), ("average", 3, average), ("minus", 2, average)],
+            self.MIGRATIONS,
+            [("decayFunction", 3, decay_function), ("average", -1, average)],
             self._preload,
         )
         self.realms = Realms.instance().init()
