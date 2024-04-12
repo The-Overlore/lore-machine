@@ -1,12 +1,19 @@
 from overlore.sqlite.townhall_db import TownhallDatabase
 
 given_townhall_values = [
-    {"rowid": i, "discussion": f"Discussion {i}", "input": f"Input {i}", "realm_id": i * 100, "ts": i * 1000}
+    {
+        "rowid": i,
+        "discussion": f"Discussion {i}",
+        "input_score": i,
+        "input": f"Input {i}",
+        "realm_id": i * 100,
+        "ts": i * 1000,
+    }
     for i in range(1, 4)
 ]
 
 given_townhall_values_for_single_realm = [
-    {"discussion": f"Discussion {i}", "input": f"Input {i}", "ts": i * 1000} for i in range(1, 4)
+    {"discussion": f"Discussion {i}", "input": f"Input {i}", "input_score": i, "ts": i * 1000} for i in range(1, 4)
 ]
 
 given_plots = [{"rowid": i, "realm_id": i, "plot": f"plot {i}"} for i in range(1, 4)]
@@ -28,19 +35,20 @@ daily_town_hall_tracker_data = [
 ]
 
 
-def generate_townhalls_for_realmid(db, realm_id, townhalls):
+def generate_townhalls_for_realmid(db: TownhallDatabase, realm_id, townhalls):
     for item in townhalls:
-        db.insert_townhall_discussion(realm_id, item["discussion"], item["input"], item["ts"])
+        db.insert_townhall_discussion(realm_id, item["discussion"], item["input"], item["input_score"], item["ts"])
 
 
 def format_townhalls(townhalls) -> list:
+    INSERT_INDEX = 0
     res = []
     for item in townhalls:
-        res.insert(0, (item["discussion"], item["input"]))
+        res.insert(INSERT_INDEX, (item["discussion"], item["input"]))
     return res
 
 
-def prepare_daily_town_hall_tracker_data(db):
+def prepare_daily_town_hall_tracker_data(db: TownhallDatabase):
     for item in daily_town_hall_tracker_data:
         db.insert_or_update_daily_townhall_tracker(item["realm_id"], item["event_row_id"])
 

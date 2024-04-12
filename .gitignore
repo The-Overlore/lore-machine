@@ -1,10 +1,6 @@
 docs/source
 
-databases/events.db
-databases/townhall.db
-databases/npc.db
-databases/npc.db-journal
-databases/events.db-journal
+databases/
 
 .DS_Store
 

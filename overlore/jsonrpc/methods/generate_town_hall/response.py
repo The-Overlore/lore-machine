@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from datetime import datetime
 from typing import TypedDict, cast
 
 from openai import BaseModel
@@ -16,7 +17,7 @@ from overlore.jsonrpc.methods.generate_town_hall.utils import (
     convert_dialogue_to_str,
     get_most_important_event,
     get_npcs_thoughts,
-    store_thoughts,
+    store_npcs_thoughts,
 )
 from overlore.katana.client import KatanaClient
 from overlore.llm.client import LlmClient
@@ -42,6 +43,7 @@ class MethodParams(BaseModel):
 class SuccessResponse(TypedDict):
     townhall_id: int
     dialogue: list[DialogueSegment]
+    input_score: int
 
 
 class TownHallBuilder:
@@ -95,7 +97,8 @@ class TownHallBuilder:
                 most_important_event=most_important_event,
                 npcs_thoughts_on_context=npcs_thoughts_on_context,
                 user_input=user_input,
-            )
+            ),
+            katana_ts=katana_ts,
         )
 
         townhall: Townhall = await self.request_town_hall_with_guard(
@@ -103,7 +106,13 @@ class TownHallBuilder:
         )
 
         dialogue = convert_dialogue_to_str(townhall.dialogue)
-        row_id = townhall_db.insert_townhall_discussion(realm_id, dialogue, user_input, katana_ts)
+        row_id = townhall_db.insert_townhall_discussion(
+            realm_id=realm_id,
+            discussion=dialogue,
+            townhall_input=user_input,
+            input_score=townhall.input_score,
+            ts=katana_ts,
+        )
 
         task = asyncio.create_task(
             coro=self.generate_and_store_thoughts(
@@ -123,17 +132,14 @@ class TownHallBuilder:
         response_dialogue = [
             cast(DialogueSegment, dialogue_segment.model_dump()) for dialogue_segment in townhall.dialogue
         ]
-        return SuccessResponse(
-            townhall_id=row_id,
-            dialogue=response_dialogue,
-        )
+        return SuccessResponse(townhall_id=row_id, dialogue=response_dialogue, input_score=townhall.input_score)
 
     async def generate_and_store_thoughts(
         self, dialogue: str, realm_name: str, realm_npcs: list[NpcEntity], katana_ts: int
     ) -> None:
         dialogue_thoughts: DialogueThoughts = await self.request_thoughts_with_guard(prompt=dialogue)
 
-        await store_thoughts(
+        await store_npcs_thoughts(
             realm_name=realm_name,
             dialogue_thoughts=dialogue_thoughts,
             realm_npcs=realm_npcs,
@@ -141,10 +147,7 @@ class TownHallBuilder:
             llm_client=self.llm_client,
         )
 
-    def prepare_prompt_for_llm_call(
-        self,
-        realm: RealmForPrompt,
-    ) -> str:
+    def prepare_prompt_for_llm_call(self, realm: RealmForPrompt, katana_ts: int) -> str:
         event_string = ""
         if realm["most_important_event"] is not None:
             event_string = self.formater.event_to_nl(realm["most_important_event"])
@@ -153,7 +156,10 @@ class TownHallBuilder:
 
         npcs_nl = self.formater.npcs_to_nl(realm["realm_npcs"])
 
+        date_time = datetime.fromtimestamp(katana_ts)
+
         prompt = TOWNHALL_USER_STRING.format(
+            date_time=date_time,
             realm_name=realm["realm_name"],
             relevant_event=event_string,
             user_input=realm["user_input"],

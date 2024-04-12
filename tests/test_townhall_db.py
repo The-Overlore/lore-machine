@@ -21,9 +21,11 @@ def db():
     db.close_conn()
 
 
-def test_insert_and_fetch_townhall_discussion(db):
+def test_insert_and_fetch_townhall_discussion(db: TownhallDatabase):
     for item in given_townhall_values:
-        added_row_id = db.insert_townhall_discussion(item["realm_id"], item["discussion"], item["input"], item["ts"])
+        added_row_id = db.insert_townhall_discussion(
+            item["realm_id"], item["discussion"], item["input"], item["input_score"], item["ts"]
+        )
         retrieved_entry = db.fetch_townhalls_by_realm_id(item["realm_id"])[0]
 
         assert added_row_id == item["rowid"], f"Expected rowid {item['rowid']}, got {added_row_id}"
@@ -33,18 +35,16 @@ def test_insert_and_fetch_townhall_discussion(db):
         ), f"Expected profile '{(item['discussion'], item['input'])}', got '{retrieved_entry}'"
 
 
-def test_fetch_multiple_townhalls(db):
+def test_fetch_multiple_townhalls(db: TownhallDatabase):
     realm_id = 999
     generate_townhalls_for_realmid(db, realm_id, given_townhall_values_for_single_realm)
 
     retrieved_entries = db.fetch_townhalls_by_realm_id(realm_id)
 
-    assert retrieved_entries == format_townhalls(
-        given_townhall_values_for_single_realm
-    ), f"Failed to fetch all townhalls for realm_id {realm_id}"
+    assert retrieved_entries == format_townhalls(given_townhall_values_for_single_realm)
 
 
-def test_insert_and_fetch_npc_thought(db):
+def test_insert_and_fetch_npc_thought(db: TownhallDatabase):
     for item in given_thoughts:
         added_row_id = db.insert_npc_thought(
             item["npc_entity_id"], item["thought"], item["poignancy"], item["ts"], item["embedding"]
@@ -55,7 +55,7 @@ def test_insert_and_fetch_npc_thought(db):
         assert retrieved_entry == item["thought"], f"Expected thought '{item['thought']}', got '{retrieved_entry}'"
 
 
-def test_insert_and_fetch_daily_townhall_tracker(db):
+def test_insert_and_fetch_daily_townhall_tracker(db: TownhallDatabase):
     for item in daily_town_hall_tracker_data:
         added_row_id = db.insert_or_update_daily_townhall_tracker(item["realm_id"], item["event_row_id"])
 
@@ -63,7 +63,7 @@ def test_insert_and_fetch_daily_townhall_tracker(db):
         assert [item["event_row_id"]] == db.fetch_daily_townhall_tracker(item["realm_id"])
 
 
-def test_update_daily_townhall_tracker(db):
+def test_update_daily_townhall_tracker(db: TownhallDatabase):
     row_ids = []
     for item in daily_town_hall_tracker_data:
         updated_count = db.insert_or_update_daily_townhall_tracker(1, item["event_row_id"])
@@ -73,7 +73,7 @@ def test_update_daily_townhall_tracker(db):
         assert row_ids == db.fetch_daily_townhall_tracker(1)
 
 
-def delete_daily_townhall_tracker(db):
+def delete_daily_townhall_tracker(db: TownhallDatabase):
     prepare_daily_town_hall_tracker_data(db)
 
     for item in daily_town_hall_tracker_data:
@@ -82,7 +82,7 @@ def delete_daily_townhall_tracker(db):
         assert len(db.fetch_daily_townhall_tracker(item["realm_id"])) == 0
 
 
-def test_fetch_last_townhall_ts(db):
+def test_fetch_last_townhall_ts(db: TownhallDatabase):
     realm_id = 999
 
     assert -1 == db.fetch_last_townhall_ts_by_realm_id(realm_id)
@@ -92,7 +92,7 @@ def test_fetch_last_townhall_ts(db):
     assert db.fetch_last_townhall_ts_by_realm_id(realm_id) == 3000
 
 
-def test_insert_empty_thought_embedding(db):
+def test_insert_empty_thought_embedding(db: TownhallDatabase):
     npc_entity_id = 1
     embedding = []
     thought = "thought"
@@ -104,7 +104,7 @@ def test_insert_empty_thought_embedding(db):
     assert error.value.args[0] == ErrorCodes.INSERTING_EMPTY_EMBEDDING
 
 
-def test_get_highest_scoring_thought_with_time_increase(db):
+def test_get_highest_scoring_thought_with_time_increase(db: TownhallDatabase):
     iterations = 100
     thoughts_filler = ThoughtsDatabaseFiller(database=db)
 
@@ -112,7 +112,7 @@ def test_get_highest_scoring_thought_with_time_increase(db):
 
     most_recent_thought = db.fetch_npc_thought_by_row_id(last_inserted_id)
 
-    (highest_scoring_though, _, _) = db.get_highest_scoring_thought(
+    (highest_scoring_though, _, _, _) = db.get_highest_scoring_thought(
         query_embedding=[1.0] * 1536, npc_entity_id=1, katana_ts=iterations
     )
 
@@ -123,7 +123,7 @@ def test_get_highest_scoring_thought_with_time_increase(db):
     assert not_so_recent_thought != highest_scoring_though
 
 
-def test_get_highest_scoring_thought_with_cosine_increase(db):
+def test_get_highest_scoring_thought_with_cosine_increase(db: TownhallDatabase):
     iterations = 100
     thoughts_filler = ThoughtsDatabaseFiller(database=db)
 
@@ -133,7 +133,7 @@ def test_get_highest_scoring_thought_with_cosine_increase(db):
 
     query_embedding = [float(last_inserted_id)] + ([float(100)] * 1535)
 
-    (highest_scoring_though, _, _) = db.get_highest_scoring_thought(
+    (highest_scoring_though, _, _, _) = db.get_highest_scoring_thought(
         query_embedding=query_embedding, npc_entity_id=1, katana_ts=1
     )
 
@@ -144,7 +144,7 @@ def test_get_highest_scoring_thought_with_cosine_increase(db):
     assert least_relevant_thought != highest_scoring_though
 
 
-def test_get_higest_scoring_thought_with_poignancy_increase(db):
+def test_get_higest_scoring_thought_with_poignancy_increase(db: TownhallDatabase):
     iterations = 10
     thoughts_filler = ThoughtsDatabaseFiller(database=db)
 
@@ -152,7 +152,7 @@ def test_get_higest_scoring_thought_with_poignancy_increase(db):
 
     most_similar_thought = db.fetch_npc_thought_by_row_id(last_inserted_id)
 
-    (highest_scoring_though, _, _) = db.get_highest_scoring_thought(
+    (highest_scoring_though, _, _, _) = db.get_highest_scoring_thought(
         query_embedding=[1.0] * 1536, npc_entity_id=1, katana_ts=1
     )
 

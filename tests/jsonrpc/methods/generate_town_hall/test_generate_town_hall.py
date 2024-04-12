@@ -20,33 +20,24 @@ from tests.jsonrpc.types import MockKatanaClient, MockLlmClient, MockToriiClient
 
 
 @pytest.mark.asyncio
-async def test_generate_town_hall_without_user_input(init_town_hall_builder):
-    town_hall_builder = init_town_hall_builder
-
-    realm_entity_id = 1
-    params = {"realm_id": 1, "user_input": "", "realm_entity_id": realm_entity_id, "order_id": 1}
+async def test_generate_town_hall_without_user_input(town_hall_builder: TownHallBuilder):
+    params = {"realm_id": 1, "user_input": "", "realm_entity_id": 1, "order_id": 1}
     response = await town_hall_builder.build_from_request_params(params=params)
 
     assert dialogue == response["dialogue"]
 
 
 @pytest.mark.asyncio
-async def test_generate_town_hall_with_user_input(init_town_hall_builder):
-    town_hall_builder = init_town_hall_builder
-
-    realm_entity_id = 1
-    params = {"realm_id": 1, "user_input": "Hello World!", "realm_entity_id": realm_entity_id, "order_id": 1}
+async def test_generate_town_hall_with_user_input(town_hall_builder: TownHallBuilder):
+    params = {"realm_id": 1, "user_input": "Hello World!", "realm_entity_id": 1, "order_id": 1}
     response = await town_hall_builder.build_from_request_params(params=params)
 
     assert dialogue == response["dialogue"]
 
 
 @pytest.mark.asyncio
-async def test_generate_town_hall_no_npcs_in_realm(init_town_hall_builder):
-    town_hall_builder = init_town_hall_builder
-
-    realm_entity_id = 2
-    params = {"realm_id": 1, "user_input": "Hello World!", "realm_entity_id": realm_entity_id, "order_id": 1}
+async def test_generate_town_hall_no_npcs_in_realm(town_hall_builder: TownHallBuilder):
+    params = {"realm_id": 1, "user_input": "Hello World!", "realm_entity_id": 2, "order_id": 1}
 
     with pytest.raises(RuntimeError) as error:
         _ = await town_hall_builder.build_from_request_params(params=params)
@@ -55,8 +46,7 @@ async def test_generate_town_hall_no_npcs_in_realm(init_town_hall_builder):
 
 
 @pytest.mark.asyncio
-async def test_generate_town_hall_katana_unavailable(init_town_hall_builder):
-    town_hall_builder = init_town_hall_builder
+async def test_generate_town_hall_katana_unavailable(town_hall_builder: TownHallBuilder):
     town_hall_builder.katana_client = MockKatanaClient(force_fail=True)
 
     realm_entity_id = 1
@@ -69,8 +59,7 @@ async def test_generate_town_hall_katana_unavailable(init_town_hall_builder):
 
 
 @pytest.mark.asyncio
-async def test_generate_town_hall_torii_unavailable(init_town_hall_builder):
-    town_hall_builder = init_town_hall_builder
+async def test_generate_town_hall_torii_unavailable(town_hall_builder: TownHallBuilder):
     town_hall_builder.torii_client = MockToriiClient(force_fail=True)
 
     realm_entity_id = 1
@@ -83,14 +72,14 @@ async def test_generate_town_hall_torii_unavailable(init_town_hall_builder):
 
 
 @pytest.fixture
-def init_town_hall_builder():
+def town_hall_builder():
     npc_db = NpcDatabase.instance().init(":memory:")
     events_db = EventsDatabase.instance().init(":memory:")
     town_hall_db = TownhallDatabase.instance().init(":memory:")
 
     mock_llm_client = MockLlmClient(
         embedding_return=valid_embedding,
-        prompt_completion_return=valid_dialogue,
+        prompt_completion_return=valid_response,
         thoughts_completion_return=valid_thought.model_dump_json(),
     )
     mock_torii_client = MockToriiClient(
@@ -120,7 +109,7 @@ dialogue = [
     {"dialogue_segment": "Blabla", "full_name": "Julien Doré"},
 ]
 
-valid_dialogue = f"""{{"dialogue": {json.dumps(dialogue, ensure_ascii=False)}}}"""
+valid_response = f"""{{"dialogue": {json.dumps(dialogue, ensure_ascii=False)}, "input_score": 0}}"""
 
 valid_thought = DialogueThoughts(
     npcs=[

@@ -92,6 +92,7 @@ class DialogueSegment(BaseModel):
 
 class Townhall(BaseModel):
     dialogue: list[DialogueSegment] = Field(description="""Discussion held by the NPCs. Do at least 10 exchanges.""")
+    input_score: int = Field(description="Note of the lord's input.")
 
 
 class Thought(BaseModel):
@@ -100,7 +101,7 @@ class Thought(BaseModel):
 
 
 class NpcsAndThoughts(BaseModel):
-    thoughts: list[Thought] = Field(description="""Thoughts and villager's name""")
+    thoughts: list[Thought] = Field(description="""Thoughts and villager's name. Make two thoughts per villager""")
     full_name: str = Field(description="Full name of the villager")
 
 

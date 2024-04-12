@@ -22,6 +22,7 @@ class TownhallDatabase(BaseDatabase):
             CREATE TABLE IF NOT EXISTS townhall (
                 discussion TEXT,
                 townhall_input TEXT,
+                input_score INT,
                 realm_id INTEGER NOT NULL,
                 ts INTEGER NOT NULL
             );
@@ -72,10 +73,10 @@ class TownhallDatabase(BaseDatabase):
 
     def get_highest_scoring_thought(
         self, query_embedding: list[float], npc_entity_id: int, katana_ts: int
-    ) -> tuple[str, float, float]:
+    ) -> tuple[str, int, float, float]:
         query = """
-            SELECT thought, cos_similarity, score FROM (
-                SELECT thought, average(cos_similarity, poignancy, decayFunction(?, 10, ? - ts)) as score, cos_similarity
+            SELECT thought, ts, cos_similarity, score FROM (
+                SELECT thought, average(cos_similarity, poignancy, decayFunction(?, 10, ? - ts)) as score, cos_similarity, ts
                 FROM(
                     SELECT vss_cosine_similarity(?, vss_npc_thought.embedding) * 10.0 AS cos_similarity, npc_thought.thought, npc_thought.poignancy, npc_thought.ts
                     FROM vss_npc_thought
@@ -97,14 +98,16 @@ class TownhallDatabase(BaseDatabase):
         if not res:
             raise CosineSimilarityNotFoundError(f"No similar thought found for npc entity {npc_entity_id}")
 
-        return cast(Tuple[str, float, float], res[0])
+        return cast(Tuple[str, int, float, float], res[0])
 
-    def insert_townhall_discussion(self, realm_id: int, discussion: str, townhall_input: str, ts: int) -> int:
+    def insert_townhall_discussion(
+        self, realm_id: int, discussion: str, townhall_input: str, input_score: int, ts: int
+    ) -> int:
         discussion = discussion.strip()
 
         return self._insert(
-            "INSERT INTO townhall (discussion, townhall_input, realm_id, ts) VALUES (?, ?, ?, ?);",
-            (discussion, townhall_input, realm_id, ts),
+            "INSERT INTO townhall (discussion, townhall_input, input_score, realm_id, ts) VALUES (?, ?, ?, ?, ?);",
+            (discussion, townhall_input, input_score, realm_id, ts),
         )
 
     def fetch_townhalls_by_realm_id(self, realm_id: int) -> list:

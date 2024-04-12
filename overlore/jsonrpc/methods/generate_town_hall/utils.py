@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 from typing import cast
 
 from overlore.errors import ErrorCodes
@@ -53,13 +54,15 @@ async def get_npcs_thoughts(
 
     for npc in realm_npcs:
         try:
-            (thought, cosine_similarity, score) = townhall_db.get_highest_scoring_thought(
+            (thought, katana_ts, cosine_similarity, score) = townhall_db.get_highest_scoring_thought(
                 query_embedding=query_embedding, npc_entity_id=npc["entity_id"], katana_ts=katana_ts
             )
 
             logger.info(f"Thought retrieved with a score of {score} (cos_sim: {cosine_similarity}) -> {thought}")
 
-            thoughts.append(npc["full_name"] + ": " + thought)
+            date_time = datetime.fromtimestamp(katana_ts)
+
+            thoughts.append(f"Thought was had on {date_time} - {npc['full_name']} : {thought}")
 
         except CosineSimilarityNotFoundError:
             pass
@@ -73,7 +76,7 @@ def get_entity_id_from_name(full_name: str, npcs: list[NpcEntity]) -> int:
     raise RuntimeError(ErrorCodes.NPC_ENTITY_ID_NOT_FOUND.value)
 
 
-async def store_thoughts(
+async def store_npcs_thoughts(
     realm_name: str,
     dialogue_thoughts: DialogueThoughts,
     realm_npcs: list[NpcEntity],
