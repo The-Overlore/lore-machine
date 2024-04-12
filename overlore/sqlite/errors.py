@@ -17,7 +17,7 @@ class NpcProfileNotDeleted(Exception):
     pass
 
 
-# TownhallDatabase
+# DiscussionDatabase
 class CosineSimilarityNotFoundError(Exception):
     """Exception raised during a cosine similarity search."""
 

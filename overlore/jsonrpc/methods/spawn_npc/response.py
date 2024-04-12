@@ -7,7 +7,7 @@ from openai import BaseModel
 from overlore.constants import TRAIT_TYPE
 from overlore.jsonrpc.methods.spawn_npc.constants import NPC_PROFILE_SYSTEM_STRING, NPC_PROFILE_USER_STRING
 from overlore.katana.client import KatanaClient
-from overlore.llm.client import LlmClient
+from overlore.llm.client import AsyncOpenAiClient
 from overlore.llm.constants import ChatCompletionModel
 from overlore.llm.guard import AsyncGuard
 from overlore.llm.natural_language_formatter import LlmFormatter
@@ -17,6 +17,14 @@ from overlore.types import NpcProfile
 from overlore.utils import sign_parameters
 
 logger = logging.getLogger("overlore")
+
+
+class Context(TypedDict):
+    guard: AsyncGuard
+    llm_client: AsyncOpenAiClient
+    torii_client: ToriiClient
+    katana_client: KatanaClient
+    lore_machine_pk: str
 
 
 class MethodParams(BaseModel):
@@ -29,26 +37,18 @@ class SuccessResponse(TypedDict):
 
 
 class NpcProfileBuilder:
-    def __init__(
-        self,
-        llm_client: LlmClient,
-        torii_client: ToriiClient,
-        katana_client: KatanaClient,
-        lore_machine_pk: str,
-        guard: AsyncGuard,
-    ):
+    def __init__(self, context: Context, params: MethodParams):
         self.formater: LlmFormatter = LlmFormatter()
-        self.llm_client = llm_client
-        self.torii_client = torii_client
-        self.katana_client = katana_client
-        self.lore_machine_pk = lore_machine_pk
-        self.guard = guard
+        self.context: Context = context
+        self.params: MethodParams = params
 
-    async def build_from_request_params(self, params: MethodParams) -> SuccessResponse:
+    async def create_response(
+        self,
+    ) -> SuccessResponse:
         npc_db = NpcDatabase.instance()
 
-        realm_entity_id = params["realm_entity_id"]  # type: ignore[index]
-
+        realm_entity_id = self.params.realm_entity_id
+        print(realm_entity_id)
         npc_profile = npc_db.fetch_npc_profile_by_realm_entity_id(realm_entity_id)
 
         if npc_profile is None:
@@ -63,7 +63,7 @@ class NpcProfileBuilder:
         else:
             logger.info(f"Existing npc profile found for realm_entity_id {realm_entity_id}")
 
-        realm_owner_wallet_address = await self.torii_client.get_realm_owner_wallet_address(
+        realm_owner_wallet_address = await self.context["torii_client"].get_realm_owner_wallet_address(
             realm_entity_id=realm_entity_id
         )
 
@@ -79,8 +79,8 @@ class NpcProfileBuilder:
         return prompt
 
     async def request_npc_profile_generation_with_guard(self, prompt: str) -> NpcProfile:
-        response = await self.guard.call_llm_with_guard(
-            api_function=self.llm_client.request_prompt_completion,
+        response = await self.context["guard"].call_llm_with_guard(
+            api_function=self.context["llm_client"].request_prompt_completion,
             instructions=NPC_PROFILE_SYSTEM_STRING,
             prompt=prompt,
             model=ChatCompletionModel.GPT_3_5_TURBO.value,
@@ -92,7 +92,8 @@ class NpcProfileBuilder:
     async def create_signature_for_response(
         self, realm_owner_wallet_address: str, npc_profile: NpcProfile
     ) -> list[str]:
-        nonce = await self.katana_client.get_contract_nonce(
+        print(self.context)
+        nonce = await self.context["katana_client"].get_contract_nonce(
             contract_address=realm_owner_wallet_address,
         )
 
@@ -104,6 +105,6 @@ class NpcProfileBuilder:
             npc_profile.character_trait,
             npc_profile.full_name,
         ]
-        signature = sign_parameters(signature_params, self.lore_machine_pk)
+        signature = sign_parameters(signature_params, self.context["lore_machine_pk"])
 
         return [str(signature[0]), str(signature[1])]

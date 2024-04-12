@@ -14,23 +14,24 @@ from overlore.sqlite.errors import CosineSimilarityNotFoundError
 logger = logging.getLogger("overlore")
 
 
-class TownhallDatabase(BaseDatabase):
-    _instance: TownhallDatabase | None = None
+class DiscussionDatabase(BaseDatabase):
+    _instance: DiscussionDatabase | None = None
     EXTENSIONS: list[str] = []
     MIGRATIONS: list[str] = [
         """
-            CREATE TABLE IF NOT EXISTS townhall (
+            CREATE TABLE IF NOT EXISTS discussion (
                 discussion TEXT,
-                townhall_input TEXT,
-                input_score INT,
+                user_input TEXT,
+                input_score INTEGER,
                 realm_id INTEGER NOT NULL,
                 ts INTEGER NOT NULL
             );
         """,
         """
-            CREATE TABLE IF NOT EXISTS daily_townhall_tracker (
-                realm_id INTEGER NOT NULL,
-                event_row_id TEXT
+            CREATE TABLE IF NOT EXISTS events_to_ignore_today (
+                realm_id INTEGER PRIMARY KEY,
+                creation_ts INTEGER NOT NULL,
+                events_id TEXT
             );
         """,
         """
@@ -49,9 +50,9 @@ class TownhallDatabase(BaseDatabase):
     ]
 
     @classmethod
-    def instance(cls) -> TownhallDatabase:
+    def instance(cls) -> DiscussionDatabase:
         if cls._instance is None:
-            logger.debug("Creating townhall db interface")
+            logger.debug("Creating discussion db interface")
             cls._instance = cls.__new__(cls)
         return cls._instance
 
@@ -61,7 +62,7 @@ class TownhallDatabase(BaseDatabase):
     def _preload(self, db: Connection) -> None:
         sqlite_vss.load(db)
 
-    def init(self, path: str = "./databases/townhall.db") -> TownhallDatabase:
+    def init(self, path: str = "./databases/discussion.db") -> DiscussionDatabase:
         self._init(
             path=path,
             extensions=self.EXTENSIONS,
@@ -100,25 +101,23 @@ class TownhallDatabase(BaseDatabase):
 
         return cast(Tuple[str, int, float, float], res[0])
 
-    def insert_townhall_discussion(
-        self, realm_id: int, discussion: str, townhall_input: str, input_score: int, ts: int
-    ) -> int:
+    def insert_discussion(self, realm_id: int, discussion: str, user_input: str, input_score: int, ts: int) -> int:
         discussion = discussion.strip()
 
         return self._insert(
-            "INSERT INTO townhall (discussion, townhall_input, input_score, realm_id, ts) VALUES (?, ?, ?, ?, ?);",
-            (discussion, townhall_input, input_score, realm_id, ts),
+            "INSERT INTO discussion (discussion, user_input, input_score, realm_id, ts) VALUES (?, ?, ?, ?, ?);",
+            (discussion, user_input, input_score, realm_id, ts),
         )
 
-    def fetch_townhalls_by_realm_id(self, realm_id: int) -> list:
+    def fetch_discussions_by_realm_id(self, realm_id: int) -> list:
         return self.execute_query(
-            "SELECT discussion, townhall_input FROM townhall WHERE realm_id = ? ORDER BY ts DESC;",
+            "SELECT discussion, user_input FROM discussion WHERE realm_id = ? ORDER BY ts DESC;",
             (realm_id,),
         )
 
-    def fetch_last_townhall_ts_by_realm_id(self, realm_id: int) -> int:
+    def fetch_last_discussion_ts_by_realm_id(self, realm_id: int) -> int:
         last_ts = self.execute_query(
-            "SELECT ts FROM townhall WHERE realm_id = ? ORDER BY ts DESC LIMIT 1;",
+            "SELECT ts FROM discussion WHERE realm_id = ? ORDER BY ts DESC LIMIT 1;",
             (realm_id,),
         )
 
@@ -146,38 +145,28 @@ class TownhallDatabase(BaseDatabase):
         self.execute_query("SELECT thought FROM npc_thought WHERE rowid = ?;", (row_id,))
         return cast(str, self.execute_query("SELECT thought FROM npc_thought WHERE rowid = ?;", (row_id,))[0][0])
 
-    def fetch_daily_townhall_tracker(self, realm_id: int) -> list[int]:
-        result = self.execute_query("SELECT event_row_id FROM daily_townhall_tracker WHERE realm_id = ?;", (realm_id,))
+    def fetch_events_to_ignore_today(self, realm_id: int) -> list[int]:
+        result = self.execute_query("SELECT events_id FROM events_to_ignore_today WHERE realm_id = ?;", (realm_id,))
+        print(result)
         if result:
             stored_event_row_ids = json.loads(result[0][0])
             return cast(list[int], stored_event_row_ids)
         return []
 
-    def insert_or_update_daily_townhall_tracker(self, realm_id: int, event_row_id: int) -> int:
-        stored_event_row_ids = self.fetch_daily_townhall_tracker(realm_id)
-
-        if len(stored_event_row_ids) == 0:
-            query = """
-                INSERT INTO daily_townhall_tracker(realm_id, event_row_id)
-                VALUES (?, json_array(?));
-            """
-            insert_values = (realm_id, event_row_id)
-            return self._insert(query, insert_values)
-        else:
-            stored_event_row_ids.append(event_row_id)
-            event_row_ids_count = ",".join(["?" for _ in stored_event_row_ids])
-
-            query = f"""
-                UPDATE daily_townhall_tracker
-                SET event_row_id = json_array({event_row_ids_count})
-                WHERE realm_id = ?;
-            """
-            update_values = (*stored_event_row_ids, realm_id)
-            return self._update(query, update_values)
-
-    def delete_daily_townhall_tracker(self, realm_id: int) -> None:
+    def insert_or_update_events_to_ignore_today(self, katana_ts: int, realm_id: int, event_id: int) -> int:
         query = """
-            DELETE FROM daily_townhall_tracker WHERE realm_id = ?;
+            INSERT INTO events_to_ignore_today(realm_id, creation_ts, events_id) VALUES (?, ?, json_array(?))
+            ON CONFLICT(realm_id) DO UPDATE SET events_id=json_insert(events_id, '$[#]', ?);
+        """
+        insert_values = (realm_id, katana_ts, event_id, event_id)
+        row_id = self._insert(query, insert_values)
+
+        print(self.fetch_events_to_ignore_today(realm_id=realm_id))
+        return row_id
+
+    def delete_events_to_ignore_today(self, realm_id: int) -> None:
+        query = """
+            DELETE FROM events_to_ignore_today WHERE realm_id = ?;
         """
         values = (realm_id,)
 

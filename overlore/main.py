@@ -6,12 +6,11 @@ from types import FrameType
 from overlore.config import BootConfig
 from overlore.jsonrpc.constants import setup_json_rpc_methods
 from overlore.jsonrpc.setup import launch_json_rpc_server
+from overlore.sqlite.discussion_db import DiscussionDatabase
 from overlore.sqlite.events_db import EventsDatabase
 from overlore.sqlite.npc_db import NpcDatabase
-from overlore.sqlite.townhall_db import TownhallDatabase
 from overlore.torii.client import ToriiClient
 from overlore.torii.subscriptions import TORII_SUBSCRIPTIONS, use_torii_subscription
-from overlore.townhall.mocks import with_mock_responses
 
 logger = logging.getLogger("overlore")
 
@@ -35,14 +34,9 @@ def setup() -> BootConfig:
 
     config = BootConfig()
 
-    if config.mock is True:
-        EventsDatabase.instance().init(":memory:")
-        TownhallDatabase.instance().init(":memory:")
-        NpcDatabase.instance().init(":memory:")
-    else:
-        EventsDatabase.instance().init()
-        TownhallDatabase.instance().init()
-        NpcDatabase.instance().init()
+    EventsDatabase.instance().init()
+    DiscussionDatabase.instance().init()
+    NpcDatabase.instance().init()
 
     return config
 
@@ -56,16 +50,17 @@ async def launch_services(config: BootConfig) -> None:
     await use_torii_subscription(config=config, callback_and_subs=TORII_SUBSCRIPTIONS)
 
 
-async def start() -> None:
-    config = setup()
-
+async def sync_services(config: BootConfig) -> None:
     torii_client = ToriiClient(url=config.env["TORII_GRAPHQL"])
     await torii_client.boot_sync()
 
-    if config.mock is True:
-        await with_mock_responses(launch_services, config, config)
-    else:
-        await launch_services(config=config)
+
+async def start() -> None:
+    config = setup()
+
+    await sync_services(config=config)
+
+    await launch_services(config=config)
 
 
 def main() -> None:

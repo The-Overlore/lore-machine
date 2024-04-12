@@ -14,9 +14,9 @@ from overlore.errors import ErrorCodes
 from overlore.katana.client import KatanaClient
 from overlore.llm.client import AsyncOpenAiClient
 from overlore.llm.constants import EmbeddingsModel
+from overlore.sqlite.discussion_db import DiscussionDatabase
 from overlore.sqlite.events_db import EventsDatabase
 from overlore.sqlite.npc_db import NpcDatabase
-from overlore.sqlite.townhall_db import TownhallDatabase
 from overlore.torii.constants import EventType
 from overlore.torii.parsing import parse_event, parse_npc_spawn_event
 from overlore.types import ToriiEmittedEvent
@@ -111,7 +111,7 @@ async def process_received_spawn_npc_event(
     if config is None:
         raise RuntimeError(ErrorCodes.EXPECTED_CONFIG)
     npc_db = NpcDatabase.instance()
-    town_hall_db = TownhallDatabase.instance()
+    discussion_db = DiscussionDatabase.instance()
     llm_client = AsyncOpenAiClient()
     katana_ts = await KatanaClient(url=config.env["KATANA_URL"]).get_katana_ts()
 
@@ -128,7 +128,7 @@ async def process_received_spawn_npc_event(
         backstory.backstory, model=EmbeddingsModel.TEXT_EMBEDDING_SMALL.value
     )
 
-    row_id = town_hall_db.insert_npc_thought(
+    row_id = discussion_db.insert_npc_thought(
         npc_entity_id=npc_entity_id,
         thought=backstory.backstory,
         poignancy=backstory.poignancy,

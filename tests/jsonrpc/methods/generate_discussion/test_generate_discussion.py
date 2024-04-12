@@ -3,79 +3,81 @@ import json
 import pytest
 
 from overlore.errors import ErrorCodes
-from overlore.jsonrpc.methods.generate_town_hall.response import TownHallBuilder
+from overlore.jsonrpc.methods.generate_discussion.response import Context, DiscussionBuilder, MethodParams
 from overlore.llm.guard import AsyncGuard
+from overlore.sqlite.discussion_db import DiscussionDatabase
 from overlore.sqlite.events_db import EventsDatabase
 from overlore.sqlite.npc_db import NpcDatabase
-from overlore.sqlite.townhall_db import TownhallDatabase
 from overlore.types import (
     Characteristics,
     DialogueThoughts,
+    Discussion,
+    NpcAndThoughts,
     NpcEntity,
-    NpcsAndThoughts,
     Thought,
-    Townhall,
 )
 from tests.jsonrpc.types import MockKatanaClient, MockLlmClient, MockToriiClient
 
 
 @pytest.mark.asyncio
-async def test_generate_town_hall_without_user_input(town_hall_builder: TownHallBuilder):
-    params = {"realm_id": 1, "user_input": "", "realm_entity_id": 1, "order_id": 1}
-    response = await town_hall_builder.build_from_request_params(params=params)
+async def test_generate_discussion_without_user_input(context: Context):
+    params = MethodParams(realm_id=1, user_input="", realm_entity_id=1, order_id=1)
+    discussion_builder = await DiscussionBuilder.create(context=context, params=params)
+    response = await discussion_builder.create_response()
 
     assert dialogue == response["dialogue"]
 
 
 @pytest.mark.asyncio
-async def test_generate_town_hall_with_user_input(town_hall_builder: TownHallBuilder):
-    params = {"realm_id": 1, "user_input": "Hello World!", "realm_entity_id": 1, "order_id": 1}
-    response = await town_hall_builder.build_from_request_params(params=params)
+async def test_generate_discussion_with_user_input(context: Context):
+    params = MethodParams(realm_id=1, user_input="Hello World!", realm_entity_id=1, order_id=1)
+
+    discussion_builder = await DiscussionBuilder.create(context=context, params=params)
+    response = await discussion_builder.create_response()
 
     assert dialogue == response["dialogue"]
 
 
 @pytest.mark.asyncio
-async def test_generate_town_hall_no_npcs_in_realm(town_hall_builder: TownHallBuilder):
-    params = {"realm_id": 1, "user_input": "Hello World!", "realm_entity_id": 2, "order_id": 1}
-
+async def test_generate_discussion_no_npcs_in_realm(context: Context):
+    params = MethodParams(realm_id=1, user_input="Hello World!", realm_entity_id=2, order_id=1)
     with pytest.raises(RuntimeError) as error:
-        _ = await town_hall_builder.build_from_request_params(params=params)
+        _ = await DiscussionBuilder.create(context=context, params=params)
 
     assert error.value.args[0] == ErrorCodes.LACK_OF_NPCS
 
 
 @pytest.mark.asyncio
-async def test_generate_town_hall_katana_unavailable(town_hall_builder: TownHallBuilder):
-    town_hall_builder.katana_client = MockKatanaClient(force_fail=True)
-
+async def test_generate_discussion_katana_unavailable(context: Context):
     realm_entity_id = 1
-    params = {"realm_id": 1, "user_input": "Hello World!", "realm_entity_id": realm_entity_id, "order_id": 1}
+    params = MethodParams(realm_id=1, user_input="Hello World!", realm_entity_id=realm_entity_id, order_id=1)
+
+    context["katana_client"] = MockKatanaClient(force_fail=True)
 
     with pytest.raises(RuntimeError) as error:
-        _ = await town_hall_builder.build_from_request_params(params=params)
+        _ = await DiscussionBuilder.create(context=context, params=params)
 
     assert error.value.args[0] == ErrorCodes.KATANA_UNAVAILABLE
 
 
 @pytest.mark.asyncio
-async def test_generate_town_hall_torii_unavailable(town_hall_builder: TownHallBuilder):
-    town_hall_builder.torii_client = MockToriiClient(force_fail=True)
-
+async def test_generate_discussion_torii_unavailable(context: Context):
     realm_entity_id = 1
-    params = {"realm_id": 1, "user_input": "Hello World!", "realm_entity_id": realm_entity_id, "order_id": 1}
+    params = MethodParams(realm_id=1, user_input="Hello World!", realm_entity_id=realm_entity_id, order_id=1)
+
+    context["torii_client"] = MockToriiClient(force_fail=True)
 
     with pytest.raises(RuntimeError) as error:
-        _ = await town_hall_builder.build_from_request_params(params=params)
+        _ = await DiscussionBuilder.create(context=context, params=params)
 
     assert error.value.args[0] == ErrorCodes.TORII_UNAVAILABLE
 
 
 @pytest.fixture
-def town_hall_builder():
+def context():
     npc_db = NpcDatabase.instance().init(":memory:")
     events_db = EventsDatabase.instance().init(":memory:")
-    town_hall_db = TownhallDatabase.instance().init(":memory:")
+    discussion_db = DiscussionDatabase.instance().init(":memory:")
 
     mock_llm_client = MockLlmClient(
         embedding_return=valid_embedding,
@@ -87,21 +89,21 @@ def town_hall_builder():
     )
 
     mock_katana_client = MockKatanaClient()
-    town_hall_guard = AsyncGuard(output_type=Townhall)
+    discussion_guard = AsyncGuard(output_type=Discussion)
     dialogue_thoughts_guard = AsyncGuard(output_type=DialogueThoughts)
 
-    town_hall_builder = TownHallBuilder(
+    context = Context(
+        discussion_guard=discussion_guard,
+        dialogue_thoughts_guard=dialogue_thoughts_guard,
         llm_client=mock_llm_client,
         torii_client=mock_torii_client,
         katana_client=mock_katana_client,
-        town_hall_guard=town_hall_guard,
-        dialogue_thoughts_guard=dialogue_thoughts_guard,
     )
 
-    yield town_hall_builder
+    yield context
     npc_db.close_conn()
     events_db.close_conn()
-    town_hall_db.close_conn()
+    discussion_db.close_conn()
 
 
 dialogue = [
@@ -113,14 +115,14 @@ valid_response = f"""{{"dialogue": {json.dumps(dialogue, ensure_ascii=False)}, "
 
 valid_thought = DialogueThoughts(
     npcs=[
-        NpcsAndThoughts(
+        NpcAndThoughts(
             full_name="Johny Bravo",
             thoughts=[
                 Thought(thought="Thoughts about HooHaa", poignancy=10),
                 Thought(thought="Second thought about HooHaa", poignancy=10),
             ],
         ),
-        NpcsAndThoughts(
+        NpcAndThoughts(
             full_name="Julien Dort",
             thoughts=[
                 Thought(thought="Thought about blabla", poignancy=10),

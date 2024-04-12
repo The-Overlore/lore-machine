@@ -41,7 +41,6 @@ class BootConfig:
     # CLI Argument
     world_db: str
     prod: bool
-    mock: bool
 
     # .env variables
     env: EnvVariables
@@ -55,11 +54,6 @@ class BootConfig:
             description="The weaving loomer of all possible actual experiential occasions."
         )
         parser.add_argument(
-            "--mock",
-            action="store_true",
-            help="Use mock data for GPT response instead of querying the API. (saves API calls)",
-        )
-        parser.add_argument(
             "--prod",
             action="store_true",
             help="Run lore-machine in production mode.",
@@ -71,7 +65,6 @@ class BootConfig:
 
         self.world_db = args.world_db
         self.prod = args.prod
-        self.mock = args.mock
 
     def _load_env_variables(self) -> None:
         dotenv_path = ".env.production" if self.prod is True else ".env.development"
