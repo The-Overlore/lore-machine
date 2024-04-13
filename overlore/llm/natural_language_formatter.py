@@ -10,7 +10,7 @@ from overlore.llm.constants import (
 from overlore.sqlite.constants import EventType
 from overlore.sqlite.types import StoredEvent
 from overlore.types import NpcEntity
-from overlore.utils import get_resource_name_by_id, str_to_json
+from overlore.utils import get_resource_name_by_id
 
 
 class LlmFormatter:

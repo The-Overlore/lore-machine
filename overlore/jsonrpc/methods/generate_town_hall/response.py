@@ -151,7 +151,7 @@ class TownHallBuilder:
     def prepare_prompt_for_llm_call(self, realm: RealmForPrompt, katana_ts: int) -> str:
         event_string = ""
         if realm["most_important_event"] is not None:
-            event_string = self.formater.event_to_nl(realm["most_important_event"])
+            event_string = self.formatter.event_to_nl(realm["most_important_event"])
 
         npc_memories = "\n".join(realm["npcs_thoughts_on_context"])
 

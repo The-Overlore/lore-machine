@@ -1,9 +1,8 @@
 from __future__ import annotations
 
+import json
 import logging
 from typing import TypedDict, cast
-
-from overlore.utils import open_json_file
 
 from .constants import ORDERS
 from .types import RealmPosition
@@ -31,9 +30,10 @@ class Realms:
         raise RuntimeError("Call instance() instead")
 
     def load_geodata(self, path: str) -> list[RealmGeodata]:
-        geodata_file = open_json_file(path)
-        features: list[RealmGeodata] = geodata_file["features"]
-        return features
+        with open(path) as file:
+            geodata_file = json.load(file)
+            features: list[RealmGeodata] = geodata_file["features"]
+            return features
 
     def init(self, path: str = "./data/realms_geodata.json") -> Realms:
         self.geodata = self.load_geodata(path)
