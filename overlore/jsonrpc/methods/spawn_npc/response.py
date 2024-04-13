@@ -48,7 +48,7 @@ class NpcProfileBuilder:
         npc_db = NpcDatabase.instance()
 
         realm_entity_id = self.params.realm_entity_id
-        print(realm_entity_id)
+
         npc_profile = npc_db.fetch_npc_profile_by_realm_entity_id(realm_entity_id)
 
         if npc_profile is None:
@@ -92,7 +92,6 @@ class NpcProfileBuilder:
     async def create_signature_for_response(
         self, realm_owner_wallet_address: str, npc_profile: NpcProfile
     ) -> list[str]:
-        print(self.context)
         nonce = await self.context["katana_client"].get_contract_nonce(
             contract_address=realm_owner_wallet_address,
         )

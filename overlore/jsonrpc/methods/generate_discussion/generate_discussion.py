@@ -27,6 +27,9 @@ async def generate_discussion(context: Context, params: MethodParams) -> Result:
         logger.error(f"Error occured while generating town hall: {err.value} - {err.name}")
         return Error(err.value, err.name)
 
+    except Exception as e:
+        print(e)
+
 
 async def handle_valid_input(context: Context, params: MethodParams) -> Result:
     discussion_builder = await DiscussionBuilder.create(context=context, params=params)

@@ -41,6 +41,7 @@ class BootConfig:
     # CLI Argument
     world_db: str
     prod: bool
+    mock: bool
 
     # .env variables
     env: EnvVariables
@@ -58,6 +59,12 @@ class BootConfig:
             action="store_true",
             help="Run lore-machine in production mode.",
         )
+        parser.add_argument(
+            "--mock",
+            action="store_true",
+            help="Use mock data for GPT response instead of querying the API. (saves API calls)",
+        )
+
         parser.add_argument("-w", "--world_db", help="location of the world db", type=str, default="/litefs/world.db")
         parser.add_argument("-l", "--logging_file", help="location of the logging file", type=str)
         args = parser.parse_args()
@@ -65,6 +72,7 @@ class BootConfig:
 
         self.world_db = args.world_db
         self.prod = args.prod
+        self.mock = args.mock
 
     def _load_env_variables(self) -> None:
         dotenv_path = ".env.production" if self.prod is True else ".env.development"

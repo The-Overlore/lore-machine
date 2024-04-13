@@ -11,11 +11,11 @@ from overlore.jsonrpc.methods.spawn_npc.spawn_npc import Context, spawn_npc
 from overlore.jsonrpc.setup import launch_json_rpc_server
 from overlore.jsonrpc.types import JsonRpcMethod
 from overlore.llm.guard import AsyncGuard
+from overlore.mocks import MockBootConfig, MockKatanaClient, MockLlmClient, MockToriiClient
 from overlore.sqlite.discussion_db import DiscussionDatabase
 from overlore.sqlite.events_db import EventsDatabase
 from overlore.sqlite.npc_db import NpcDatabase
 from overlore.types import Backstory, Characteristics, NpcProfile
-from tests.jsonrpc.types import MockBootConfig, MockKatanaClient, MockLlmClient, MockToriiClient
 from tests.jsonrpc.utils import call_json_rpc_server, run_async_function
 
 

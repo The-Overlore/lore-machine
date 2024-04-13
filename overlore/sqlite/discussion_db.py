@@ -147,7 +147,6 @@ class DiscussionDatabase(BaseDatabase):
 
     def fetch_events_to_ignore_today(self, realm_id: int) -> list[int]:
         result = self.execute_query("SELECT events_id FROM events_to_ignore_today WHERE realm_id = ?;", (realm_id,))
-        print(result)
         if result:
             stored_event_row_ids = json.loads(result[0][0])
             return cast(list[int], stored_event_row_ids)
@@ -161,7 +160,6 @@ class DiscussionDatabase(BaseDatabase):
         insert_values = (realm_id, katana_ts, event_id, event_id)
         row_id = self._insert(query, insert_values)
 
-        print(self.fetch_events_to_ignore_today(realm_id=realm_id))
         return row_id
 
     def delete_events_to_ignore_today(self, realm_id: int) -> None:

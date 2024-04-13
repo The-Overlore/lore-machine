@@ -5,6 +5,7 @@ import pytest
 from overlore.errors import ErrorCodes
 from overlore.jsonrpc.methods.generate_discussion.response import Context, DiscussionBuilder, MethodParams
 from overlore.llm.guard import AsyncGuard
+from overlore.mocks import MockKatanaClient, MockLlmClient, MockToriiClient
 from overlore.sqlite.discussion_db import DiscussionDatabase
 from overlore.sqlite.events_db import EventsDatabase
 from overlore.sqlite.npc_db import NpcDatabase
@@ -16,7 +17,6 @@ from overlore.types import (
     NpcEntity,
     Thought,
 )
-from tests.jsonrpc.types import MockKatanaClient, MockLlmClient, MockToriiClient
 
 
 @pytest.mark.asyncio

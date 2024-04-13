@@ -1,5 +1,5 @@
 from overlore.config import BootConfig
-from overlore.jsonrpc.methods.generate_discussion.generate_discussion import Context as GenerateTownHallContext
+from overlore.jsonrpc.methods.generate_discussion.generate_discussion import Context as GenerateDiscussionContext
 from overlore.jsonrpc.methods.generate_discussion.generate_discussion import generate_discussion
 from overlore.jsonrpc.methods.spawn_npc.spawn_npc import Context as SpawnNpcContext
 from overlore.jsonrpc.methods.spawn_npc.spawn_npc import spawn_npc
@@ -14,7 +14,7 @@ from overlore.types import DialogueThoughts, Discussion, NpcProfile
 def setup_json_rpc_methods(config: BootConfig) -> list[JsonRpcMethod]:
     json_rpc_methods: list[JsonRpcMethod] = [
         JsonRpcMethod(
-            context=GenerateTownHallContext(
+            context=GenerateDiscussionContext(
                 discussion_guard=AsyncGuard(
                     output_type=Discussion,
                 ),
