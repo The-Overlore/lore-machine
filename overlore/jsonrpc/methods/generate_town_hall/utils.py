@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import cast
 
 from overlore.errors import ErrorCodes
-from overlore.eternum.constants import Realms
+from overlore.eternum.realms import Realms
 from overlore.llm.client import LlmClient
 from overlore.llm.constants import EmbeddingsModel
 from overlore.sqlite.errors import CosineSimilarityNotFoundError

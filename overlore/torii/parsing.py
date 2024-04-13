@@ -1,7 +1,7 @@
 import json
 from typing import cast
 
-from overlore.eternum.constants import Realms
+from overlore.eternum.realms import Realms
 from overlore.eternum.types import AttackingEntityIds, ResourceAmount, ResourceAmounts
 from overlore.sqlite.constants import EventType as SqLiteEventType
 from overlore.torii.constants import EventType as EventKeyHash
