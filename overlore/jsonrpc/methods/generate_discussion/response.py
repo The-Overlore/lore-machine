@@ -15,6 +15,7 @@ from overlore.jsonrpc.methods.generate_discussion.constant import (
     DISCUSSION_USER_STRING,
     THOUGHTS_SYSTEM_STRING,
 )
+from overlore.jsonrpc.methods.generate_discussion.types import DialogueSegmentWithNpcEntityId
 from overlore.jsonrpc.methods.generate_discussion.utils import (
     convert_discussion_to_str,
     get_entity_id_from_name,
@@ -52,7 +53,7 @@ class MethodParams(BaseModel):
 
 class SuccessResponse(TypedDict):
     timestamp: int
-    dialogue: list[DialogueSegment]
+    dialogue: list[DialogueSegmentWithNpcEntityId]
     input_score: int
 
 
@@ -107,13 +108,17 @@ class DiscussionBuilder:
 
     def create_success_response(self, discussion: Discussion) -> SuccessResponse:
         response_dialogue = [
-            cast(DialogueSegment, dialogue_segment.model_dump()) for dialogue_segment in discussion.dialogue
+            DialogueSegmentWithNpcEntityId(
+                npc_entity_id=get_entity_id_from_name(full_name=dialogue_segment.full_name, npcs=self.npcs),
+                dialogue_segment=cast(DialogueSegment, dialogue_segment.model_dump()),
+            )
+            for dialogue_segment in discussion.dialogue
         ]
         return SuccessResponse(timestamp=self.katana_ts, dialogue=response_dialogue, input_score=discussion.input_score)
 
     async def create_discussion(self) -> Discussion:
         prompt = await self.build_prompt()
-        discussion_discussion = await self.request_discussion_discussion_with_guard(prompt=prompt)
+        discussion_discussion = await self.request_discussion_with_llm_guard(prompt=prompt)
         return discussion_discussion
 
     async def build_prompt(self) -> str:
@@ -148,8 +153,12 @@ class DiscussionBuilder:
 
                 thoughts.append(f"Thought was had on {date_time} - {npc['full_name']} : {thought}")
 
-            except CosineSimilarityNotFoundError:
-                pass
+            except CosineSimilarityNotFoundError as e:
+                logger.error(
+                    f"Failure to fetch thoughts. NPC entity id: {npc['entity_id']}. Embedding question"
+                    f" {embedding_question}. Katana ts {self.katana_ts}"
+                )
+                raise RuntimeError(ErrorCodes.NO_THOUGHT_FOUND) from e
         return thoughts
 
     def store_discussion(self, discussion: Discussion) -> None:
@@ -224,7 +233,7 @@ class DiscussionBuilder:
         )
         return prompt
 
-    async def request_discussion_discussion_with_guard(
+    async def request_discussion_with_llm_guard(
         self,
         prompt: str,
     ) -> Discussion:

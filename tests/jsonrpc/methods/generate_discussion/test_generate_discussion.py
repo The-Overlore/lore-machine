@@ -3,9 +3,15 @@ import json
 import pytest
 
 from overlore.errors import ErrorCodes
-from overlore.jsonrpc.methods.generate_discussion.response import Context, DiscussionBuilder, MethodParams
+from overlore.jsonrpc.methods.generate_discussion.response import (
+    Context,
+    DiscussionBuilder,
+    MethodParams,
+    SuccessResponse,
+)
+from overlore.jsonrpc.methods.generate_discussion.types import DialogueSegmentWithNpcEntityId
 from overlore.llm.guard import AsyncGuard
-from overlore.mocks import MockKatanaClient, MockLlmClient, MockToriiClient
+from overlore.mocks import KATANA_MOCK_TS, MockKatanaClient, MockLlmClient, MockToriiClient
 from overlore.sqlite.discussion_db import DiscussionDatabase
 from overlore.sqlite.events_db import EventsDatabase
 from overlore.sqlite.npc_db import NpcDatabase
@@ -25,7 +31,7 @@ async def test_generate_discussion_without_user_input(context: Context):
     discussion_builder = await DiscussionBuilder.create(context=context, params=params)
     response = await discussion_builder.create_response()
 
-    assert dialogue == response["dialogue"]
+    assert success_response == response
 
 
 @pytest.mark.asyncio
@@ -35,7 +41,7 @@ async def test_generate_discussion_with_user_input(context: Context):
     discussion_builder = await DiscussionBuilder.create(context=context, params=params)
     response = await discussion_builder.create_response()
 
-    assert dialogue == response["dialogue"]
+    assert success_response == response
 
 
 @pytest.mark.asyncio
@@ -79,9 +85,24 @@ def context():
     events_db = EventsDatabase.instance().init(":memory:")
     discussion_db = DiscussionDatabase.instance().init(":memory:")
 
+    discussion_db.insert_npc_thought(
+        npc_entity_id=JULIEN_ENTITY_ID,
+        thought="doesn't matter",
+        poignancy=10,
+        katana_ts=1,
+        thought_embedding=[0.1] * 1536,
+    )
+    discussion_db.insert_npc_thought(
+        npc_entity_id=JOHNY_ENTITY_ID,
+        thought="doesn't matter as well",
+        poignancy=10,
+        katana_ts=1,
+        thought_embedding=[0.1] * 1536,
+    )
+
     mock_llm_client = MockLlmClient(
         embedding_return=valid_embedding,
-        prompt_completion_return=valid_response,
+        prompt_completion_return=llm_client_response,
         thoughts_completion_return=valid_thought.model_dump_json(),
     )
     mock_torii_client = MockToriiClient(
@@ -106,12 +127,24 @@ def context():
     discussion_db.close_conn()
 
 
+JULIEN_ENTITY_ID = 104
+JOHNY_ENTITY_ID = 105
+
 dialogue = [
     {"dialogue_segment": "HooHaa", "full_name": "Johny Bravo"},
     {"dialogue_segment": "Blabla", "full_name": "Julien Doré"},
 ]
 
-valid_response = f"""{{"dialogue": {json.dumps(dialogue, ensure_ascii=False)}, "input_score": 0}}"""
+success_response = SuccessResponse(
+    dialogue=[
+        DialogueSegmentWithNpcEntityId(npc_entity_id=JOHNY_ENTITY_ID, dialogue_segment=dialogue[0]),
+        DialogueSegmentWithNpcEntityId(npc_entity_id=JULIEN_ENTITY_ID, dialogue_segment=dialogue[1]),
+    ],
+    input_score=0,
+    timestamp=KATANA_MOCK_TS,
+)
+
+llm_client_response = f"""{{"dialogue": {json.dumps(dialogue, ensure_ascii=False)}, "input_score": 0}}"""
 
 valid_thought = DialogueThoughts(
     npcs=[
@@ -123,7 +156,7 @@ valid_thought = DialogueThoughts(
             ],
         ),
         NpcAndThoughts(
-            full_name="Julien Dort",
+            full_name="Julien Doré",
             thoughts=[
                 Thought(thought="Thought about blabla", poignancy=10),
                 Thought(thought="Second thought about HooHaa", poignancy=10),
@@ -136,19 +169,19 @@ npcs = [
     NpcEntity(
         character_trait="Generous",
         full_name="Johny Bravo",
-        characteristics=Characteristics(age=27, role=3, sex=1).model_dump(),
-        entity_id=105,
+        characteristics=Characteristics(age=27, role=3, sex=1),
+        entity_id=JOHNY_ENTITY_ID,
         current_realm_entity_id=1,
         origin_realm_id=26,
     ),
     NpcEntity(
         character_trait="compassionate",
-        full_name="Julien Dort",
-        characteristics=Characteristics(age=32, role=3, sex=1).model_dump(),
-        entity_id=104,
+        full_name="Julien Doré",
+        characteristics=Characteristics(age=32, role=3, sex=1),
+        entity_id=JULIEN_ENTITY_ID,
         current_realm_entity_id=1,
         origin_realm_id=26,
     ),
 ]
 
-valid_embedding = [0.0, 0.1, 0.2]
+valid_embedding = [0.1] * 1536

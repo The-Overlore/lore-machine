@@ -1,12 +1,8 @@
 from typing import TypedDict
 
-from overlore.sqlite.types import StoredEvent
-from overlore.types import NpcEntity
+from overlore.types import DialogueSegment
 
 
-class RealmForPrompt(TypedDict):
-    realm_name: str
-    realm_npcs: list[NpcEntity]
-    most_important_event: StoredEvent | None
-    npcs_thoughts_on_context: list[str]
-    user_input: str
+class DialogueSegmentWithNpcEntityId(TypedDict):
+    npc_entity_id: int
+    dialogue_segment: DialogueSegment

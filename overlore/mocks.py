@@ -24,6 +24,8 @@ from overlore.types import (
     Thought,
 )
 
+KATANA_MOCK_TS = 1000
+
 
 class MockLlmClient(LlmClient):
     def __init__(
@@ -63,7 +65,7 @@ class MockKatanaClient:
     async def get_katana_ts(self) -> int:
         if self.force_fail:
             raise RuntimeError(ErrorCodes.KATANA_UNAVAILABLE)
-        return 1000
+        return KATANA_MOCK_TS
 
 
 class MockToriiClient:
@@ -163,7 +165,7 @@ valid_thought = DialogueThoughts(
             ],
         ),
         NpcAndThoughts(
-            full_name="Julien Dort",
+            full_name="Julien Doré",
             thoughts=[
                 Thought(thought="Thought about blabla", poignancy=10),
                 Thought(thought="Second thought about HooHaa", poignancy=10),
@@ -184,7 +186,7 @@ npcs = [
     ),
     NpcEntity(
         character_trait="compassionate",
-        full_name="Julien Dort",
+        full_name="Julien Doré",
         characteristics=Characteristics(age=32, role=3, sex=1),
         entity_id=104,
         current_realm_entity_id=1,

@@ -43,18 +43,15 @@ class ToriiClient:
             query=Queries.NPC_BY_CURRENT_REALM_ENTITY_ID.value.format(realm_entity_id=realm_entity_id),
         )
         npcs = [
-            cast(
-                NpcEntity,
-                {
-                    "character_trait": decode_shortstring(int(query_result["node"]["character_trait"], base=16)),
-                    "full_name": decode_shortstring(int(query_result["node"]["full_name"], base=16)),
-                    "characteristics": unpack_characteristics(int(query_result["node"]["characteristics"], base=16)),
-                    "entity_id": int(query_result["node"]["entity_id"], base=16),
-                    "current_realm_entity_id": int(query_result["node"]["current_realm_entity_id"], base=16),
-                    "origin_realm_id": await self.get_realm_id_from_npc_entity_id(
-                        int(query_result["node"]["entity_id"], base=16),
-                    ),
-                },
+            NpcEntity(
+                character_trait=decode_shortstring(int(query_result["node"]["character_trait"], base=16)),
+                full_name=decode_shortstring(int(query_result["node"]["full_name"], base=16)),
+                characteristics=unpack_characteristics(int(query_result["node"]["characteristics"], base=16)),
+                entity_id=int(query_result["node"]["entity_id"], base=16),
+                current_realm_entity_id=int(query_result["node"]["current_realm_entity_id"], base=16),
+                origin_realm_id=await self.get_realm_id_from_npc_entity_id(
+                    int(query_result["node"]["entity_id"], base=16),
+                ),
             )
             for query_result in query_results["npcModels"]["edges"]
         ]

@@ -13,9 +13,9 @@ async def generate_discussion(context: Context, params: MethodParams) -> Result:
     try:
         validated_params = MethodParams.model_validate_json(json.dumps(params), strict=True)  # noqa: TRY300
         if len(validated_params.user_input) == 0:
-            return Error(ErrorCodes.INVALID_TOWN_HALL_INPUT.value, ErrorCodes.INVALID_TOWN_HALL_INPUT.name)
+            return Error(ErrorCodes.INVALID_DISCUSSION_INPUT.value, ErrorCodes.INVALID_DISCUSSION_INPUT.name)
 
-        logger.info(f"Generating a town hall for realm_entity_id: {validated_params.realm_entity_id}")
+        logger.info(f"Generating a discussion for realm_entity_id: {validated_params.realm_entity_id}")
 
         return await handle_valid_input(context=context, params=validated_params)
 
@@ -24,11 +24,11 @@ async def generate_discussion(context: Context, params: MethodParams) -> Result:
 
     except RuntimeError as e:
         err = e.args[0]
-        logger.error(f"Error occured while generating town hall: {err.value} - {err.name}")
+        logger.error(f"Error occured while generating discussion: {err.value} - {err.name}")
         return Error(err.value, err.name)
 
     except Exception as e:
-        print(e)
+        logger.info(e)
 
 
 async def handle_valid_input(context: Context, params: MethodParams) -> Result:

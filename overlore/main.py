@@ -29,7 +29,6 @@ def handle_sigint(_signum: int, _frame: FrameType | None) -> None:
     logger.info("Shutting down Overlore ...")
     signal.signal(signal.SIGINT, signal.SIG_IGN)
     asyncio.run_coroutine_threadsafe(cancel_all_tasks(), loop=asyncio.get_running_loop())
-    exit(0)
 
 
 def setup() -> BootConfig:
