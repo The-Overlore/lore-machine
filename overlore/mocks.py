@@ -4,12 +4,12 @@ import json
 from typing import Any
 
 from overlore.errors import ErrorCodes
-from overlore.jsonrpc.methods.generate_discussion.generate_discussion import Context as GenerateDiscussionContext
-from overlore.jsonrpc.methods.generate_discussion.generate_discussion import (
+from overlore.jsonrpc.methods.generate_discussion.entrypoint import Context as GenerateDiscussionContext
+from overlore.jsonrpc.methods.generate_discussion.entrypoint import (
     generate_discussion,
 )
-from overlore.jsonrpc.methods.spawn_npc.spawn_npc import Context as SpawnNpcContext
-from overlore.jsonrpc.methods.spawn_npc.spawn_npc import spawn_npc
+from overlore.jsonrpc.methods.spawn_npc.entrypoint import Context as SpawnNpcContext
+from overlore.jsonrpc.methods.spawn_npc.entrypoint import spawn_npc
 from overlore.jsonrpc.types import JsonRpcMethod
 from overlore.llm.client import LlmClient
 from overlore.llm.guard import AsyncGuard

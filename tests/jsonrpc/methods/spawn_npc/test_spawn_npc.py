@@ -6,8 +6,8 @@ from starknet_py.cairo.felt import encode_shortstring
 from starknet_py.hash.utils import compute_hash_on_elements, verify_message_signature
 
 from overlore.errors import ErrorCodes
+from overlore.jsonrpc.methods.spawn_npc.entrypoint import Context, spawn_npc
 from overlore.jsonrpc.methods.spawn_npc.response import MethodParams, NpcProfileBuilder
-from overlore.jsonrpc.methods.spawn_npc.spawn_npc import Context, spawn_npc
 from overlore.jsonrpc.setup import launch_json_rpc_server
 from overlore.jsonrpc.types import JsonRpcMethod
 from overlore.llm.guard import AsyncGuard
