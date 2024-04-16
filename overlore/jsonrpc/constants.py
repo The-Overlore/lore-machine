@@ -1,13 +1,14 @@
 from overlore.config import BootConfig
-from overlore.jsonrpc.methods.generate_discussion.generate_discussion import (
+from overlore.jsonrpc.methods.generate_discussion.entrypoint import Context as GenerateDiscussionContext
+from overlore.jsonrpc.methods.generate_discussion.entrypoint import (
     generate_discussion,
-    Context as GenerateDiscussionContext,
 )
-from overlore.jsonrpc.methods.get_npc_backstory.get_npc_backstory import (
-    Context as GetNpcBackstoryContext,
+from overlore.jsonrpc.methods.get_npc_backstory.entrypoint import Context as GetNpcBackstoryContext
+from overlore.jsonrpc.methods.get_npc_backstory.entrypoint import (
     get_npc_backstory,
 )
-from overlore.jsonrpc.methods.spawn_npc.spawn_npc import Context as SpawnNpcContext, spawn_npc
+from overlore.jsonrpc.methods.spawn_npc.entrypoint import Context as SpawnNpcContext
+from overlore.jsonrpc.methods.spawn_npc.entrypoint import spawn_npc
 from overlore.jsonrpc.types import JsonRpcMethod
 from overlore.katana.client import KatanaClient
 from overlore.llm.client import AsyncOpenAiClient
