@@ -8,6 +8,7 @@ from jsonrpcserver import async_dispatch
 
 from overlore.config import BootConfig
 from overlore.jsonrpc.types import JsonRpcMethod
+from overlore.jsonrpc.utils import snake_to_camel
 
 methods_key: web.AppKey = web.AppKey(name="methods", t=JsonRpcMethod)
 
@@ -15,11 +16,13 @@ methods_key: web.AppKey = web.AppKey(name="methods", t=JsonRpcMethod)
 async def handle_http_request(request: web.Request) -> web.Response:
     methods = request.app[methods_key]
 
-    dispatch_methods = {f"{method['method'].__name__}": method["method"] for method in methods}
+    dispatch_methods = {f"{snake_to_camel(method['method'].__name__)}": method["method"] for method in methods}
 
     request_as_json = await request.json()
 
-    method_called = next(filter(lambda method: method["method"].__name__ == request_as_json["method"], methods), None)
+    method_called = next(
+        filter(lambda method: snake_to_camel(method["method"].__name__) == request_as_json["method"], methods), None
+    )
 
     if method_called is None:
         return web.Response(status=404)

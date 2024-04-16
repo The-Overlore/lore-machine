@@ -55,15 +55,16 @@ class BootConfig:
             description="The weaving loomer of all possible actual experiential occasions."
         )
         parser.add_argument(
-            "--mock",
-            action="store_true",
-            help="Use mock data for GPT response instead of querying the API. (saves API calls)",
-        )
-        parser.add_argument(
             "--prod",
             action="store_true",
             help="Run lore-machine in production mode.",
         )
+        parser.add_argument(
+            "--mock",
+            action="store_true",
+            help="Use mock data for GPT response instead of querying the API. (saves API calls)",
+        )
+
         parser.add_argument("-w", "--world_db", help="location of the world db", type=str, default="/litefs/world.db")
         parser.add_argument("-l", "--logging_file", help="location of the logging file", type=str)
         args = parser.parse_args()

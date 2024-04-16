@@ -81,9 +81,9 @@ class LlmFormatter:
 
         characteristics = npc["characteristics"]
 
-        age: int = cast(int, characteristics["age"])  # type: ignore[index]
-        role: str = cast(str, ROLES[characteristics["role"]])  # type: ignore[index]
-        sex: str = cast(str, SEX[characteristics["sex"]])  # type: ignore[index]
+        age: int = cast(int, characteristics.age)
+        role: str = cast(str, ROLES[characteristics.role])
+        sex: str = cast(str, SEX[characteristics.sex])
 
         name: str = cast(str, npc["full_name"])
 

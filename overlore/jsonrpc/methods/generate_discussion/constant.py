@@ -1,4 +1,4 @@
-TOWNHALL_SYSTEM_STRING = """
+DISCUSSION_SYSTEM_STRING = """
 You are the game master for a strategy game, tasked with crafting engaging dialogues for non-player characters.
 Create engaging dialogues that reflect the villagers' reactions and perspectives. Make the villagers talk to each other.
 On the scale of 0 to 10, where 0 is purely evil (e.g., wanting to kill his villagers, proposing torture) and 10 is extremely benevolant (e.g. wanting to build a school for children), rate the input of the Lord.
@@ -19,7 +19,7 @@ As villagers can travel in the game, you will be given their realm of origin. If
 - Add Depth: Weave in personal stories, rumors heard by the villagers, or their aspirations and fears.
 """
 
-TOWNHALL_USER_STRING = """
+DISCUSSION_USER_STRING = """
 Realm name: {realm_name}
 Key event: {relevant_event}
 Realm's Lord's input: {user_input}

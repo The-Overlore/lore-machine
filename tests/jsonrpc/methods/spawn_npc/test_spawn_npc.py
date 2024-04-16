@@ -6,40 +6,39 @@ from starknet_py.cairo.felt import encode_shortstring
 from starknet_py.hash.utils import compute_hash_on_elements, verify_message_signature
 
 from overlore.errors import ErrorCodes
-from overlore.jsonrpc.methods.spawn_npc.response import NpcProfileBuilder
-from overlore.jsonrpc.methods.spawn_npc.spawn_npc import Context, spawn_npc
+from overlore.jsonrpc.methods.spawn_npc.entrypoint import Context, spawn_npc
+from overlore.jsonrpc.methods.spawn_npc.response import MethodParams, NpcProfileBuilder
 from overlore.jsonrpc.setup import launch_json_rpc_server
 from overlore.jsonrpc.types import JsonRpcMethod
 from overlore.llm.guard import AsyncGuard
+from overlore.mocks import MockBootConfig, MockKatanaClient, MockLlmClient, MockToriiClient
+from overlore.sqlite.discussion_db import DiscussionDatabase
 from overlore.sqlite.events_db import EventsDatabase
 from overlore.sqlite.npc_db import NpcDatabase
-from overlore.sqlite.townhall_db import TownhallDatabase
 from overlore.types import Backstory, Characteristics, NpcProfile
-from tests.jsonrpc.types import MockBootConfig, MockKatanaClient, MockLlmClient, MockToriiClient
 from tests.jsonrpc.utils import call_json_rpc_server, run_async_function
 
 
 @pytest.mark.asyncio
-async def test_spawn_npc_successful(init_npc_profile_builder):
-    npc_profile_builder = init_npc_profile_builder
-
+async def test_spawn_npc_successful(context: Context):
     realm_entity_id = 1
-    params = {"realm_id": 1, "user_input": "", "realm_entity_id": realm_entity_id, "order_id": 1}
-    response = await npc_profile_builder.build_from_request_params(params=params)
-    print(response)
+    params = MethodParams(realm_entity_id=realm_entity_id)
+    npc_profile_builder = NpcProfileBuilder(context=context, params=params)
+    response = await npc_profile_builder.create_response()
+
     assert response["npc"] == valid_npc_profile.model_dump()
 
 
 @pytest.mark.asyncio
-async def test_spawn_npc_valid_signature(init_npc_profile_builder):
-    npc_profile_builder = init_npc_profile_builder
-
+async def test_spawn_npc_valid_signature(context: Context):
     realm_entity_id = 1
-    params = {"realm_id": 1, "user_input": "", "realm_entity_id": realm_entity_id, "order_id": 1}
-    response = await npc_profile_builder.build_from_request_params(params=params)
+    params = MethodParams(realm_entity_id=realm_entity_id)
+    npc_profile_builder = NpcProfileBuilder(context=context, params=params)
+
+    response = await npc_profile_builder.create_response()
 
     npc = response["npc"]
-    nonce = await npc_profile_builder.katana_client.get_contract_nonce(1)
+    nonce = await npc_profile_builder.context["katana_client"].get_contract_nonce(1)
 
     msg = [
         nonce,
@@ -60,7 +59,7 @@ async def test_spawn_npc_load(init_load_tester_config):
 
     launch_json_rpc_server(config=boot_config, methods=[json_rpc_method])
 
-    NUM_THREADS = 20
+    NUM_THREADS = 100
 
     threads = []
     results = []
@@ -88,38 +87,37 @@ async def test_spawn_npc_load(init_load_tester_config):
 
 
 @pytest.mark.asyncio
-async def test_spawn_npc_katana_unavailable(init_npc_profile_builder):
-    npc_profile_builder = init_npc_profile_builder
-    npc_profile_builder.katana_client = MockKatanaClient(force_fail=True)
+async def test_spawn_npc_katana_unavailable(context: Context):
+    context["katana_client"] = MockKatanaClient(force_fail=True)
 
     realm_entity_id = 1
-    params = {"realm_id": 1, "user_input": "", "realm_entity_id": realm_entity_id, "order_id": 1}
+    params = MethodParams(realm_entity_id=realm_entity_id)
+    npc_profile_builder = NpcProfileBuilder(context=context, params=params)
 
     with pytest.raises(RuntimeError) as error:
-        _ = await npc_profile_builder.build_from_request_params(params=params)
+        _ = await npc_profile_builder.create_response()
 
     assert error.value.args[0] == ErrorCodes.KATANA_UNAVAILABLE
 
 
 @pytest.mark.asyncio
-async def test_spawn_npc_torii_unavailable(init_npc_profile_builder):
-    npc_profile_builder = init_npc_profile_builder
-    npc_profile_builder.torii_client = MockToriiClient(force_fail=True)
-
+async def test_spawn_npc_torii_unavailable(context: Context):
     realm_entity_id = 1
-    params = {"realm_id": 1, "user_input": "", "realm_entity_id": realm_entity_id, "order_id": 1}
+    params = MethodParams(realm_entity_id=realm_entity_id)
+    context["torii_client"] = MockToriiClient(force_fail=True)
+    npc_profile_builder = NpcProfileBuilder(context=context, params=params)
 
     with pytest.raises(RuntimeError) as error:
-        _ = await npc_profile_builder.build_from_request_params(params=params)
+        _ = await npc_profile_builder.create_response()
 
     assert error.value.args[0] == ErrorCodes.TORII_UNAVAILABLE
 
 
 @pytest.fixture
-def init_npc_profile_builder():
+def context():
     npc_db = NpcDatabase.instance().init(":memory:")
     events_db = EventsDatabase.instance().init(":memory:")
-    townhall_db = TownhallDatabase.instance().init(":memory:")
+    discussion_db = DiscussionDatabase.instance().init(":memory:")
 
     mock_llm_client = MockLlmClient(
         embedding_return=valid_embedding, prompt_completion_return=valid_npc_profile.model_dump_json()
@@ -128,26 +126,26 @@ def init_npc_profile_builder():
     mock_torii_client = MockToriiClient()
     mock_katana_client = MockKatanaClient()
     guard = AsyncGuard(output_type=NpcProfile)
-
-    npc_profile_builder = NpcProfileBuilder(
+    context = Context(
+        guard=guard,
         llm_client=mock_llm_client,
         torii_client=mock_torii_client,
         katana_client=mock_katana_client,
         lore_machine_pk=TEST_PRIVATE_KEY,
-        guard=guard,
     )
 
-    yield npc_profile_builder
+    yield context
+
     npc_db.close_conn()
     events_db.close_conn()
-    townhall_db.close_conn()
+    discussion_db.close_conn()
 
 
 @pytest.fixture
 def init_load_tester_config():
     npc_db = NpcDatabase.instance().init(":memory:")
     events_db = EventsDatabase.instance().init(":memory:")
-    townhall_db = TownhallDatabase.instance().init(":memory:")
+    discussion_db = DiscussionDatabase.instance().init(":memory:")
 
     mock_llm_client = MockLlmClient(
         embedding_return=valid_embedding, prompt_completion_return=valid_npc_profile.model_dump_json()
@@ -173,7 +171,7 @@ def init_load_tester_config():
 
     npc_db.close_conn()
     events_db.close_conn()
-    townhall_db.close_conn()
+    discussion_db.close_conn()
 
 
 TEST_PUBLIC_KEY = "0x141A26313BD3355FE4C4F3DDA7E40DFB77CE54AEA5F62578B4EC5AAD8DD63B1"

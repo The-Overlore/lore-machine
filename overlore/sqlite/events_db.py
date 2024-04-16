@@ -131,7 +131,7 @@ class EventsDatabase(BaseDatabase):
     def fetch_most_relevant_event(
         self, realm_position: RealmPosition, current_time: int, stored_event_row_ids: list[int]
     ) -> StoredEvent | None:
-        where_clauses = " AND ".join([f"rowid != {event_row_id}" for event_row_id in stored_event_row_ids])
+        where_clauses = " AND ".join([f"rowid != {event_id}" for event_id in stored_event_row_ids])
         where_clauses = "WHERE " + where_clauses if where_clauses != "" else ""
 
         """Attributes an importance score depending on the distance in kilometers, the recency

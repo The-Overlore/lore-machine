@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Sequence, cast
+from typing import Any, Sequence
 
 from starknet_py.cairo.felt import encode_shortstring
 from starknet_py.hash.utils import ECSignature, message_signature
@@ -34,11 +34,8 @@ def unpack_characteristics(characteristics: int) -> Characteristics:
     characteristics >>= 8
     sex: int = characteristics & U2_MASK
 
-    return cast(
-        Characteristics,
-        {
-            "age": age,
-            "role": role,
-            "sex": sex,
-        },
+    return Characteristics(
+        age=age,
+        role=role,
+        sex=sex,
     )

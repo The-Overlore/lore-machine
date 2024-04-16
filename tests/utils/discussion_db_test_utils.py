@@ -1,6 +1,6 @@
-from overlore.sqlite.townhall_db import TownhallDatabase
+from overlore.sqlite.discussion_db import DiscussionDatabase
 
-given_townhall_values = [
+given_discussion_values = [
     {
         "rowid": i,
         "discussion": f"Discussion {i}",
@@ -12,7 +12,7 @@ given_townhall_values = [
     for i in range(1, 4)
 ]
 
-given_townhall_values_for_single_realm = [
+given_discussion_values_for_single_realm = [
     {"discussion": f"Discussion {i}", "input": f"Input {i}", "input_score": i, "ts": i * 1000} for i in range(1, 4)
 ]
 
@@ -25,36 +25,36 @@ given_thoughts = [
     for i in range(1, 4)
 ]
 
-daily_town_hall_tracker_data = [
+daily_discussion_tracker_data = [
     {
         "row_id": i,
         "realm_id": i * 10,
-        "event_row_id": i * 5,
+        "event_id": i * 5,
     }
     for i in range(1, 4)
 ]
 
 
-def generate_townhalls_for_realmid(db: TownhallDatabase, realm_id, townhalls):
-    for item in townhalls:
-        db.insert_townhall_discussion(realm_id, item["discussion"], item["input"], item["input_score"], item["ts"])
+def generate_discussions_for_realmid(db: DiscussionDatabase, realm_id, discussions):
+    for item in discussions:
+        db.insert_discussion(realm_id, item["discussion"], item["input"], item["input_score"], item["ts"])
 
 
-def format_townhalls(townhalls) -> list:
+def format_discussions(discussions) -> list:
     INSERT_INDEX = 0
     res = []
-    for item in townhalls:
+    for item in discussions:
         res.insert(INSERT_INDEX, (item["discussion"], item["input"]))
     return res
 
 
-def prepare_daily_town_hall_tracker_data(db: TownhallDatabase):
-    for item in daily_town_hall_tracker_data:
-        db.insert_or_update_daily_townhall_tracker(item["realm_id"], item["event_row_id"])
+def prepare_daily_discussion_tracker_data(db: DiscussionDatabase):
+    for item in daily_discussion_tracker_data:
+        db.insert_or_update_events_to_ignore_today(item["realm_id"], item["event_id"])
 
 
 class ThoughtsDatabaseFiller:
-    def __init__(self, database: TownhallDatabase):
+    def __init__(self, database: DiscussionDatabase):
         self.database = database
 
     def populate_with_time_increase(self, num: int) -> int:
