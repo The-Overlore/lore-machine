@@ -9,12 +9,12 @@ from overlore.jsonrpc.methods.generate_discussion.response import (
     MethodParams,
     SuccessResponse,
 )
-from overlore.jsonrpc.methods.generate_discussion.types import DialogueSegmentWithNpcEntityId
 from overlore.llm.guard import AsyncGuard
 from overlore.mocks import KATANA_MOCK_TS, MockKatanaClient, MockLlmClient, MockToriiClient
 from overlore.sqlite.discussion_db import DiscussionDatabase
 from overlore.sqlite.events_db import EventsDatabase
 from overlore.sqlite.npc_db import NpcDatabase
+from overlore.sqlite.types import StorableDiscussion, StoredSegment
 from overlore.types import (
     Characteristics,
     DialogueThoughts,
@@ -31,17 +31,22 @@ async def test_generate_discussion_without_user_input(context: Context):
     discussion_builder = await DiscussionBuilder.create(context=context, params=params)
     response = await discussion_builder.create_response()
 
-    assert success_response == response
+    SUCCESS_RESPONSE["discussion"]["user_input"] = ""
+
+    assert SUCCESS_RESPONSE == response
 
 
 @pytest.mark.asyncio
 async def test_generate_discussion_with_user_input(context: Context):
-    params = MethodParams(realm_id=1, user_input="Hello World!", realm_entity_id=1, order_id=1)
+    user_input = "Hello World!"
+    params = MethodParams(realm_id=1, user_input=user_input, realm_entity_id=1, order_id=1)
 
     discussion_builder = await DiscussionBuilder.create(context=context, params=params)
     response = await discussion_builder.create_response()
 
-    assert success_response == response
+    SUCCESS_RESPONSE["discussion"]["user_input"] = user_input
+
+    assert SUCCESS_RESPONSE == response
 
 
 @pytest.mark.asyncio
@@ -127,21 +132,32 @@ def context():
     discussion_db.close_conn()
 
 
+REALM_ID = 1
+
 JULIEN_ENTITY_ID = 104
 JOHNY_ENTITY_ID = 105
 
+JOHNY_DIALOGUE = "HooHaa"
+JULIEN_DIALOGUE = "Blabla"
+
+USER_INPUT = "Hello World!"
+
 dialogue = [
-    {"dialogue_segment": "HooHaa", "full_name": "Johny Bravo"},
-    {"dialogue_segment": "Blabla", "full_name": "Julien Doré"},
+    {"dialogue_segment": JOHNY_DIALOGUE, "full_name": "Johny Bravo"},
+    {"dialogue_segment": JULIEN_DIALOGUE, "full_name": "Julien Doré"},
 ]
 
-success_response = SuccessResponse(
-    dialogue=[
-        DialogueSegmentWithNpcEntityId(npc_entity_id=JOHNY_ENTITY_ID, dialogue_segment=dialogue[0]),
-        DialogueSegmentWithNpcEntityId(npc_entity_id=JULIEN_ENTITY_ID, dialogue_segment=dialogue[1]),
-    ],
-    input_score=0,
-    timestamp=KATANA_MOCK_TS,
+SUCCESS_RESPONSE = SuccessResponse(
+    discussion=StorableDiscussion(
+        realm_id=REALM_ID,
+        timestamp=KATANA_MOCK_TS,
+        dialogue=[
+            StoredSegment(npc_entity_id=JOHNY_ENTITY_ID, segment=JOHNY_DIALOGUE),
+            StoredSegment(npc_entity_id=JULIEN_ENTITY_ID, segment=JULIEN_DIALOGUE),
+        ],
+        user_input="",
+        input_score=0,
+    )
 )
 
 llm_client_response = f"""{{"dialogue": {json.dumps(dialogue, ensure_ascii=False)}, "input_score": 0}}"""

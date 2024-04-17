@@ -3,9 +3,11 @@ from overlore.jsonrpc.methods.generate_discussion.entrypoint import Context as G
 from overlore.jsonrpc.methods.generate_discussion.entrypoint import (
     generate_discussion,
 )
-from overlore.jsonrpc.methods.get_npc_backstory.entrypoint import Context as GetNpcBackstoryContext
-from overlore.jsonrpc.methods.get_npc_backstory.entrypoint import (
-    get_npc_backstory,
+from overlore.jsonrpc.methods.get_discussions.entrypoint import Context as GetDiscussionsContext
+from overlore.jsonrpc.methods.get_discussions.entrypoint import get_discussions
+from overlore.jsonrpc.methods.get_npcs_backstory.entrypoint import Context as GetNpcBackstoryContext
+from overlore.jsonrpc.methods.get_npcs_backstory.entrypoint import (
+    get_npcs_backstory,
 )
 from overlore.jsonrpc.methods.spawn_npc.entrypoint import Context as SpawnNpcContext
 from overlore.jsonrpc.methods.spawn_npc.entrypoint import spawn_npc
@@ -21,7 +23,8 @@ def setup_json_rpc_methods(config: BootConfig) -> list[JsonRpcMethod]:
     json_rpc_methods: list[JsonRpcMethod] = [
         create_generate_discussion_method(config=config),
         create_spawn_npc_method(config=config),
-        create_get_npc_backstory_method(),
+        create_get_npcs_backstory_method(),
+        create_get_discussions_method(),
     ]
 
     return json_rpc_methods
@@ -55,5 +58,9 @@ def create_spawn_npc_method(config: BootConfig) -> JsonRpcMethod:
     )
 
 
-def create_get_npc_backstory_method() -> JsonRpcMethod:
-    return JsonRpcMethod(context=GetNpcBackstoryContext(), method=get_npc_backstory)
+def create_get_npcs_backstory_method() -> JsonRpcMethod:
+    return JsonRpcMethod(context=GetNpcBackstoryContext(), method=get_npcs_backstory)
+
+
+def create_get_discussions_method() -> JsonRpcMethod:
+    return JsonRpcMethod(context=GetDiscussionsContext(), method=get_discussions)

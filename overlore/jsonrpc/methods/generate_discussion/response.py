@@ -15,9 +15,7 @@ from overlore.jsonrpc.methods.generate_discussion.constant import (
     DISCUSSION_USER_STRING,
     THOUGHTS_SYSTEM_STRING,
 )
-from overlore.jsonrpc.methods.generate_discussion.types import DialogueSegmentWithNpcEntityId
 from overlore.jsonrpc.methods.generate_discussion.utils import (
-    convert_discussion_to_str,
     get_entity_id_from_name,
     get_most_important_event,
 )
@@ -28,8 +26,9 @@ from overlore.llm.guard import AsyncGuard
 from overlore.llm.natural_language_formatter import LlmFormatter
 from overlore.sqlite.discussion_db import DiscussionDatabase
 from overlore.sqlite.errors import CosineSimilarityNotFoundError
+from overlore.sqlite.types import StorableDiscussion
 from overlore.torii.client import ToriiClient
-from overlore.types import DialogueSegment, DialogueThoughts, Discussion, NpcAndThoughts, NpcEntity, Thought
+from overlore.types import DialogueThoughts, Discussion, NpcAndThoughts, NpcEntity, Thought
 
 logger = logging.getLogger("overlore")
 
@@ -52,9 +51,7 @@ class MethodParams(BaseModel):
 
 
 class SuccessResponse(TypedDict):
-    timestamp: int
-    dialogue: list[DialogueSegmentWithNpcEntityId]
-    input_score: int
+    discussion: StorableDiscussion
 
 
 class DiscussionBuilder:
@@ -87,17 +84,17 @@ class DiscussionBuilder:
         raise RuntimeError("Call create() instead")
 
     async def create_response(self) -> SuccessResponse:
-        discussion = await self.create_and_store_discussion()
+        discussion: StorableDiscussion = await self.create_and_store_discussion()
         self.create_and_store_thoughts(discussion=discussion)
         return self.create_success_response(discussion=discussion)
 
-    async def create_and_store_discussion(self) -> Discussion:
-        discussion = await self.create_discussion()
+    async def create_and_store_discussion(self) -> StorableDiscussion:
+        discussion: StorableDiscussion = await self.create_discussion()
         self.store_discussion(discussion)
         return discussion
 
-    def create_and_store_thoughts(self, discussion: Discussion) -> None:
-        dialogue = convert_discussion_to_str(discussion.dialogue)
+    def create_and_store_thoughts(self, discussion: StorableDiscussion) -> None:
+        dialogue = StorableDiscussion.to_string(discussion=discussion, realm_npcs=self.npcs)  # type: ignore[attr-defined]
 
         task = asyncio.create_task(
             coro=self.thoughts_task(dialogue=dialogue),
@@ -106,20 +103,21 @@ class DiscussionBuilder:
         create_and_store_thoughts_tasks.add(task)
         task.add_done_callback(create_and_store_thoughts_tasks.discard)
 
-    def create_success_response(self, discussion: Discussion) -> SuccessResponse:
-        response_dialogue = [
-            DialogueSegmentWithNpcEntityId(
-                npc_entity_id=get_entity_id_from_name(full_name=dialogue_segment.full_name, npcs=self.npcs),
-                dialogue_segment=cast(DialogueSegment, dialogue_segment.model_dump()),
-            )
-            for dialogue_segment in discussion.dialogue
-        ]
-        return SuccessResponse(timestamp=self.katana_ts, dialogue=response_dialogue, input_score=discussion.input_score)
+    def create_success_response(self, discussion: StorableDiscussion) -> SuccessResponse:
+        return SuccessResponse(discussion=discussion)
 
-    async def create_discussion(self) -> Discussion:
+    async def create_discussion(self) -> StorableDiscussion:
         prompt = await self.build_prompt()
-        discussion_discussion = await self.request_discussion_with_llm_guard(prompt=prompt)
-        return discussion_discussion
+        discussion = await self.request_discussion_with_llm_guard(prompt=prompt)
+        storable_discussion: StorableDiscussion = StorableDiscussion.from_llm_output(  # type: ignore[attr-defined]
+            realm_id=self.params.realm_id,
+            ts=self.katana_ts,
+            discussion=discussion,
+            user_input=self.params.user_input,
+            realm_npcs=self.npcs,
+        )
+
+        return storable_discussion
 
     async def build_prompt(self) -> str:
         self.most_important_event = get_most_important_event(realm_id=self.params.realm_id, katana_ts=self.katana_ts)
@@ -161,15 +159,9 @@ class DiscussionBuilder:
                 raise RuntimeError(ErrorCodes.NO_THOUGHT_FOUND) from e
         return thoughts
 
-    def store_discussion(self, discussion: Discussion) -> None:
-        dialogue = convert_discussion_to_str(discussion.dialogue)
-
+    def store_discussion(self, discussion: StorableDiscussion) -> None:
         self.discussion_db.insert_discussion(
-            realm_id=self.params.realm_id,
-            discussion=dialogue,
-            user_input=self.params.user_input,
-            input_score=discussion.input_score,
-            ts=self.katana_ts,
+            discussion=discussion,
         )
 
         if self.most_important_event:

@@ -2,13 +2,11 @@ import pytest
 
 from overlore.errors import ErrorCodes
 from overlore.sqlite.discussion_db import DiscussionDatabase
+from overlore.sqlite.types import StorableDiscussion
+from overlore.types import Characteristics, DialogueSegment, Discussion, NpcEntity
 from tests.utils.discussion_db_test_utils import (
     ThoughtsDatabaseFiller,
     daily_discussion_tracker_data,
-    format_discussions,
-    generate_discussions_for_realmid,
-    given_discussion_values,
-    given_discussion_values_for_single_realm,
     given_thoughts,
     prepare_daily_discussion_tracker_data,
 )
@@ -21,27 +19,40 @@ def db():
     db.close_conn()
 
 
-def test_insert_and_fetch_discussion_discussion(db: DiscussionDatabase):
-    for item in given_discussion_values:
-        added_row_id = db.insert_discussion(
-            item["realm_id"], item["discussion"], item["input"], item["input_score"], item["ts"]
+def test_insert_and_fetch_discussion(db: DiscussionDatabase):
+    for i in range(1, 10):
+        storable = StorableDiscussion.from_llm_output(
+            discussion=Discussion(
+                dialogue=[DialogueSegment(full_name="Fred", dialogue_segment=f"Discussion {i}")], input_score=10
+            ),
+            ts=i,
+            user_input=f"Input: {i}",
+            realm_id=i,
+            realm_npcs=REALM_NPCS,
         )
-        retrieved_entry = db.fetch_discussions_by_realm_id(item["realm_id"])[0]
+        _ = db.insert_discussion(discussion=storable)
+        retrieved_discussion = db.fetch_discussions_by_realm_id(realm_id=i)[0]
 
-        assert added_row_id == item["rowid"], f"Expected rowid {item['rowid']}, got {added_row_id}"
-        assert retrieved_entry == (
-            item["discussion"],
-            item["input"],
-        ), f"Expected profile '{(item['discussion'], item['input'])}', got '{retrieved_entry}'"
+        assert retrieved_discussion == storable
 
 
 def test_fetch_multiple_discussions(db: DiscussionDatabase):
     realm_id = 999
-    generate_discussions_for_realmid(db, realm_id, given_discussion_values_for_single_realm)
+    storables = []
+    for i in range(1, 10):
+        storable = StorableDiscussion.from_llm_output(
+            discussion=Discussion(
+                dialogue=[DialogueSegment(full_name="Fred", dialogue_segment=f"Discussion {i}")], input_score=10
+            ),
+            ts=i,
+            user_input=f"Input: {i}",
+            realm_id=realm_id,
+            realm_npcs=REALM_NPCS,
+        )
+        _ = db.insert_discussion(discussion=storable)
+        storables.append(storable)
 
-    retrieved_entries = db.fetch_discussions_by_realm_id(realm_id)
-
-    assert retrieved_entries == format_discussions(given_discussion_values_for_single_realm)
+    assert storables == db.fetch_discussions_by_realm_id(realm_id)
 
 
 def test_insert_and_fetch_npc_thought(db: DiscussionDatabase):
@@ -85,12 +96,23 @@ def delete_events_to_ignore_today(db: DiscussionDatabase):
 
 def test_fetch_last_discussion_ts(db: DiscussionDatabase):
     realm_id = 999
+    MAX_DISCUSSIONS = 10
 
     assert -1 == db.fetch_last_discussion_ts_by_realm_id(realm_id)
 
-    generate_discussions_for_realmid(db, realm_id, given_discussion_values_for_single_realm)
+    for i in range(1, MAX_DISCUSSIONS + 1):
+        storable = StorableDiscussion.from_llm_output(
+            discussion=Discussion(
+                dialogue=[DialogueSegment(full_name="Fred", dialogue_segment=f"Discussion {i}")], input_score=10
+            ),
+            ts=i,
+            user_input=f"Input: {i}",
+            realm_id=realm_id,
+            realm_npcs=REALM_NPCS,
+        )
+        _ = db.insert_discussion(discussion=storable)
 
-    assert db.fetch_last_discussion_ts_by_realm_id(realm_id) == 3000
+    assert db.fetch_last_discussion_ts_by_realm_id(realm_id) == MAX_DISCUSSIONS
 
 
 def test_insert_empty_thought_embedding(db: DiscussionDatabase):
@@ -162,3 +184,28 @@ def test_get_higest_scoring_thought_with_poignancy_increase(db: DiscussionDataba
     least = db.fetch_npc_thought_by_row_id(1)
 
     assert least != highest_scoring_though
+
+
+JOHN_ENTITY_ID = 1
+FRED_ENTITY_ID = 2
+
+
+JOHN = NpcEntity(
+    character_trait="dumb",
+    characteristics=Characteristics(age=1, role=1, sex=1),
+    current_realm_entity_id=1,
+    entity_id=JOHN_ENTITY_ID,
+    full_name="John",
+    origin_realm_id=1,
+)
+
+FRED = NpcEntity(
+    character_trait="dumber",
+    characteristics=Characteristics(age=1, role=1, sex=1),
+    current_realm_entity_id=1,
+    entity_id=FRED_ENTITY_ID,
+    full_name="Fred",
+    origin_realm_id=1,
+)
+
+REALM_NPCS = [FRED, JOHN]

@@ -4,7 +4,7 @@ from typing import TypedDict
 
 from openai import BaseModel
 
-from overlore.jsonrpc.methods.get_npc_backstory.types import BackstoryWithEntityId
+from overlore.jsonrpc.methods.get_npcs_backstory.types import BackstoryWithEntityId
 from overlore.sqlite.npc_db import NpcDatabase
 
 

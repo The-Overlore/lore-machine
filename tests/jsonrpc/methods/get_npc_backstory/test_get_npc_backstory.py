@@ -1,12 +1,12 @@
 import pytest
 
-from overlore.jsonrpc.methods.get_npc_backstory.response import (
+from overlore.jsonrpc.methods.get_npcs_backstory.response import (
     Context,
     MethodParams,
     NpcBackstoryGetter,
     SuccessResponse,
 )
-from overlore.jsonrpc.methods.get_npc_backstory.types import BackstoryWithEntityId
+from overlore.jsonrpc.methods.get_npcs_backstory.types import BackstoryWithEntityId
 from overlore.sqlite.npc_db import NpcDatabase
 from overlore.types import Backstory, Characteristics, NpcProfile
 
@@ -87,6 +87,3 @@ ANOTHER_VALID_RESPONSE = SuccessResponse(
 )
 
 NON_EXISTENT_ENTITY_ID = 9999
-
-
-NPC_PROFILES = []
