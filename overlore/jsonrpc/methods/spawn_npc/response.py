@@ -49,6 +49,10 @@ class NpcProfileBuilder:
 
         realm_entity_id = self.params.realm_entity_id
 
+        realm_owner_wallet_address = await self.context["torii_client"].get_realm_owner_wallet_address(
+            realm_entity_id=realm_entity_id
+        )
+
         npc_profile = npc_db.fetch_npc_profile_by_realm_entity_id(realm_entity_id)
 
         if npc_profile is None:
@@ -62,10 +66,6 @@ class NpcProfileBuilder:
 
         else:
             logger.info(f"Existing npc profile found for realm_entity_id {realm_entity_id}")
-
-        realm_owner_wallet_address = await self.context["torii_client"].get_realm_owner_wallet_address(
-            realm_entity_id=realm_entity_id
-        )
 
         signature = await self.create_signature_for_response(
             realm_owner_wallet_address=realm_owner_wallet_address, npc_profile=npc_profile

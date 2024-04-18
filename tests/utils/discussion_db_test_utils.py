@@ -1,17 +1,5 @@
 from overlore.sqlite.discussion_db import DiscussionDatabase
 
-given_discussion_values = [
-    {
-        "rowid": i,
-        "discussion": f"Discussion {i}",
-        "input_score": i,
-        "input": f"Input {i}",
-        "realm_id": i * 100,
-        "ts": i * 1000,
-    }
-    for i in range(1, 4)
-]
-
 given_discussion_values_for_single_realm = [
     {"discussion": f"Discussion {i}", "input": f"Input {i}", "input_score": i, "ts": i * 1000} for i in range(1, 4)
 ]

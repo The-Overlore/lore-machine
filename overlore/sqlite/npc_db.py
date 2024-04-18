@@ -108,6 +108,15 @@ class NpcDatabase(BaseDatabase):
             raise NpcDescriptionNotFoundError(f"No villager backstory found at npc_entity_id {npc_entity_id}")
         return Backstory(backstory=backstory[0][0], poignancy=backstory[0][1])
 
+    def fetch_npcs_backstories(self, npc_entity_ids: list[int]) -> list[tuple[int, str]]:
+        query = (
+            "SELECT npc_entity_id, backstory FROM npc_backstory WHERE npc_entity_id IN"
+            f" ({','.join(['?'] * len(npc_entity_ids))});"
+        )
+        params = tuple(npc_entity_ids)
+        ret = self.execute_query(query=query, params=params)
+        return ret
+
     def insert_npc_backstory(self, npc_entity_id: int, realm_entity_id: int) -> int:
         backstory = self.execute_query(
             "SELECT backstory, backstory_poignancy FROM npc_profile WHERE realm_entity_id = ?;", (realm_entity_id,)

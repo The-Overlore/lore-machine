@@ -10,6 +10,7 @@ import sqlite_vss
 from overlore.errors import ErrorCodes
 from overlore.sqlite.base_db import A_TIME, BaseDatabase, average, decay_function
 from overlore.sqlite.errors import CosineSimilarityNotFoundError
+from overlore.sqlite.types import StorableDiscussion
 
 logger = logging.getLogger("overlore")
 
@@ -20,7 +21,7 @@ class DiscussionDatabase(BaseDatabase):
     MIGRATIONS: list[str] = [
         """
             CREATE TABLE IF NOT EXISTS discussion (
-                discussion TEXT,
+                discussion JSON,
                 user_input TEXT,
                 input_score INTEGER,
                 realm_id INTEGER NOT NULL,
@@ -101,19 +102,45 @@ class DiscussionDatabase(BaseDatabase):
 
         return cast(Tuple[str, int, float, float], res[0])
 
-    def insert_discussion(self, realm_id: int, discussion: str, user_input: str, input_score: int, ts: int) -> int:
-        discussion = discussion.strip()
-
+    def insert_discussion(self, discussion: StorableDiscussion) -> int:
         return self._insert(
             "INSERT INTO discussion (discussion, user_input, input_score, realm_id, ts) VALUES (?, ?, ?, ?, ?);",
-            (discussion, user_input, input_score, realm_id, ts),
+            (
+                json.dumps(discussion["dialogue"]),
+                discussion["user_input"],
+                discussion["input_score"],
+                discussion["realm_id"],
+                discussion["timestamp"],
+            ),
         )
 
-    def fetch_discussions_by_realm_id(self, realm_id: int) -> list:
-        return self.execute_query(
-            "SELECT discussion, user_input FROM discussion WHERE realm_id = ? ORDER BY ts DESC;",
+    def fetch_discussions_by_realm_id(self, realm_id: int) -> list[StorableDiscussion]:
+        query_ret = self.execute_query(
+            "SELECT discussion, user_input, input_score, realm_id, ts FROM discussion WHERE realm_id = ? ORDER BY ts"
+            " ASC;",
             (realm_id,),
         )
+        return [
+            StorableDiscussion.from_stored_data(  # type: ignore[attr-defined]
+                discussion=item[0], user_input=item[1], input_score=item[2], realm_id=item[3], ts=item[4]
+            )
+            for item in query_ret
+        ]
+
+    def fetch_discussions_by_realm_id_and_ts(
+        self, realm_id: int, start_time: int, end_time: int
+    ) -> list[StorableDiscussion]:
+        query_ret = self.execute_query(
+            "SELECT discussion, user_input, input_score, realm_id, ts FROM discussion WHERE realm_id = ? AND ts >= ?"
+            " AND ts <= ? ORDER BY ts ASC;",
+            (realm_id, start_time, end_time),
+        )
+        return [
+            StorableDiscussion.from_stored_data(  # type: ignore[attr-defined]
+                discussion=item[0], user_input=item[1], input_score=item[2], realm_id=item[3], ts=item[4]
+            )
+            for item in query_ret
+        ]
 
     def fetch_last_discussion_ts_by_realm_id(self, realm_id: int) -> int:
         last_ts = self.execute_query(
