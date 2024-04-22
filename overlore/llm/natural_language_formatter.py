@@ -1,5 +1,5 @@
 import json
-from typing import Any, cast
+from typing import Any
 
 from overlore.constants import ROLES, SEX
 from overlore.eternum.realms import Realms
@@ -81,15 +81,15 @@ class LlmFormatter:
 
         characteristics = npc["characteristics"]
 
-        age: int = cast(int, characteristics["age"])
-        role: str = cast(str, ROLES[characteristics["role"]])
-        sex: str = cast(str, SEX[characteristics["sex"]])
+        age = characteristics["age"]
+        role_str = ROLES[characteristics["role"]]
+        sex_str = SEX[characteristics["sex"]]
 
-        name: str = cast(str, npc["full_name"])
+        name = npc["full_name"]
 
         origin_realm: str = realms.name_by_id(npc["origin_realm_id"])
 
-        return AGENT_TEMPLATE.format(name=name, sex=sex, role=role, age=age, origin_realm=origin_realm)
+        return AGENT_TEMPLATE.format(name=name, sex=sex_str, role=role_str, age=age, origin_realm=origin_realm)
 
     def event_to_nl(self, event: StoredEvent) -> str:
         #  event
