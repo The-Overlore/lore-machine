@@ -4,7 +4,7 @@ from typing import TypedDict
 
 from openai import BaseModel
 
-from overlore.constants import ROLES, SEX, TRAIT_TYPE
+from overlore.constants import MAX_AGE, MIN_AGE, ROLES, SEX, TRAIT_TYPE
 from overlore.jsonrpc.methods.spawn_npc.constants import NPC_PROFILE_SYSTEM_STRING, NPC_PROFILE_USER_STRING
 from overlore.katana.client import KatanaClient
 from overlore.llm.client import AsyncOpenAiClient
@@ -21,10 +21,10 @@ logger = logging.getLogger("overlore")
 
 class RandGenerator:
     def generate_age(self) -> int:
-        return random.randint(15, 65)
+        return random.randint(MIN_AGE, MAX_AGE)
 
     def generate_sex(self) -> int:
-        return random.randint(0, 1)
+        return random.randint(0, len(SEX) - 1)
 
     def generate_role(self) -> int:
         return random.randint(0, len(ROLES) - 1)

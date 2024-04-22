@@ -5,7 +5,7 @@ from typing import Any, cast
 
 import aiohttp
 
-from overlore.constants import ROLES
+from overlore.constants import MAX_AGE, MIN_AGE, ROLES, SEX
 
 
 class MockRandGenerator:
@@ -13,10 +13,10 @@ class MockRandGenerator:
         self.rand = random.Random(seed)
 
     def generate_age(self) -> int:
-        return self.rand.randint(15, 65)
+        return self.rand.randint(MIN_AGE, MAX_AGE)
 
     def generate_sex(self) -> int:
-        return self.rand.randint(0, 1)
+        return self.rand.randint(0, len(SEX) - 1)
 
     def generate_role(self) -> int:
         return self.rand.randint(0, len(ROLES) - 1)
