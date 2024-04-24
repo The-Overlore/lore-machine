@@ -6,3 +6,6 @@ NPC_PROFILE_USER_STRING = """Generate for a villager a {trait_type} trait, a bac
 - role: {role}
 - sex: {sex}
 """
+
+MIN_AGE = 15
+MAX_AGE = 65

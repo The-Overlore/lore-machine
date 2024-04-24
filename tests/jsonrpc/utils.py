@@ -5,7 +5,8 @@ from typing import Any, cast
 
 import aiohttp
 
-from overlore.constants import MAX_AGE, MIN_AGE, ROLES, SEX
+from overlore.constants import ROLES, SEX
+from overlore.jsonrpc.methods.spawn_npc.constants import MAX_AGE, MIN_AGE
 
 
 class MockRandGenerator:

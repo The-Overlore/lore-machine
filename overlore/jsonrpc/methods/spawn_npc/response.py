@@ -4,8 +4,13 @@ from typing import TypedDict
 
 from openai import BaseModel
 
-from overlore.constants import MAX_AGE, MIN_AGE, ROLES, SEX, TRAIT_TYPE
-from overlore.jsonrpc.methods.spawn_npc.constants import NPC_PROFILE_SYSTEM_STRING, NPC_PROFILE_USER_STRING
+from overlore.constants import ROLES, SEX, TRAIT_TYPE
+from overlore.jsonrpc.methods.spawn_npc.constants import (
+    MAX_AGE,
+    MIN_AGE,
+    NPC_PROFILE_SYSTEM_STRING,
+    NPC_PROFILE_USER_STRING,
+)
 from overlore.katana.client import KatanaClient
 from overlore.llm.client import AsyncOpenAiClient
 from overlore.llm.constants import ChatCompletionModel
@@ -95,7 +100,6 @@ class NpcProfileBuilder:
         )
 
         return SuccessResponse(npc=npc_profile, signature=signature)
-        # return SuccessResponse(npc=cast(NpcProfile, npc_profile.model_dump()), signature=signature)
 
     def prepare_prompt_for_llm_call(self, age: int, role: str, sex: str) -> str:
         trait_type = TRAIT_TYPE[random.randrange(2)]
