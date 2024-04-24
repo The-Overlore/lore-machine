@@ -5,9 +5,10 @@ import pytest
 from starknet_py.cairo.felt import encode_shortstring
 from starknet_py.hash.utils import compute_hash_on_elements, verify_message_signature
 
+from overlore.constants import ROLES, SEX
 from overlore.errors import ErrorCodes
 from overlore.jsonrpc.methods.spawn_npc.entrypoint import Context, spawn_npc
-from overlore.jsonrpc.methods.spawn_npc.response import MethodParams, NpcProfileBuilder
+from overlore.jsonrpc.methods.spawn_npc.response import MethodParams, NpcProfileBuilder, RandGenerator
 from overlore.jsonrpc.setup import launch_json_rpc_server
 from overlore.jsonrpc.types import JsonRpcMethod
 from overlore.llm.guard import AsyncGuard
@@ -15,25 +16,25 @@ from overlore.mocks import MockBootConfig, MockKatanaClient, MockLlmClient, Mock
 from overlore.sqlite.discussion_db import DiscussionDatabase
 from overlore.sqlite.events_db import EventsDatabase
 from overlore.sqlite.npc_db import NpcDatabase
-from overlore.types import Backstory, Characteristics, NpcProfile
-from tests.jsonrpc.utils import call_json_rpc_server, run_async_function
+from overlore.types import Backstory, Characteristics, NpcIdentity, NpcProfile
+from tests.jsonrpc.utils import MockRandGenerator, call_json_rpc_server, run_async_function
 
 
 @pytest.mark.asyncio
 async def test_spawn_npc_successful(context: Context):
     realm_entity_id = 1
     params = MethodParams(realm_entity_id=realm_entity_id)
-    npc_profile_builder = NpcProfileBuilder(context=context, params=params)
+    npc_profile_builder = NpcProfileBuilder(context=context, params=params, rand_generator=MockRandGenerator(SEED))
     response = await npc_profile_builder.create_response()
 
-    assert response["npc"] == valid_npc_profile.model_dump()
+    assert response["npc"] == valid_npc_profile
 
 
 @pytest.mark.asyncio
 async def test_spawn_npc_valid_signature(context: Context):
     realm_entity_id = 1
     params = MethodParams(realm_entity_id=realm_entity_id)
-    npc_profile_builder = NpcProfileBuilder(context=context, params=params)
+    npc_profile_builder = NpcProfileBuilder(context=context, params=params, rand_generator=MockRandGenerator(SEED))
 
     response = await npc_profile_builder.create_response()
 
@@ -92,7 +93,7 @@ async def test_spawn_npc_katana_unavailable(context: Context):
 
     realm_entity_id = 1
     params = MethodParams(realm_entity_id=realm_entity_id)
-    npc_profile_builder = NpcProfileBuilder(context=context, params=params)
+    npc_profile_builder = NpcProfileBuilder(context=context, params=params, rand_generator=MockRandGenerator(SEED))
 
     with pytest.raises(RuntimeError) as error:
         _ = await npc_profile_builder.create_response()
@@ -105,12 +106,27 @@ async def test_spawn_npc_torii_unavailable(context: Context):
     realm_entity_id = 1
     params = MethodParams(realm_entity_id=realm_entity_id)
     context["torii_client"] = MockToriiClient(force_fail=True)
-    npc_profile_builder = NpcProfileBuilder(context=context, params=params)
+    npc_profile_builder = NpcProfileBuilder(context=context, params=params, rand_generator=MockRandGenerator(SEED))
 
     with pytest.raises(RuntimeError) as error:
         _ = await npc_profile_builder.create_response()
 
     assert error.value.args[0] == ErrorCodes.TORII_UNAVAILABLE
+
+
+@pytest.mark.asyncio
+async def test_rand_int_values(context):
+    context = context
+
+    for realm_entity_id in range(1, 10):
+        params = MethodParams(realm_entity_id=realm_entity_id)
+        npc_profile_builder = NpcProfileBuilder(context=context, params=params, rand_generator=RandGenerator())
+
+        response = await npc_profile_builder.create_response()
+
+        assert 15 <= response["npc"]["characteristics"]["age"] <= 65
+        assert 0 <= response["npc"]["characteristics"]["role"] <= len(ROLES) - 1
+        assert 0 <= response["npc"]["characteristics"]["sex"] <= len(SEX) - 1
 
 
 @pytest.fixture
@@ -120,12 +136,12 @@ def context():
     discussion_db = DiscussionDatabase.instance().init(":memory:")
 
     mock_llm_client = MockLlmClient(
-        embedding_return=valid_embedding, prompt_completion_return=valid_npc_profile.model_dump_json()
+        embedding_return=valid_embedding, prompt_completion_return=valid_npc_identity.model_dump_json()
     )
 
     mock_torii_client = MockToriiClient()
     mock_katana_client = MockKatanaClient()
-    guard = AsyncGuard(output_type=NpcProfile)
+    guard = AsyncGuard(output_type=NpcIdentity)
     context = Context(
         guard=guard,
         llm_client=mock_llm_client,
@@ -147,12 +163,10 @@ def init_load_tester_config():
     events_db = EventsDatabase.instance().init(":memory:")
     discussion_db = DiscussionDatabase.instance().init(":memory:")
 
-    mock_llm_client = MockLlmClient(
-        embedding_return=valid_embedding, prompt_completion_return=valid_npc_profile.model_dump_json()
-    )
+    mock_llm_client = MockLlmClient(embedding_return=valid_embedding, prompt_completion_return=valid_npc_profile)
     mock_torii_client = MockToriiClient()
     mock_katana_client = MockKatanaClient()
-    guard = AsyncGuard(output_type=NpcProfile)
+    guard = AsyncGuard(output_type=NpcIdentity)
 
     config = MockBootConfig()
 
@@ -177,6 +191,9 @@ def init_load_tester_config():
 TEST_PUBLIC_KEY = "0x141A26313BD3355FE4C4F3DDA7E40DFB77CE54AEA5F62578B4EC5AAD8DD63B1"
 TEST_PRIVATE_KEY = "0x38A8B43F18016C22F685A41728046DEC4B3E6829A17A2A83D75F1D840E82ED5"
 
+SEED = 10
+mock_rand_generator = MockRandGenerator(SEED)
+
 valid_embedding = [0.0, 0.1, 0.2]
 valid_npc_profile = NpcProfile(
     character_trait="Generous",
@@ -185,5 +202,17 @@ valid_npc_profile = NpcProfile(
         backstory="""Seraphina Rivertree is known for her unwavering generosity, always willing to help those in need without expecting anything in return. She's very pretty and young and she doesn't care about other people LOL. She's just doing her own thang brah. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum""",
         poignancy=0,
     ),
-    characteristics=Characteristics(age=27, role=3, sex=1),
+    characteristics=Characteristics(
+        age=mock_rand_generator.generate_age(),
+        role=mock_rand_generator.generate_role(),
+        sex=mock_rand_generator.generate_sex(),
+    ),
+)
+valid_npc_identity = NpcIdentity(
+    character_trait="Generous",
+    full_name="Seraphina Rivertree",
+    backstory=Backstory(
+        backstory="""Seraphina Rivertree is known for her unwavering generosity, always willing to help those in need without expecting anything in return. She's very pretty and young and she doesn't care about other people LOL. She's just doing her own thang brah. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum""",
+        poignancy=0,
+    ),
 )

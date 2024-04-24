@@ -1,8 +1,26 @@
 import asyncio
 import json
+import random
 from typing import Any, cast
 
 import aiohttp
+
+from overlore.constants import ROLES, SEX
+from overlore.jsonrpc.methods.spawn_npc.constants import MAX_AGE, MIN_AGE
+
+
+class MockRandGenerator:
+    def __init__(self, seed):
+        self.rand = random.Random(seed)
+
+    def generate_age(self) -> int:
+        return self.rand.randint(MIN_AGE, MAX_AGE)
+
+    def generate_sex(self) -> int:
+        return self.rand.randint(0, len(SEX) - 1)
+
+    def generate_role(self) -> int:
+        return self.rand.randint(0, len(ROLES) - 1)
 
 
 def run_async_function(async_function: Any, *args, **kwargs):

@@ -1,11 +1,21 @@
 import json
 import logging
+from json import JSONEncoder
+from typing import Any
 
 from jsonrpcserver import Error, InvalidParams, Result, Success
 
-from overlore.jsonrpc.methods.spawn_npc.response import Context, MethodParams, NpcProfileBuilder
+from overlore.jsonrpc.methods.spawn_npc.response import Context, MethodParams, NpcProfileBuilder, RandGenerator
+from overlore.types import Backstory
 
 logger = logging.getLogger("overlore")
+
+
+class CustomEncoder(JSONEncoder):
+    def default(self, obj: Any) -> Any:
+        if isinstance(obj, Backstory):
+            return obj.model_dump()
+        return JSONEncoder.default(self, obj)
 
 
 async def spawn_npc(context: Context, params: MethodParams) -> Result:
@@ -23,6 +33,7 @@ async def spawn_npc(context: Context, params: MethodParams) -> Result:
 
 
 async def handle_regular_flow(context: Context, params: MethodParams) -> Result:
-    npc_profile_builder = NpcProfileBuilder(context=context, params=params)
+    npc_profile_builder = NpcProfileBuilder(context=context, params=params, rand_generator=RandGenerator())
     response = await npc_profile_builder.create_response()
-    return Success(json.dumps(response))
+
+    return Success(json.dumps(response, cls=CustomEncoder))
