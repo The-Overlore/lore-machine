@@ -118,17 +118,15 @@ def parse_npc_spawn_event(event: ToriiDataNode) -> ParsedSpawnEvent:
     if not torii_event_id:
         raise RuntimeError("Event had no torii_event_id")
 
-    event_type = get_event_type(keys=keys)
-    if event_type == EventKeyHash.NPC_SPAWNED.value:
-        realm_entity_id = int(keys[1], base=16)
-        npc_entity_id = int(data[0], base=16)
+    realm_entity_id = int(data[0], base=16)
+    npc_entity_id = int(data[1], base=16)
 
-        parsed_event: ParsedSpawnEvent = {
-            "torii_event_id": torii_event_id,
-            "event_type": SqLiteEventType.NPC_SPAWNED,
-            "realm_entity_id": realm_entity_id,
-            "npc_entity_id": npc_entity_id,
-        }
+    parsed_event: ParsedSpawnEvent = {
+        "torii_event_id": torii_event_id,
+        "event_type": SqLiteEventType.NPC_SPAWNED,
+        "realm_entity_id": realm_entity_id,
+        "npc_entity_id": npc_entity_id,
+    }
 
     return parsed_event
 
