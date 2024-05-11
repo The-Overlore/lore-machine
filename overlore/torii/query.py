@@ -53,7 +53,7 @@ class Queries(Enum):
 
     REALM_ENTITY_ID_BY_NPC_ENTITY_ID = """
         query {{
-            entityownerModels (where: {{entity_id: "{npc_entity_id}"}}) {{
+            entityOwnerModels (where: {{entity_id: "{npc_entity_id}"}}) {{
                     edges {{
                         node {{
                             entity_owner_id

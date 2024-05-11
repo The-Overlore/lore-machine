@@ -64,12 +64,12 @@ class ToriiClient:
             ),
         )
 
+        entity_owner_id = int(query_result["entityOwnerModels"]["edges"][0]["node"]["entity_owner_id"], base=16)
         query_result = await self.run_torii_query(
             query=Queries.REALM_ID_BY_REALM_ENTITY_ID.value.format(
-                realm_entity_id=int(query_result["entityownerModels"]["edges"][0]["node"]["entity_owner_id"], base=16),
+                realm_entity_id=entity_owner_id,
             ),
         )
-
         return int(query_result["realmModels"]["edges"][0]["node"]["realm_id"], base=16)
 
     async def get_realm_owner_wallet_address(self, realm_entity_id: int) -> str:
